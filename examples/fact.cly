@@ -1,0 +1,39 @@
+buf resb 16
+
+start:
+    mov eax, 10
+    call factorial
+    lea rdi, [buf + 15]
+    mov byte [rdi], 10
+    mov ebx, 10
+.digit:
+    xor edx, edx
+    div ebx
+    add dl, '0'
+    dec rdi
+    mov [rdi], dl
+    test eax, eax
+    jnz .digit
+
+    lea rdx, [buf + 16]
+    sub rdx, rdi
+    mov rsi, rdi
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    mov rax, 60
+    mov rdi, 0
+    syscall
+
+factorial:
+    mov ecx, eax
+    mov eax, 1
+.mul:
+    cmp ecx, 1
+    jbe .ret
+    imul eax, ecx
+    dec ecx
+    jmp .mul
+.ret:
+    ret

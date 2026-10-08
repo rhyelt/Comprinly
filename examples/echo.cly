@@ -1,0 +1,21 @@
+buf resb 256
+
+start:
+.loop:
+    mov rax, 0
+    mov rdi, 0
+    mov rsi, buf
+    mov rdx, 256
+    syscall
+    cmp eax, 0
+    jle .done
+    mov rdx, rax
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, buf
+    syscall
+    jmp .loop
+.done:
+    mov rax, 60
+    mov rdi, 0
+    syscall

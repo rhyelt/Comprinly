@@ -1,0 +1,25 @@
+digits db "0123456789"
+nl db 10
+ob resb 4
+
+start:
+    lea rbx, [digits]
+    lea rsi, [ob]
+    xor ecx, ecx
+.next:
+    push rcx
+    mov al, [rbx + rcx]
+    mov [rsi], al
+    mov byte [rsi + 1], 10
+    mov rax, 1
+    mov rdi, 1
+    mov rdx, 2
+    syscall
+    pop rcx
+    inc ecx
+    cmp ecx, 10
+    jb .next
+
+    mov rax, 60
+    mov rdi, 0
+    syscall
