@@ -172,6 +172,18 @@ static int pow2_ok(i64 n) { return n > 0 && (n & (n - 1)) == 0; }
 
 static void ensure_vregsec(void);
 
+static Sym *ci_match(const char *name)
+{
+    Sym *found = NULL;
+    for (int i = 0; i < A.nsyms; i++) {
+        Sym *c = A.syms[i];
+        if (!(c->defined || c->ext || c->common) || strcmp(c->name, name) == 0 || strcasecmp(c->name, name) != 0) continue;
+        if (found && strcmp(found->name, c->name) != 0) return NULL;
+        found = c;
+    }
+    return found;
+}
+
 static int asm_sym_lookup(const char *name, Val *out)
 {
     if (!strcmp(name, "__cly_vregs")) {
@@ -200,6 +212,10 @@ static int asm_sym_lookup(const char *name, Val *out)
     }
     char *fn = full_name(name);
     Sym *s = get_sym(fn);
+    if (!s->defined && !s->ext && !s->common) {
+        Sym *m = ci_match(fn);
+        if (m) s = m;
+    }
     free(fn);
     if (!s->referenced) { s->reffile = g_pos.file; s->refline = g_pos.line; }
     s->referenced = 1;
@@ -1001,6 +1017,25 @@ static void set_bits(int b)
     else err("`bits' must be 16, 32 or 64");
 }
 
+static void equ_nul_note(const char *q)
+{
+    if (!A.final) return;
+    q = skipws(q);
+    if (*q != '$' || q[1] == '$') return;
+    q = skipws(q + 1);
+    if (*q != '-') return;
+    q = skipws(q + 1);
+    char id[128];
+    const char *e = scan_word(q, id, sizeof id);
+    if (e == q) return;
+    e = skipws(e);
+    if (*e && *e != ';') return;
+    Sec *sc = A.stmt ? A.stmt : A.text;
+    if (!sc || sc->nobits || (i64)sc->data.n != sc->size || sc->data.n == 0) return;
+    if (sc->data.p[sc->data.n - 1] != 0) return;
+    warn("`$ - %s' counts the trailing 0 byte; use `$ - %s - 1' for the text only", id, id);
+}
+
 static void define_equ(const char *fname, const Val *v)
 {
     Sym *s = get_sym(fname);
@@ -1610,13 +1645,88 @@ static void handle_syscall(Sec *s, IC *ic)
     encode_one(s, "call", &o, 1, &c2, 0);
 }
 
+static void handle_insn(const char *mn, const char *rest, IC *ic);
+
+static int is_stackreg32(const Op *o)
+{
+    return o->kind == OK_REG && REGCLS(o->reg) == RC_R32 && (REGNUM(o->reg) == 4 || REGNUM(o->reg) == 5);
+}
+
+static void promote_regs(const char *mn, Op *ops, int nops, IC *ic)
+{
+    if (ic->a32) return;
+    int stackdest = nops >= 1 && is_stackreg32(&ops[0]);
+    for (int i = 0; i < nops; i++) {
+        Op *o = &ops[i];
+        if (o->kind != OK_MEM || o->asize == 32) continue;
+        int b32 = o->base && REGCLS(o->base) == RC_R32;
+        int i32 = o->index && REGCLS(o->index) == RC_R32;
+        int stack = (b32 && (REGNUM(o->base) == 4 || REGNUM(o->base) == 5)) || (i32 && REGNUM(o->index) == 5);
+        if (!(b32 || i32) || !(stack || (stackdest && !strcasecmp(mn, "lea")))) continue;
+        if (b32) o->base = REGID(RC_R64, REGNUM(o->base));
+        if (i32) o->index = REGID(RC_R64, REGNUM(o->index));
+    }
+    static const char *const single[] = { "push", "pop", "call", "jmp", NULL };
+    static const char *const stack1[] = { "inc", "dec", "neg", "not", NULL };
+    static const char *const stack2[] = { "mov", "add", "sub", "and", "or", "xor", "cmp", "test", "lea", "xchg", "adc", "sbb", NULL };
+    int is_single = 0, is_s1 = 0, is_s2 = 0;
+    for (int i = 0; single[i]; i++) if (!strcasecmp(mn, single[i])) is_single = 1;
+    for (int i = 0; stack1[i]; i++) if (!strcasecmp(mn, stack1[i])) is_s1 = 1;
+    for (int i = 0; stack2[i]; i++) if (!strcasecmp(mn, stack2[i])) is_s2 = 1;
+    if (nops == 1 && ops[0].kind == OK_REG && REGCLS(ops[0].reg) == RC_R32 && is_single) {
+        ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
+        return;
+    }
+    if (nops == 1 && is_s1 && is_stackreg32(&ops[0])) {
+        ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
+        return;
+    }
+    if (nops == 2 && is_s2 && stackdest) {
+        int ok = 0;
+        if (is_stackreg32(&ops[1])) ok = 1;
+        else if (ops[1].kind == OK_IMM) ok = 1;
+        else if (ops[1].kind == OK_MEM && !strcasecmp(mn, "lea")) ok = 1;
+        if (ok) {
+            ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
+            if (ops[1].kind == OK_REG) ops[1].reg = REGID(RC_R64, REGNUM(ops[1].reg));
+        }
+    } else if (nops == 2 && is_s2 && is_stackreg32(&ops[1]) && is_stackreg32(&ops[0])) {
+        ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
+        ops[1].reg = REGID(RC_R64, REGNUM(ops[1].reg));
+    }
+}
+
+static int expand_legacy64(const char *mn, int nops, Sec *s, IC *ic)
+{
+    (void)s;
+    if (nops != 0) return 0;
+    static const char *const pad[] = { "push rax", "lea rax, [rsp+8]", "push rcx", "push rdx", "push rbx", "push rax", "push rbp", "push rsi", "push rdi", "mov rax, [rsp+56]", NULL };
+    static const char *const pop[] = { "pop rdi", "pop rsi", "pop rbp", "lea rsp, [rsp+8]", "pop rbx", "pop rdx", "pop rcx", "pop rax", NULL };
+    const char *const *seq = NULL;
+    if (!strcasecmp(mn, "pushad") || !strcasecmp(mn, "pusha")) seq = pad;
+    else if (!strcasecmp(mn, "popad") || !strcasecmp(mn, "popa")) seq = pop;
+    else if (!strcasecmp(mn, "pushfd")) { handle_insn("pushfq", "", ic); return 1; }
+    else if (!strcasecmp(mn, "popfd")) { handle_insn("popfq", "", ic); return 1; }
+    if (!seq) return 0;
+    for (int i = 0; seq[i]; i++) {
+        char buf[48];
+        snprintf(buf, sizeof buf, "%s", seq[i]);
+        char *sp = strchr(buf, ' ');
+        *sp = 0;
+        handle_insn(buf, sp + 1, ic);
+    }
+    return 1;
+}
+
 static void handle_insn(const char *mn, const char *rest, IC *ic)
 {
     Sec *s = begin_emit(K_CODE);
     Op ops[5];
     int nops = 0;
     const char *p = rest;
+    if (A.bits == 64 && (!*skipws(rest) || *skipws(rest) == ';') && expand_legacy64(mn, 0, s, ic)) return;
     if (!parse_operands(&p, ops, &nops)) return;
+    if (A.bits == 64) promote_regs(mn, ops, nops, ic);
     p = skipws(p);
     if (*p && *p != ';') { err("junk at end of line: `%.20s'", p); return; }
     ic->bits = A.bits;
@@ -1728,6 +1838,7 @@ static void do_stmt(const char *p0, int kind_hint)
             q = skipws(q);
             Val v;
             begin_emit(K_EQU);
+            equ_nul_note(q);
             if (expr_parse(&q, &v, 0)) define_equ(fn, &v);
             free(fn);
             return;
@@ -1792,6 +1903,7 @@ static void do_stmt(const char *p0, int kind_hint)
                 const char *q = skipws(ne);
                 Val v;
                 begin_emit(K_EQU);
+                equ_nul_note(q);
                 if (expr_parse(&q, &v, 0)) define_equ(fn, &v);
                 free(fn);
                 return;
@@ -1891,7 +2003,7 @@ static i64 size_sum(void)
 
 void obj_free(Obj *o) { (void)o; }
 
-static int detect_bits(AsmOpts *o)
+int detect_bits(AsmOpts *o)
 {
     if (o->bits) return o->bits;
     for (int i = 0; i < o->lines.n; i++) {
@@ -1995,7 +2107,7 @@ int assemble(AsmOpts *o, Obj *out)
     if (g_errors != e0) return 0;
     for (int i = 0; i < A.nsyms; i++) {
         Sym *s = A.syms[i];
-        if (s->referenced && !s->defined && !s->ext && !s->common && strcmp(s->name, "__cly_syscall")) {
+        if (s->referenced && !s->defined && !s->ext && !s->common && strcmp(s->name, "__cly_syscall") && !ci_match(s->name)) {
             if (!(s->name[0] == '.' && s->name[1] != '.' && 0)) {
                 g_pos.file = s->reffile;
                 g_pos.line = s->refline;
@@ -2007,6 +2119,9 @@ int assemble(AsmOpts *o, Obj *out)
     if (g_errors != e0) return 0;
     Sym *st = sym_find("start");
     if (!st || !st->defined) st = sym_find("..start");
+    for (int i = 0; (!st || !st->defined) && i < A.nsyms; i++) {
+        if (A.syms[i]->defined && (!strcasecmp(A.syms[i]->name, "start") || !strcasecmp(A.syms[i]->name, "..start") || !strcmp(A.syms[i]->name, "_start"))) st = A.syms[i];
+    }
     A.entry = (st && st->defined) ? st : NULL;
     if (st) st->global = 1;
     out->secs = A.secs;

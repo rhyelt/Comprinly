@@ -4,7 +4,7 @@ Componly (`cly`) is a small low-level language for x86 and x86-64. It is a simpl
 
 REMINDER: This project is fully vibe-coded, so you may find some bugs. It is purely for recreational purposes.
 
-See HOWTOUSE.md for a full guide.
+See HOWTOUSE.md for a full guide and DOCUMENTATION.md for the preprocessor reference.
 
 ## Download
 
@@ -22,7 +22,7 @@ Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Componly/
 The result is written next to the source file. Code is 64-bit by default, except for `bare` and raw types, which default to 32-bit. A `bits 32` or `bits 64` line in the source also works.
 
 Types: `-bin` (native format for the kernel), `-elf`, `-exe`, `-macho`, `-obj`, `-coff`, `-flat`, `-img`, `-com`, `-hex`, `-srec`.
-Other options: `-m32`, `-m64`, `-out file`, `-I dir`, `-D name=val`, `-U name`, `-l [file]` (listing), `-E` (preprocess only), `-w`, `-q`, `-v`, `-h`.
+Other options: `-m32`, `-m64`, `-O0` (optimizer off), `-out file`, `-I dir`, `-D name=val`, `-U name`, `-l [file]` (listing), `-E` (preprocess only), `-w`, `-q`, `-v`, `-h`.
 
 ## What it does for you
 
@@ -32,6 +32,9 @@ Other options: `-m32`, `-m64`, `-out file`, `-I dir`, `-D name=val`, `-U name`, 
 - In 32-bit code the 64-bit names work as 32-bit registers. r8 to r15 live in memory there.
 - In 64-bit code you get the full register set, REX, RIP-relative addressing (`[rel x]`, `default rel`) and SSE through AVX-512.
 - Curly quotes and missing commas are accepted.
+- Symbol names, `start` and `%include` file names ignore case when there is only one match.
+- 32-bit habits like `push eax`, `mov ebp, esp` and `[esp+4]` work in 64-bit code.
+- The optimizer shrinks and speeds up your code by default and keeps behavior the same. `-O0` turns it off.
 - Bare metal builds a bootable image: boot sector, protected or long mode switch, then your code. Output goes to VGA text, serial COM1 and port 0xE9. Exit powers off in QEMU, Bochs and VirtualBox, or halts.
 
 ## Build

@@ -22,6 +22,7 @@ static const char *usage_text =
     "  -P FILE       pre-include a file\n"
     "  -l [FILE]     write a listing\n"
     "  -m32, -m64    force 32-bit or 64-bit code (default: 64 for linux, windows, mac; 32 for bare)\n"
+    "  -O0           turn the optimizer off (it is on by default)\n"
     "  -E            preprocess only\n"
     "  -w            hide warnings\n"
     "  -q            quiet\n"
@@ -77,15 +78,16 @@ static const char *ext_for(int kernel, int type)
     return "";
 }
 
-static const char *fmt_name(int kernel, int type)
+static const char *fmt_name(int kernel, int type, int bits)
 {
+    int b64 = bits == 64;
     if (type == T_BIN) type = kernel == K_WINDOWS ? T_EXE : kernel == K_MAC ? T_MACHO : kernel == K_LINUX ? T_ELF : T_FLAT;
     switch (type) {
-    case T_ELF: return "elf32";
-    case T_EXE: return "win32";
-    case T_MACHO: return "macho32";
-    case T_OBJ: return kernel == K_WINDOWS ? "win32" : "elf32";
-    case T_COFF: return "win32";
+    case T_ELF: return b64 ? "elf64" : "elf32";
+    case T_EXE: return b64 ? "win64" : "win32";
+    case T_MACHO: return b64 ? "macho64" : "macho32";
+    case T_OBJ: return kernel == K_WINDOWS ? (b64 ? "win64" : "win32") : (b64 ? "elf64" : "elf32");
+    case T_COFF: return b64 ? "win64" : "win32";
     }
     return "bin";
 }
@@ -126,10 +128,13 @@ int main(int argc, char **argv)
     char **pre = xmalloc(sizeof(char *) * (size_t)(argc + 1));
     int ni = 0, nd = 0, nu = 0, np = 0;
     int mbits = 0;
+    int optimize = 1;
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
         if (!strcmp(a, "-h") || !strcmp(a, "--help") || !strcmp(a, "-?")) { fputs(usage_text, stdout); return 0; }
         if (!strcmp(a, "-v") || !strcmp(a, "--version") || !strcmp(a, "-version")) { printf("Componly %s\n", CLY_VERSION); return 0; }
+        if (!strcmp(a, "-O0")) { optimize = 0; continue; }
+        if (!strcmp(a, "-O") || !strcmp(a, "-O1") || !strcmp(a, "-O2") || !strcmp(a, "-O3") || !strcmp(a, "-Os")) { optimize = 1; continue; }
         if (!strcmp(a, "-m32")) { mbits = 32; continue; }
         if (!strcmp(a, "-m64")) { mbits = 64; continue; }
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
@@ -248,8 +253,10 @@ int main(int argc, char **argv)
     po.nundefs = nu;
     po.preincs = pre;
     po.npreincs = np;
-    po.outfmt = fmt_name(kernel, type);
-    po.bits = mbits ? mbits : 32;
+    int rawtype = type == T_FLAT || type == T_COM || type == T_HEX || type == T_SREC || type == T_IMG;
+    int defbits = mbits ? mbits : ((kernel == K_BARE || rawtype) ? 32 : 64);
+    po.outfmt = fmt_name(kernel, type, defbits);
+    po.bits = defbits;
     LineVec lines;
     memset(&lines, 0, sizeof lines);
     if (!pp_run(file, &po, &lines) || g_errors) return 1;
@@ -272,6 +279,8 @@ int main(int argc, char **argv)
         if (!has_org(&lines)) lv_add(&ao.lines, "org 0x100", "<com>", 2);
     }
     for (int i = 0; i < lines.n; i++) lv_add(&ao.lines, lines.v[i].text, lines.v[i].file, lines.v[i].line);
+    g_strip = optimize;
+    if (optimize) opt_run(&ao.lines, detect_bits(&ao), kernel, type);
     char *base = strip_ext(file);
     if (list) {
         if (!listpath) {

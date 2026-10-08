@@ -1,0 +1,35 @@
+start:
+    xor ebx, ebx
+    call f
+    call g
+    call h
+    mov edi, ebx
+    mov eax, 60
+    syscall
+f:
+    jmp .x
+.x:
+    add ebx, 1
+    jmp .y
+.y:
+    jmp .z
+.z:
+    ret
+g:
+    cmp ebx, 0
+    je .a
+    jmp .b
+.a:
+    add ebx, 10
+.b:
+    add ebx, 100
+    ret
+h:
+    mov eax, 0
+    jz .t
+    add ebx, 1000
+.t:
+    ret
+unused:
+    mov ebx, 5
+    ret

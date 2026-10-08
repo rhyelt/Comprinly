@@ -1,0 +1,11 @@
+%include "lib.cly"
+START:
+    CALL LIBFN
+    MOV RAX, 1
+    MOV RDI, 1
+    MOV RSI, STRMSG
+    MOV RDX, 3
+    SYSCALL
+    mov rax, 60
+    xor edi, edi
+    syscall

@@ -133,12 +133,14 @@ def main():
             continue
         if BITS != '64' and ('LONG' in fs or 'X86_64' in fs) and 'NOLONG' not in fs:
             continue
-        if mn.endswith('cc') or 'resb' in enc or re.match(r'^(RES|D[BWDQTOYZ]$|INCBIN|EQU)', mn, re.I):
+        if 'resb' in enc or re.match(r'^(RES|D[BWDQTOYZ]$|INCBIN|EQU)', mn, re.I):
             continue
         if ONLY and not re.search(ONLY, mn, re.I):
             continue
         oplist = [] if ops == 'void' else ops.split(',')
-        for i in range(NV):
+        mns = [mn[:-2] + c for c in ('o', 'ae', 'z', 'ne', 'be', 'a', 's', 'np', 'l', 'ge', 'le', 'g')] if mn.endswith('cc') else [mn]
+        for mn in mns:
+          for i in range(NV):
             res = []
             ok = True
             for k, t in enumerate(oplist):

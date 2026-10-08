@@ -1,5 +1,6 @@
 #include "cly.h"
 #include <time.h>
+#include <dirent.h>
 
 typedef struct SMac {
     char *name;
@@ -649,6 +650,12 @@ static void expand_text(const char *in, Str *out, Active *act)
             if (n >= sizeof name) { saddn(&res, s, n); continue; }
             memcpy(name, s, n);
             name[n] = 0;
+            if (n > 6 && !strncmp(name, "__?", 3) && !strcmp(name + n - 3, "?__")) {
+                memmove(name + 2, name + 3, n - 6);
+                name[n - 4] = '_';
+                name[n - 3] = '_';
+                name[n - 2] = 0;
+            }
             if (!strcmp(name, "__FILE__")) { sfmt(&res, "\"%s\"", P.curfile ? P.curfile : ""); continue; }
             if (!strcmp(name, "__LINE__")) { sfmt(&res, "%d", P.curline); continue; }
             if (!strcmp(name, "__BITS__")) { sfmt(&res, "%d", P.bits); continue; }
@@ -1346,6 +1353,48 @@ static void add_mmac(MMac *m)
     free(k);
 }
 
+static char *ci_resolve(const char *dir, const char *name)
+{
+    char *norm = xstrdup(name);
+    for (char *q = norm; *q; q++) if (*q == '\\') *q = '/';
+    char *cur = xstrdup(dir && dir[0] ? dir : ".");
+    char *tok = norm;
+    int isabs = norm[0] == '/';
+    if (isabs) { free(cur); cur = xstrdup("/"); while (*tok == '/') tok++; }
+    while (*tok) {
+        char *sl = strchr(tok, '/');
+        size_t n = sl ? (size_t)(sl - tok) : strlen(tok);
+        char *comp = xstrndup(tok, n);
+        char *cand = path_join(cur, comp);
+        if (!n || !strcmp(comp, ".") || !strcmp(comp, "..") || file_exists(cand)) {
+            free(cur);
+            cur = cand;
+        } else {
+            free(cand);
+            DIR *d = opendir(cur);
+            char *hit = NULL;
+            if (d) {
+                struct dirent *e;
+                while ((e = readdir(d)) != NULL) {
+                    if (!strcasecmp(e->d_name, comp)) { hit = xstrdup(e->d_name); break; }
+                }
+                closedir(d);
+            }
+            if (!hit) { free(comp); free(cur); free(norm); return NULL; }
+            char *c2 = path_join(cur, hit);
+            free(hit);
+            free(cur);
+            cur = c2;
+        }
+        free(comp);
+        tok += n;
+        while (*tok == '/') tok++;
+    }
+    free(norm);
+    if (!file_exists(cur)) { free(cur); return NULL; }
+    return cur;
+}
+
 static char *find_include(const char *name, const char *from)
 {
     if (file_exists(name) && (name[0] == '/' || name[0] == '\\' || (name[0] && name[1] == ':'))) return xstrdup(name);
@@ -1360,6 +1409,14 @@ static char *find_include(const char *name, const char *from)
         free(c);
     }
     if (file_exists(name)) return xstrdup(name);
+    dir = path_dir(from ? from : "");
+    c = ci_resolve(dir, name);
+    free(dir);
+    if (c) return c;
+    for (int i = 0; i < P.opts->nincdirs; i++) {
+        c = ci_resolve(P.opts->incdirs[i], name);
+        if (c) return c;
+    }
     return NULL;
 }
 
@@ -1454,11 +1511,11 @@ static void do_arg_local(const char *rest, int islocal)
 {
     if (P.nctx == 0) { err("`%%%s' used outside a context", islocal ? "local" : "arg"); return; }
     Ctx *c = &P.ctx[P.nctx - 1];
-    if (!c->stk) { c->stk = 2; c->argoff = 8; c->locoff = 0; }
+    if (!c->stk) { c->stk = P.bits == 64 ? 4 : 2; c->argoff = P.bits == 64 ? 16 : 8; c->locoff = 0; }
     int n;
     char **parts = split_top_commas(rest, &n);
-    const char *basereg = c->stk == 2 ? "ebp" : "bp";
-    int width = c->stk == 2 ? 4 : 2;
+    const char *basereg = c->stk == 4 ? "rbp" : (c->stk == 2 ? "ebp" : "bp");
+    int width = c->stk == 4 ? 8 : (c->stk == 2 ? 4 : 2);
     for (int i = 0; i < n; i++) {
         char *colon = strchr(parts[i], ':');
         char name[256];
@@ -1896,7 +1953,7 @@ static void handle_directive(char *tt, Src *s, const char *file, int line)
         if (!strcasecmp(tok, "flat")) { c->stk = 2; c->argoff = 8; }
         else if (!strcasecmp(tok, "small")) { c->stk = 1; c->argoff = 4; }
         else if (!strcasecmp(tok, "large")) { c->stk = 3; c->argoff = 6; }
-        else if (!strcasecmp(tok, "flat64")) { c->stk = 2; c->argoff = 16; }
+        else if (!strcasecmp(tok, "flat64")) { c->stk = 4; c->argoff = 16; }
         else err("unknown `%%stacksize' mode `%s'", tok);
         c->locoff = 0;
     } else if (!strcasecmp(dir, "arg")) {
@@ -1959,15 +2016,13 @@ static void define_builtins(PPOpts *o)
     define_simple("__NASM_VER__", "\"2.16.01\"");
     define_simple("__CLY__", "1");
     define_simple("__CLY_MAJOR__", "1");
-    define_simple("__CLY_MINOR__", "0");
+    define_simple("__CLY_MINOR__", "1");
     define_simple("__CLY_VERSION__", "\"" CLY_VERSION "\"");
     define_simple("__OUTPUT_FORMAT__", o->outfmt ? o->outfmt : "bin");
     define_simple("__PASS__", "3");
     define_simple("__?NASM_MAJOR?__", "2");
     define_simple("__?NASM_MINOR?__", "16");
     define_simple("__?OUTPUT_FORMAT?__", o->outfmt ? o->outfmt : "bin");
-    define_simple("__?BITS?__", "32");
-    define_simple("__?FILE?__", "\"\"");
     time_t t = time(NULL);
     struct tm *g = gmtime(&t);
     char b[64];

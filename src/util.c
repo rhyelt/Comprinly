@@ -1,7 +1,7 @@
 #include "cly.h"
 
 Pos g_pos;
-int g_errors, g_warnings, g_nowarn, g_quiet;
+int g_errors, g_warnings, g_nowarn, g_quiet, g_strip;
 
 void *xmalloc(size_t n)
 {

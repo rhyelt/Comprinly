@@ -1,0 +1,10 @@
+msg db "Hello", 10
+START
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, msg
+    mov rdx, 6
+    syscall
+    mov rax, 60
+    xor edi, edi
+    syscall

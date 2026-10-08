@@ -912,6 +912,9 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
 
 void insn_init(void)
 {
+    static int done;
+    if (done) return;
+    done = 1;
     insn_tab_init();
 }
 

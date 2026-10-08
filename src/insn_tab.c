@@ -403,6 +403,7 @@ static void int_tab(void)
         snprintf(mn, sizeof mn, "cmov%s", ccal[i].n);
         TF(mn, "r16,rm16", "o16 0f %02x /r", 0x40 + c);
         TF(mn, "r32,rm32", "o32 0f %02x /r", 0x40 + c);
+        TF(mn, "r64,rm64", "only64 o64 0f %02x /r", 0x40 + c);
     }
     (void)ccn;
     LV(0);

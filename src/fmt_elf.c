@@ -66,6 +66,10 @@ static int fmt_elf64(Obj *o, Bytes *out)
         while ((i64)f.n < g_lay.rw_lma - ELF64_BASE) bad1(&f, 0);
         link_range(o, &f, g_lay.rw_start, g_lay.file_end > g_lay.rw_start ? g_lay.file_end : g_lay.rw_start);
     }
+    if (g_strip) {
+        badd(out, f.p, f.n);
+        return 1;
+    }
     Bytes shstr = {0}, symtab = {0}, strtab = {0};
     bad1(&shstr, 0);
     bad1(&strtab, 0);
@@ -195,6 +199,10 @@ int fmt_elf(Obj *o, Bytes *out)
     if (rw) {
         while ((i64)f.n < g_lay.rw_lma - ELF_BASE) bad1(&f, 0);
         link_range(o, &f, g_lay.rw_start, g_lay.file_end > g_lay.rw_start ? g_lay.file_end : g_lay.rw_start);
+    }
+    if (g_strip) {
+        badd(out, f.p, f.n);
+        return 1;
     }
 
     Bytes shstr = {0}, symtab = {0}, strtab = {0};

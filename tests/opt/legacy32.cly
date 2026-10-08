@@ -1,0 +1,29 @@
+msg db "hi", 10
+start:
+    push ebp
+    mov ebp, esp
+    sub esp, 16
+    mov dword [ebp-4], 5
+    mov eax, [ebp-4]
+    mov [esp+4], eax
+    mov ebx, [esp+4]
+    push eax
+    push ebx
+    pushad
+    popad
+    pop ebx
+    pop eax
+    pushfd
+    popfd
+    lea esi, [esp+8]
+    add eax, ebx
+    mov esp, ebp
+    pop ebp
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, msg
+    mov rdx, 3
+    syscall
+    mov eax, 60
+    mov edi, ebx
+    syscall

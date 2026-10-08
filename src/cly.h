@@ -15,7 +15,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.0.0"
+#define CLY_VERSION "1.1.0"
 
 typedef int64_t i64;
 typedef uint64_t u64;
@@ -65,7 +65,7 @@ int edit_distance(const char *a, const char *b);
 const char *insn_suggest(const char *mn);
 typedef struct { const char *file; int line; } Pos;
 extern Pos g_pos;
-extern int g_errors, g_warnings, g_nowarn;
+extern int g_strip, g_errors, g_warnings, g_nowarn;
 void err(const char *fmt, ...);
 void warn(const char *fmt, ...);
 void fatal(const char *fmt, ...);
@@ -147,6 +147,7 @@ typedef struct {
 } PPOpts;
 
 int pp_run(const char *path, PPOpts *o, LineVec *out);
+void opt_run(LineVec *lv, int bits, int kernel, int type);
 
 enum { SEC_ABS = -1 };
 
@@ -238,6 +239,7 @@ typedef struct {
     int optimize;
     int bits;
 } AsmOpts;
+int detect_bits(AsmOpts *o);
 
 int assemble(AsmOpts *o, Obj *out);
 void obj_free(Obj *o);

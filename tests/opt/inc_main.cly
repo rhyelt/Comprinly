@@ -1,0 +1,11 @@
+%include "LIB.CLY"
+start:
+    call libfn
+    mov rax, SYS_WRITE
+    mov rdi, 1
+    mov rsi, strmsg
+    mov rdx, 3
+    syscall
+    mov rax, 60
+    xor edi, edi
+    syscall
