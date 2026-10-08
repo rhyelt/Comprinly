@@ -7,7 +7,7 @@ static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-b
 static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
 
 static const char *usage_text =
-    "Componly " CLY_VERSION "\n"
+    "Comprinly " CLY_VERSION "\n"
     "\n"
     "usage: cly <kernel> <file> [-type] [options]\n"
     "\n"
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
         if (!strcmp(a, "-h") || !strcmp(a, "--help") || !strcmp(a, "-?")) { fputs(usage_text, stdout); return 0; }
-        if (!strcmp(a, "-v") || !strcmp(a, "--version") || !strcmp(a, "-version")) { printf("Componly %s\n", CLY_VERSION); return 0; }
+        if (!strcmp(a, "-v") || !strcmp(a, "--version") || !strcmp(a, "-version")) { printf("Comprinly %s\n", CLY_VERSION); return 0; }
         if (!strcmp(a, "-O0")) { optimize = 0; continue; }
         if (!strcmp(a, "-O") || !strcmp(a, "-O1") || !strcmp(a, "-O2") || !strcmp(a, "-O3") || !strcmp(a, "-Os")) { optimize = 1; continue; }
         if (!strcmp(a, "-m32")) { mbits = 32; continue; }

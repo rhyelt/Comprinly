@@ -1,6 +1,6 @@
-# Componly
+# Comprinly
 
-Componly (`cly`) is a small low-level language for x86 and x86-64. It is a simplified and forgiving version of the assembler NASM. It compiles to Linux, Windows, macOS and bare metal, but only Linux is really tested and macOS is experimental.
+Comprinly (`cly`) is a small low-level language for x86 and x86-64. It is a simplified and forgiving version of the assembler NASM. It compiles to Linux, Windows, macOS and bare metal, but only Linux is really tested and macOS is experimental.
 
 REMINDER: This project is fully vibe-coded, so you may find some bugs. It is purely for recreational purposes.
 

@@ -1,6 +1,6 @@
-# How to use Componly
+# How to use Comprinly
 
-Componly (`cly`) turns assembly source into a program you can run. You write NASM-style x86 code (32-bit or 64-bit), pick the system you want to run it on, and get a finished file. No assembler or linker needed.
+Comprinly (`cly`) turns assembly source into a program you can run. You write NASM-style x86 code (32-bit or 64-bit), pick the system you want to run it on, and get a finished file. No assembler or linker needed.
 
 ## 1. Get it
 
@@ -108,7 +108,7 @@ Options:
 
 ## 5. Optimizer
 
-Componly makes the program smaller and a bit faster on its own. It is on by default and keeps the behavior of your program the same. Turn it off with `-O0` when you want the code exactly as you wrote it.
+Comprinly makes the program smaller and a bit faster on its own. It is on by default and keeps the behavior of your program the same. Turn it off with `-O0` when you want the code exactly as you wrote it.
 
 What it does:
 
@@ -137,7 +137,7 @@ It does not move values between registers or rewrite your algorithm. You chose t
 - Names ignore case when only one spelling exists, so `START:`, `Msg` and `MSG` all find the same thing. The entry point can be `start`, `_start` or `START`, with or without a colon.
 - `%include` ignores case in file names and accepts backslashes in paths, so Windows-style names work on Linux.
 - In 64-bit code, 32-bit habits keep working: `push eax`, `pop ebx`, `call eax`, `mov ebp, esp`, `sub esp, 16`, `[esp+4]`, `[ebp-8]`, `pushad`, `popad` and `pushfd` are treated as their 64-bit versions.
-- A line like `len equ $ - msg` counts every byte up to `$`. If your string ends in `, 0`, that zero is counted too, and Componly warns about it. Use `$ - msg - 1` for the text only.
+- A line like `len equ $ - msg` counts every byte up to `$`. If your string ends in `, 0`, that zero is counted too, and Comprinly warns about it. Use `$ - msg - 1` for the text only.
 - In 32-bit code the 64-bit register names (`rax`, `rdi`) work as their 32-bit halves. `r8` to `r15` live in memory.
 
 Common calls like read, write, open, close and exit work everywhere. Anything the target system cannot do returns -38 (ENOSYS). The runtime sources in `rt/` show exactly what is mapped.

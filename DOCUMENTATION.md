@@ -1,8 +1,8 @@
-# Componly preprocessor and language reference
+# Comprinly preprocessor and language reference
 
-This file covers the preprocessor and the directives around it. For installing and running Componly, see HOWTOUSE.md. The syntax follows NASM, so NASM examples carry over.
+This file covers the preprocessor and the directives around it. For installing and running Comprinly, see HOWTOUSE.md. The syntax follows NASM, so NASM examples carry over.
 
-Everything listed here has been run and checked. Things Componly does not do are at the end.
+Everything listed here has been run and checked. Things Comprinly does not do are at the end.
 
 ## Macros
 
@@ -109,7 +109,7 @@ These name stack variables inside a context. `%stacksize` picks the frame style:
 | `flat64` | `rbp` | 8 |
 | `small`, `large` | `bp` | 2 |
 
-If you do not set one, Componly uses `flat` in 32-bit code and `flat64` in 64-bit code.
+If you do not set one, Comprinly uses `flat` in 32-bit code and `flat64` in 64-bit code.
 
     bits 64
     f:
@@ -127,7 +127,7 @@ If you do not set one, Componly uses `flat` in 32-bit code and `flat64` in 64-bi
         ret
     %pop
 
-Use the names inside square brackets. `%assign %$localsize 0` has to come before `%local` so Componly can add up the space.
+Use the names inside square brackets. `%assign %$localsize 0` has to come before `%local` so Comprinly can add up the space.
 
 ## Messages
 
@@ -160,9 +160,9 @@ Use the names inside square brackets. `%assign %$localsize 0` has to come before
 | `__BITS__` | 16, 32 or 64 (follows `-m32`, `-m64` and the default for your target) |
 | `__SECT__` | the current section directive |
 | `__OUTPUT_FORMAT__` | `elf64`, `elf32`, `win64`, `win32`, `macho64`, `macho32` or `bin` |
-| `__NASM_MAJOR__`, `__NASM_MINOR__`, `__NASM_SUBMINOR__`, `__NASM_PATCHLEVEL__` | the NASM version Componly matches (2.16.01) |
+| `__NASM_MAJOR__`, `__NASM_MINOR__`, `__NASM_SUBMINOR__`, `__NASM_PATCHLEVEL__` | the NASM version Comprinly matches (2.16.01) |
 | `__NASM_VERSION_ID__`, `__NASM_VER__` | the same version as a number and as a string |
-| `__CLY__`, `__CLY_MAJOR__`, `__CLY_MINOR__`, `__CLY_VERSION__` | the Componly version |
+| `__CLY__`, `__CLY_MAJOR__`, `__CLY_MINOR__`, `__CLY_VERSION__` | the Comprinly version |
 | `__DATE__`, `__TIME__`, `__DATE_NUM__`, `__TIME_NUM__` | build date and time (UTC) |
 | `__UTC_DATE__`, `__UTC_TIME__`, `__UTC_DATE_TIME__`, `__POSIX_TIME__` | the same in other forms |
 | `__PASS__` | always 3 |
@@ -173,7 +173,7 @@ You can add your own on the command line with `-D NAME=value` and remove one wit
 
 ## Not supported
 
-These are not in Componly, so they are not documented above:
+These are not in Comprinly, so they are not documented above:
 
 - APX (the extended general registers `r16` to `r31` and the new instruction forms)
 - OMF and `.obj` output for 16-bit tools (`-coff` and `-obj` make COFF and ELF)
