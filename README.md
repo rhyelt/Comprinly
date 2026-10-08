@@ -1,10 +1,14 @@
 # Componly
 
-Componly (`cly`) is a small low-level language for x86-64. It is a simplified and forgiving version of the assembler NASM. It compiles or assembles to Linux, Windows, and MacOS but only Linux is tested and MacOS is experimental.
+Componly (`cly`) is a small low-level language for x86 and x86-64. It is a simplified and forgiving version of the assembler NASM. It compiles to Linux, Windows, macOS and bare metal, but only Linux is really tested and macOS is experimental.
 
-REMINDER: This project is fully vibe-coded in which you may find some bugs. This project is purely for recreational purposes. 
+REMINDER: This project is fully vibe-coded, so you may find some bugs. It is purely for recreational purposes.
 
 See HOWTOUSE.md for a full guide.
+
+## Download
+
+Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Componly/releases). Grab the one for your system, or build it yourself below.
 
 ## Use
 
@@ -32,24 +36,40 @@ Other options: `-m32`, `-m64`, `-out file`, `-I dir`, `-D name=val`, `-U name`, 
 
 ## Build
 
+You need a C compiler and make.
+
     make
 
-or `gcc -O2 -fwrapv -o cly src/*.c`. 32-bit builds: `make cly32` (Linux) and `make cly.exe` (Windows).
+or `gcc -O2 -fwrapv -o cly src/*.c`.
+
+Extra targets:
+
+- `make static` small static build
+- `make cly32` 32-bit Linux build of cly itself (needs python3 and ziglang)
+- `make cly.exe` 32-bit Windows build of cly itself (needs python3 and ziglang). It still makes 64-bit programs.
+- `make gen` rebuild the instruction tables (needs python3)
+- `make check` run the tests (the NASM comparisons need nasm, the emulator tests need python3 and unicorn)
 
 ## Instruction data
 
-`data/insns.dat` is the NASM instruction table (BSD licence, notice kept in the file). `tools/gen_insns.py` turns its AVX and AVX-512 lines into `src/insn_gen.c`, and `tools/gen_insns64.py` does the same for the 64-bit-only lines (`src/insn_gen64.c`). Run `make gen` to rebuild it.
+`data/insns.dat` is the NASM instruction table (BSD licence, notice kept in the file). `tools/gen_insns.py` turns its AVX and AVX-512 lines into `src/insn_gen.c`, and `tools/gen_insns64.py` does the same for the 64-bit-only lines (`src/insn_gen64.c`).
 
 ## Layout
 
 - `src/` compiler (preprocessor, expressions, assembler, linker, format writers)
 - `rt/` runtime sources per kernel, embedded by `rt/gen.py`
 - `tests/` comparison scripts against NASM
-- `examples/` sample program
+- `examples/` sample programs
 - `dist/` sample outputs
 
 ## Limits
 
-- Mac output, and the 64-bit Windows, mac and bare runtimes, were tested only in an emulator.
+- Linux programs were run for real, in 32-bit and 64-bit. Windows, macOS and bare metal output, including the 64-bit runtimes, was only run in an emulator.
 - AVX, AVX2, FMA, BMI, AVX-512 (with masks, broadcast, rounding and FP16) and MPX work. XOP, FMA4 and TBM work too. AMX does not.
+- A few rare old x87 shorthands that NASM accepts are rejected.
 - Bare metal has no interrupt table, and `syscall` only offers the basic Linux calls.
+- No Mach-O object output.
+
+## Licence
+
+AGPL-3.0. The NASM instruction table keeps its own BSD notice.
