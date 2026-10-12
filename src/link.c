@@ -185,6 +185,11 @@ int link_apply(Obj *o)
             bad++;
             continue;
         }
+        if (r->kind >= RK_A64_B26) {
+            int handled = 0;
+            if (!link_arch_reloc(o, r, v, sec_addr(o, r->sec) + r->off, &handled)) bad++;
+            continue;
+        }
         if (r->kind == RK_REL) v -= sec_addr(o, r->sec) + r->relbase;
         put_reloc(o, r, v);
     }
@@ -459,6 +464,15 @@ void fmt_srec(const Bytes *in, i64 base, i64 entry, Str *out)
 int link_obj(Obj *o, int kernel, int type, Bytes *out)
 {
     int plainbin = type == T_BIN;
+    if (o->arch != ARCH_X86) {
+        if (type == T_BIN && kernel == K_BARE) type = T_FLAT;
+        if (type == T_IMG) type = T_FLAT;
+        if (type == T_EXE || type == T_MACHO || type == T_COFF || (type == T_BIN && kernel != K_LINUX) || (type == T_OBJ && kernel == K_WINDOWS)) {
+            const char *what = (type == T_EXE || (type == T_BIN && kernel == K_WINDOWS) || type == T_COFF || type == T_OBJ) ? "Windows PE/COFF" : "Mach-O";
+            fprintf(stderr, "cly: %s output is not supported for %s; build for linux (-elf or -obj) or bare (-flat, -hex, -srec)\n", what, arch_name(o->arch));
+            return 0;
+        }
+    }
     if (type == T_BIN) {
         type = kernel == K_WINDOWS ? T_EXE : kernel == K_MAC ? T_MACHO : kernel == K_LINUX ? T_ELF : T_IMG;
         if (kernel == K_BARE) type = T_IMG;

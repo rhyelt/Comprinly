@@ -1,5 +1,5 @@
 import subprocess, re, os, sys
-CLY = '/home/claude/componly/cly'
+CLY = '/home/claude/comprinly/cly'
 W = '/tmp/cmpea'
 os.makedirs(W, exist_ok=True)
 E32 = ['eax','ecx','edx','ebx','esp','ebp','esi','edi']

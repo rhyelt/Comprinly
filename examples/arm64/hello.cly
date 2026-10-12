@@ -1,0 +1,17 @@
+cpu arm64
+
+section .data
+msg: db "Hello, World!", 10
+len equ $ - msg
+
+section .text
+global start
+start:
+    mov x0, 1
+    mov x1, msg
+    mov x2, len
+    mov x8, 64
+    svc 0
+    mov x0, 0
+    mov x8, 93
+    svc 0

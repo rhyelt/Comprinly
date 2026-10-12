@@ -1,0 +1,55 @@
+cpu rv64
+
+section .text
+global start
+start:
+    li a0, 10
+    call fact
+    mv s0, a0
+    la a1, buf
+    li t0, 0
+    mv t1, s0
+1:  li t2, 10
+    remu t3, t1, t2
+    divu t1, t1, t2
+    addi t3, t3, '0'
+    addi t0, t0, 1
+    sub t4, a1, t0
+    sb t3, 16(t4)
+    bnez t1, 1b
+    li a0, 1
+    la a1, buf
+    addi a1, a1, 16
+    sub a1, a1, t0
+    mv a2, t0
+    li a7, 64
+    ecall
+    li a0, 1
+    la a1, nl
+    li a2, 1
+    li a7, 64
+    ecall
+    li a0, 0
+    li a7, 93
+    ecall
+
+fact:
+    li t0, 1
+    bgt a0, t0, 2f
+    li a0, 1
+    ret
+2:  addi sp, sp, -16
+    sd ra, 8(sp)
+    sd a0, 0(sp)
+    addi a0, a0, -1
+    call fact
+    ld t0, 0(sp)
+    mul a0, a0, t0
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+
+section .data
+nl: db 10
+section .bss
+buf: resb 16

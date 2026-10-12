@@ -15,7 +15,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.1.0"
+#define CLY_VERSION "1.2.0"
 
 typedef int64_t i64;
 typedef uint64_t u64;
@@ -122,6 +122,7 @@ int expr_parse(const char **pp, Val *out, int flags);
 int expr_eval_str(const char *s, Val *out, int flags);
 int ident_start(int c);
 int ident_char(int c);
+extern int num_overflow;
 int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat);
 int parse_charconst(const char **pp, Str *out);
 int float_encode(const char *text, int kind, u8 *out);
@@ -144,10 +145,12 @@ typedef struct {
     const char *outfmt;
     int bits;
     int pass;
+    int arch;
 } PPOpts;
 
 int pp_run(const char *path, PPOpts *o, LineVec *out);
 void opt_run(LineVec *lv, int bits, int kernel, int type);
+void opt_run_nx(LineVec *lv, int arch, int kernel, int type);
 
 enum { SEC_ABS = -1 };
 
@@ -167,7 +170,15 @@ typedef struct Sec {
     i64 fileoff;
 } Sec;
 
-enum { RK_ABS, RK_REL };
+enum {
+    RK_ABS, RK_REL,
+    RK_A64_B26, RK_A64_B19, RK_A64_B14, RK_A64_ADR, RK_A64_ADRP, RK_A64_LO12, RK_A64_MOVW,
+    RK_RV_JAL, RK_RV_BRANCH, RK_RV_HI20, RK_RV_LO12I, RK_RV_LO12S, RK_RV_PCHI20, RK_RV_PCLO12I, RK_RV_PCLO12S, RK_RV_CALL, RK_RV_CJ, RK_RV_CB
+};
+
+enum { ARCH_X86, ARCH_A64, ARCH_RV64, ARCH_RV32 };
+enum { RVX_I = 1, RVX_M = 2, RVX_A = 4, RVX_F = 8, RVX_D = 16, RVX_C = 32, RVX_ZICSR = 64, RVX_ZIFENCEI = 128, RVX_ZBA = 256, RVX_ZBB = 512, RVX_ZBS = 1024, RVX_ZBC = 2048, RVX_ZICOND = 4096, RVX_ZFH = 1 << 13, RVX_ZFHMIN = 1 << 14, RVX_ZBKB = 1 << 15, RVX_ZBKX = 1 << 16, RVX_ZKND = 1 << 17, RVX_ZKNE = 1 << 18, RVX_ZKNH = 1 << 19, RVX_ZKSED = 1 << 20, RVX_ZKSH = 1 << 21, RVX_ZICBOM = 1 << 22, RVX_ZICBOZ = 1 << 23, RVX_ZICBOP = 1 << 24, RVX_ZAWRS = 1 << 25, RVX_SVINVAL = 1 << 26, RVX_H = 1 << 27 };
+#define RVX_DEFAULT (RVX_I | RVX_M | RVX_A | RVX_F | RVX_D | RVX_C | RVX_ZICSR | RVX_ZIFENCEI | RVX_ZBA | RVX_ZBB | RVX_ZBS | RVX_ZBC | RVX_ZICOND | RVX_ZFH | RVX_ZFHMIN | RVX_ZBKB | RVX_ZBKX | RVX_ZKND | RVX_ZKNE | RVX_ZKNH | RVX_ZKSED | RVX_ZKSH | RVX_ZICBOM | RVX_ZICBOZ | RVX_ZICBOP | RVX_ZAWRS | RVX_SVINVAL | RVX_H)
 
 typedef struct {
     int sec;
@@ -197,6 +208,8 @@ struct Sym {
     char *expname;
     int defline;
     int defpass;
+    const char *deffile;
+    int defln;
     int isabs;
 };
 
@@ -209,6 +222,7 @@ typedef struct {
     int nsyms;
     int bits;
     int is64;
+    int arch, rvext;
     int org, has_org;
     Sym *entry;
     int uses_syscall;
@@ -238,6 +252,8 @@ typedef struct {
     int cpu;
     int optimize;
     int bits;
+    int arch, rvext;
+    int arch_given;
 } AsmOpts;
 int detect_bits(AsmOpts *o);
 
@@ -282,9 +298,30 @@ typedef struct {
     int nomatch;
     const char *why;
     int vexpfx;
+    int arch, rvext, optimize, kernel;
 } IC;
 
 int insn_known(const char *mn);
+const char *arch_name(int arch);
+int arch_parse(const char *s, int *rvext);
+int arch_rv_generic(const char *name);
+int arch_cpu_line(const char *text, char *arg, size_t sz);
+int arch_first_cpu(const LineVec *lv, char *arg, size_t sz, int *lineno);
+int arch_guess(const LineVec *lv, int *rvext);
+void sysval_run(const LineVec *lv, int arch, int kernel, int bits);
+int rt_syscall_supported(int kernel, int bits, int n);
+int arch_check_foreign(const LineVec *lv, int arch);
+extern int g_guess_line;
+extern char g_guess_tok[64];
+int arch_known(int arch, const char *mn);
+int pp_macro_arity(const char *name, int *minp, int *maxp);
+int arch_bits(int arch);
+int arch_insn(int arch, const char *mn, const char *rest, IC *ic, InsnOut *out);
+int a64_known(const char *mn);
+int a64_insn(const char *mn, const char *rest, IC *ic, InsnOut *out);
+int rv_known(const char *mn, int rvext);
+int rv_insn(const char *mn, const char *rest, IC *ic, InsnOut *out);
+int link_arch_reloc(Obj *o, Reloc *r, i64 S, i64 P, int *handled);
 int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out);
 void insn_cpu_set(const char *name, int *lvl);
 

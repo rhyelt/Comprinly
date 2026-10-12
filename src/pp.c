@@ -26,7 +26,7 @@ typedef struct Ctx {
     int argoff, locoff;
 } Ctx;
 
-typedef struct { int parent, active, taken, hadelse; } Cond;
+typedef struct { int parent, active, taken, hadelse; const char *ofile; int oline; } Cond;
 
 typedef struct Inv {
     char **args;
@@ -755,6 +755,18 @@ static int mmac_exists_name(const char *name)
         MMac *m = ht_get(h, k);
         free(k);
         if (m) return 1;
+    }
+    return 0;
+}
+
+int pp_macro_arity(const char *name, int *minp, int *maxp)
+{
+    for (int ci = 0; ci < 2; ci++) {
+        HT *h = ci ? &P.mmacs_ci : &P.mmacs;
+        char *k = ci ? lower(name) : xstrdup(name);
+        MMac *m = ht_get(h, k);
+        free(k);
+        if (m) { *minp = m->minp; *maxp = m->greedy ? -1 : m->maxp; return 1; }
     }
     return 0;
 }
@@ -1611,7 +1623,7 @@ static void handle_directive(char *tt, Src *s, const char *file, int line)
         int neg;
         if (!split_cond(dir, &kind, &neg, iselif ? "elif" : "if")) {
             if (active || iselif) err("unknown directive `%%%s'", dir);
-            if (!iselif) { Cond *c = &P.conds[P.ncond++]; c->parent = active; c->active = 0; c->taken = 1; c->hadelse = 0; }
+            if (!iselif) { Cond *c = &P.conds[P.ncond++]; c->parent = active; c->active = 0; c->taken = 1; c->hadelse = 0; c->ofile = g_pos.file; c->oline = g_pos.line; }
             return;
         }
         if (!iselif) {
@@ -1619,6 +1631,8 @@ static void handle_directive(char *tt, Src *s, const char *file, int line)
             Cond *c = &P.conds[P.ncond++];
             c->parent = active;
             c->hadelse = 0;
+            c->ofile = g_pos.file;
+            c->oline = g_pos.line;
             if (!active) { c->active = 0; c->taken = 1; return; }
             int r = cond_eval(kind, rest);
             if (neg) r = !r;
@@ -2016,8 +2030,17 @@ static void define_builtins(PPOpts *o)
     define_simple("__NASM_VER__", "\"2.16.01\"");
     define_simple("__CLY__", "1");
     define_simple("__CLY_MAJOR__", "1");
-    define_simple("__CLY_MINOR__", "1");
+    define_simple("__CLY_MINOR__", "2");
     define_simple("__CLY_VERSION__", "\"" CLY_VERSION "\"");
+    {
+        int a = o->arch;
+        define_simple("__CLY_ARCH__", a == ARCH_A64 ? "\"arm64\"" : a == ARCH_RV64 ? "\"riscv64\"" : a == ARCH_RV32 ? "\"riscv32\"" : "\"x86-64\"");
+        if (a == ARCH_X86) define_simple("__ARCH_X86__", "1");
+        if (a == ARCH_A64) define_simple("__ARCH_ARM64__", "1");
+        if (a == ARCH_RV64 || a == ARCH_RV32) define_simple("__ARCH_RISCV__", "1");
+        if (a == ARCH_RV64) define_simple("__ARCH_RISCV64__", "1");
+        if (a == ARCH_RV32) define_simple("__ARCH_RISCV32__", "1");
+    }
     define_simple("__OUTPUT_FORMAT__", o->outfmt ? o->outfmt : "bin");
     define_simple("__PASS__", "3");
     define_simple("__?NASM_MAJOR?__", "2");
@@ -2073,6 +2096,6 @@ int pp_run(const char *path, PPOpts *o, LineVec *out)
     free(text);
     Src s = { &lv, 0, NULL };
     process_src(&s);
-    if (P.ncond) { g_pos.file = fn; g_pos.line = 0; err("expecting `%%endif'"); }
+    for (int i = P.ncond - 1; i >= 0; i--) { g_pos.file = P.conds[i].ofile ? P.conds[i].ofile : fn; g_pos.line = P.conds[i].oline; err("this conditional is never closed, expecting `%%endif'"); }
     return g_errors == 0;
 }

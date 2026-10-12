@@ -22,6 +22,8 @@ static const char *usage_text =
     "  -P FILE       pre-include a file\n"
     "  -l [FILE]     write a listing\n"
     "  -m32, -m64    force 32-bit or 64-bit code (default: 64 for linux, windows, mac; 32 for bare)\n"
+    "  -cpu NAME     target cpu: x86-64, arm64 or risc-v (rv64gc, rv32imac, ...); a `cpu' line on\n"
+    "                the first line of the source does the same, otherwise it is guessed\n"
     "  -O0           turn the optimizer off (it is on by default)\n"
     "  -E            preprocess only\n"
     "  -w            hide warnings\n"
@@ -129,12 +131,22 @@ int main(int argc, char **argv)
     int ni = 0, nd = 0, nu = 0, np = 0;
     int mbits = 0;
     int optimize = 1;
+    int cli_arch = -1, cli_rvext = 0, rv_generic = 0;
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
         if (!strcmp(a, "-h") || !strcmp(a, "--help") || !strcmp(a, "-?")) { fputs(usage_text, stdout); return 0; }
         if (!strcmp(a, "-v") || !strcmp(a, "--version") || !strcmp(a, "-version")) { printf("Comprinly %s\n", CLY_VERSION); return 0; }
         if (!strcmp(a, "-O0")) { optimize = 0; continue; }
         if (!strcmp(a, "-O") || !strcmp(a, "-O1") || !strcmp(a, "-O2") || !strcmp(a, "-O3") || !strcmp(a, "-Os")) { optimize = 1; continue; }
+        if (!strcmp(a, "-cpu") || !strcmp(a, "--cpu") || !strcmp(a, "-arch") || !strcmp(a, "--arch")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a cpu name\n", a); return 1; }
+            const char *nm = argv[++i];
+            cli_arch = arch_parse(nm, &cli_rvext);
+            rv_generic = arch_rv_generic(nm);
+            if (cli_arch == -2) { fprintf(stderr, "cly: `%s' is not supported (32-bit ARM is not available; use arm64)\n", nm); return 1; }
+            if (cli_arch < 0) { fprintf(stderr, "cly: unknown cpu `%s'; use x86-64, arm64 or risc-v\n", nm); return 1; }
+            continue;
+        }
         if (!strcmp(a, "-m32")) { mbits = 32; continue; }
         if (!strcmp(a, "-m64")) { mbits = 64; continue; }
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
@@ -254,12 +266,92 @@ int main(int argc, char **argv)
     po.preincs = pre;
     po.npreincs = np;
     int rawtype = type == T_FLAT || type == T_COM || type == T_HEX || type == T_SREC || type == T_IMG;
-    int defbits = mbits ? mbits : ((kernel == K_BARE || rawtype) ? 32 : 64);
-    po.outfmt = fmt_name(kernel, type, defbits);
-    po.bits = defbits;
+    int arch = cli_arch, rvext = cli_rvext;
+    int arch_from_file = 0;
+    {
+        size_t flen = 0;
+        char *raw = read_file(file, &flen);
+        if (raw) {
+            LineVec tmp;
+            memset(&tmp, 0, sizeof tmp);
+            const char *p = raw;
+            while (*p) {
+                const char *nl = strchr(p, '\n');
+                size_t len = nl ? (size_t)(nl - p) : strlen(p);
+                char *t = xstrndup(p, len);
+                lv_add(&tmp, t, file, tmp.n + 1);
+                free(t);
+                if (!nl) break;
+                p = nl + 1;
+            }
+            char arg[64];
+            if (arch_first_cpu(&tmp, arg, sizeof arg, NULL)) {
+                int fx = 0;
+                int fa = arch_parse(arg, &fx);
+                if (fa == -2) { fprintf(stderr, "cly: `cpu %s' is not supported (32-bit ARM is not available; use arm64)\n", arg); return 1; }
+                if (fa >= 0) {
+                    int ca = arch == ARCH_X86 ? 0 : arch == ARCH_A64 ? 1 : 2;
+                    int cf = fa == ARCH_X86 ? 0 : fa == ARCH_A64 ? 1 : 2;
+                    if (arch >= 0 && ca != cf) {
+                        fprintf(stderr, "cly: the source says `cpu %s' but -cpu chose %s\n", arg, arch_name(arch));
+                        return 1;
+                    }
+                    arch = fa;
+                    rvext = fx;
+                    rv_generic = arch_rv_generic(arg);
+                    arch_from_file = 1;
+                }
+            }
+            for (int i = 0; i < tmp.n; i++) free(tmp.v[i].text);
+            free(tmp.v);
+            free(raw);
+        }
+    }
+    int guessed = 0;
+    if (arch < 0) arch = ARCH_X86;
+    else guessed = 1;
+    (void)arch_from_file;
+    int need_guess = !guessed;
+    int defbits;
     LineVec lines;
-    memset(&lines, 0, sizeof lines);
-    if (!pp_run(file, &po, &lines) || g_errors) return 1;
+    for (int attempt = 0; attempt < 2; attempt++) {
+        if (arch == ARCH_RV64 && mbits == 32) {
+            if (!rv_generic) { fprintf(stderr, "cly: -m32 does not fit cpu rv64; use rv32 or plain risc-v\n"); return 1; }
+            arch = ARCH_RV32;
+        } else if (arch == ARCH_RV32 && mbits == 64) {
+            if (!rv_generic) { fprintf(stderr, "cly: -m64 does not fit cpu rv32; use rv64 or plain risc-v\n"); return 1; }
+            arch = ARCH_RV64;
+        }
+        if (arch == ARCH_A64 && mbits && mbits != 64) { fprintf(stderr, "cly: ARM64 is 64-bit only; -m%d does not apply\n", mbits); return 1; }
+        defbits = arch != ARCH_X86 ? arch_bits(arch) : (mbits ? mbits : ((kernel == K_BARE || rawtype) ? 32 : 64));
+        po.outfmt = fmt_name(kernel, type, defbits);
+        po.bits = defbits;
+        po.arch = arch;
+        memset(&lines, 0, sizeof lines);
+        g_errors = 0;
+        if (!pp_run(file, &po, &lines) || g_errors) return 1;
+        if (need_guess && attempt == 0) {
+            int gx = 0;
+            int ga = arch_guess(&lines, &gx);
+            need_guess = 0;
+            if (ga != ARCH_X86) {
+                arch = ga;
+                rvext = gx;
+                continue;
+            }
+        }
+        break;
+    }
+    if (!pponly && arch_check_foreign(&lines, arch)) { fprintf(stderr, "cly: %d error%s\n", g_errors, g_errors == 1 ? "" : "s"); return 1; }
+    if (arch != ARCH_X86) {
+        if (type == T_COM) { fprintf(stderr, "cly: -com is a 16-bit x86 format and does not apply to %s\n", arch_name(arch)); return 1; }
+        if (arch != ARCH_A64 && (kernel == K_WINDOWS || kernel == K_MAC)) {
+            fprintf(stderr, "cly: %s has no %s target; use linux or bare\n", arch_name(arch), kernel == K_WINDOWS ? "windows" : "mac");
+            return 1;
+        }
+        if (type == T_IMG) type = T_FLAT;
+    }
+    if (!pponly) sysval_run(&lines, arch, kernel, defbits);
     if (pponly) {
         for (int i = 0; i < lines.n; i++) puts(lines.v[i].text);
         return 0;
@@ -271,6 +363,9 @@ int main(int argc, char **argv)
     ao.srcpath = file;
     ao.cpu = 99;
     ao.bits = mbits;
+    ao.arch = arch;
+    ao.rvext = rvext;
+    ao.optimize = optimize;
     ao.list = list;
     int flat = type == T_FLAT || type == T_COM || type == T_HEX || type == T_SREC;
     ao.flat_mode = flat;
@@ -280,7 +375,8 @@ int main(int argc, char **argv)
     }
     for (int i = 0; i < lines.n; i++) lv_add(&ao.lines, lines.v[i].text, lines.v[i].file, lines.v[i].line);
     g_strip = optimize;
-    if (optimize) opt_run(&ao.lines, detect_bits(&ao), kernel, type);
+    if (optimize && arch == ARCH_X86) opt_run(&ao.lines, detect_bits(&ao), kernel, type);
+    else if (optimize) opt_run_nx(&ao.lines, arch, kernel, type);
     char *base = strip_ext(file);
     if (list) {
         if (!listpath) {

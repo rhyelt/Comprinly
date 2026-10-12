@@ -154,7 +154,7 @@ static int match_spec(int s, const Op *o, IC *ic, const Ent *e, const Ent *head)
             i64 d = v->n - (ic->start_off + e->fixedlen + extra);
             if (d < -128 || d > 127) {
                 if (near_alt && !(o->flags & OF_SHORT)) { ic->need_wide = 1; return 0; }
-                err("short jump is out of range");
+                err("short jump is out of range (%lld bytes away, the limit is -128 to 127); remove `short' to let it grow", (long long)d);
                 return 0;
             }
         }
@@ -755,7 +755,7 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
         if (v->unk) {
         } else if (v->pos == ic->cur_sec && v->neg < 0 && !v->ext && !v->hasreg) {
             i64 d = v->n - end;
-            if (relsize == 1 && (d < -128 || d > 127)) { err("short jump is out of range"); return 0; }
+            if (relsize == 1 && (d < -128 || d > 127)) { err("short jump is out of range (%lld bytes away, the limit is -128 to 127)", (long long)d); return 0; }
             if (relsize == 2 && (d < -32768 || d > 65535)) { err("relative displacement out of range"); return 0; }
             bputle(code, foff, (u64)d, relsize);
         } else {
@@ -923,7 +923,7 @@ void insn_cpu_set(const char *name, int *lvl)
     static const struct { const char *n; int l; } t[] = {
         { "8086", 0 }, { "186", 1 }, { "286", 2 }, { "386", 3 }, { "486", 4 }, { "586", 5 }, { "pentium", 5 },
         { "686", 6 }, { "ppro", 6 }, { "p2", 6 }, { "p3", 7 }, { "katmai", 7 }, { "p4", 8 }, { "willamette", 8 },
-        { "prescott", 9 }, { "ia64", 99 }, { "x64", 99 }, { "default", 99 }, { "all", 99 },
+        { "prescott", 9 }, { "ia64", 99 }, { "x64", 99 }, { "x86-64", 99 }, { "x86_64", 99 }, { "amd64", 99 }, { "intel64", 99 }, { "em64t", 99 }, { "x86", 3 }, { "ia32", 3 }, { "i386", 3 }, { "i486", 4 }, { "i586", 5 }, { "i686", 6 }, { "default", 99 }, { "all", 99 },
         { "pentiumm", 8 }, { "pentium2", 6 }, { "pentium3", 7 }, { "pentium4", 8 }, { "core", 10 }, { "nehalem", 12 },
         { "sandybridge", 13 }, { "haswell", 14 }, { "skylake", 15 }, { "icelake", 15 }, { "sapphirerapids", 15 }, { NULL, 0 }
     };

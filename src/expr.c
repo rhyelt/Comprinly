@@ -36,10 +36,20 @@ static int digval(int c)
     return 99;
 }
 
+int num_overflow;
+
+static u64 acc(u64 v, int base, int d)
+{
+    u64 r;
+    if (__builtin_mul_overflow(v, (u64)base, &r) || __builtin_add_overflow(r, (u64)d, &r)) num_overflow = 1;
+    return r;
+}
+
 int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
 {
     const char *p = s;
     *isfloat = 0;
+    num_overflow = 0;
     int base = 0;
     if (*p == '$' && digval(p[1]) < 10) {
         p++;
@@ -59,7 +69,7 @@ int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
         u64 v = 0;
         const char *q = p;
         while (*q == '_' || digval(*q) < base) {
-            if (*q != '_') v = v * (u64)base + (u64)digval(*q);
+            if (*q != '_') v = acc(v, base, digval(*q));
             q++;
         }
         if (ident_char(*q) && *q != '.') return 0;
@@ -80,7 +90,7 @@ int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
     if (hexf) {
         u64 v = 0;
         for (const char *t = p; t < q - 1; t++)
-            if (*t != '_') v = v * 16 + (u64)digval(*t);
+            if (*t != '_') v = acc(v, 16, digval(*t));
         *end = q;
         *out = (i64)v;
         return 1;
@@ -98,7 +108,7 @@ int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
             if (ok && q - p >= 2) {
                 u64 v = 0;
                 for (const char *t = p; t < q - 1; t++)
-                    if (*t != '_') v = v * (u64)b + (u64)digval(*t);
+                    if (*t != '_') v = acc(v, b, digval(*t));
                 *end = q;
                 *out = (i64)v;
                 return 1;
@@ -126,7 +136,7 @@ int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
     q = p;
     u64 v = 0;
     while (isdigit((unsigned char)*q) || *q == '_') {
-        if (*q != '_') v = v * 10 + (u64)(*q - '0');
+        if (*q != '_') v = acc(v, 10, *q - '0');
         q++;
     }
     (void)allnum;
@@ -364,6 +374,7 @@ static int parse_primary(EP *e, Val *v)
         i64 n;
         int isf;
         if (parse_number_tok(p, &end, &n, &isf)) {
+            if (num_overflow && !isf) err("number is too large for 64 bits");
             if (isf) {
                 u8 tmp[16];
                 char buf[256];

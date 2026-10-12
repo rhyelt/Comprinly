@@ -59,9 +59,19 @@ typedef struct {
     int *lst_len;
     int kernel;
     int type;
+    int arch, rvext;
+    int cpu_first;
+    int numlab[10000];
 } AS;
 
 static AS A;
+
+static int known(const char *w)
+{
+    if (A.arch == ARCH_X86) return insn_known(w);
+    if (A.arch == ARCH_A64) return a64_known(w);
+    return rv_known(w, A.rvext);
+}
 
 static void chunk_reloc(Chunk *c, const Val *v, int size, int kind, i64 off)
 {
@@ -115,6 +125,8 @@ static Sym *get_sym(const char *name)
     s->name = xstrdup(name);
     s->sec = SEC_ABS;
     s->defpass = -1;
+    s->deffile = NULL;
+    s->defln = 0;
     ht_put(&A.symtab, name, s);
     if (A.nsyms == A.capsyms) {
         A.capsyms = A.capsyms ? A.capsyms * 2 : 64;
@@ -265,11 +277,37 @@ static const char *scan_word(const char *p, char *buf, size_t sz)
 }
 
 
+static void redef_err(const Sym *s, const char *name)
+{
+    if (s->deffile && s->defln) err("symbol `%s' redefined (first defined at %s:%d)", name, s->deffile, s->defln);
+    else err("symbol `%s' redefined", name);
+}
+
+static int edit1(const char *a, const char *b)
+{
+    size_t la = strlen(a), lb = strlen(b);
+    if (la > lb + 1 || lb > la + 1 || la < 3) return 0;
+    size_t i = 0;
+    while (i < la && i < lb && tolower((unsigned char)a[i]) == tolower((unsigned char)b[i])) i++;
+    if (la == lb) { if (i == la) return 1; return strcasecmp(a + i + 1, b + i + 1) == 0; }
+    if (la > lb) return strcasecmp(a + i + 1, b + i) == 0;
+    return strcasecmp(a + i, b + i + 1) == 0;
+}
+
+static const char *sym_suggest(const char *name)
+{
+    for (int i = 0; i < A.nsyms; i++) {
+        Sym *t = A.syms[i];
+        if (t->defined && !strncmp(t->name, "__", 2) == 0 && edit1(name, t->name)) return t->name;
+    }
+    return NULL;
+}
+
 static void def_label_now(const char *fname, Sec *s)
 {
     Sym *sym = get_sym(fname);
     if (sym->ext) { err("symbol `%s' redefined: was declared extern", fname); return; }
-    if (sym->defpass == A.pass) { err("symbol `%s' redefined", fname); return; }
+    if (sym->defpass == A.pass) { redef_err(sym, fname); return; }
     int sec = s->absolute ? SEC_ABS : s->idx;
     i64 off = s->size;
     if (!sym->defined || sym->isequ || sym->sec != sec || sym->off != off) A.changed = 1;
@@ -278,6 +316,8 @@ static void def_label_now(const char *fname, Sec *s)
     sym->sec = sec;
     sym->off = off;
     sym->defpass = A.pass;
+    sym->deffile = g_pos.file;
+    sym->defln = g_pos.line;
     sym->defline = A.cur_line;
 }
 
@@ -290,12 +330,25 @@ static void flush_labels(Sec *s)
     A.npending = 0;
 }
 
+static int *pend_line;
+static const char **pend_file;
+static int pend_cap;
+
 static void add_pending(const char *fname)
 {
+    for (int i = 0; i < A.npending; i++)
+        if (!strcmp(A.pending[i], fname)) { err("symbol `%s' redefined (first defined at %s:%d)", fname, pend_file[i], pend_line[i]); return; }
+    {
+        Sym *ps = get_sym(fname);
+        if (ps->defpass == A.pass && !ps->ext) { redef_err(ps, fname); return; }
+    }
     if (A.npending == A.cappending) {
         A.cappending = A.cappending ? A.cappending * 2 : 16;
         A.pending = xrealloc(A.pending, sizeof(char *) * (size_t)A.cappending);
     }
+    if (A.cappending > pend_cap) { pend_cap = A.cappending; pend_line = xrealloc(pend_line, sizeof(int) * (size_t)pend_cap); pend_file = xrealloc(pend_file, sizeof(char *) * (size_t)pend_cap); }
+    pend_line[A.npending] = g_pos.line;
+    pend_file[A.npending] = g_pos.file;
     A.pending[A.npending++] = xstrdup(fname);
 }
 
@@ -352,12 +405,24 @@ static void smart_pad(Sec *s, i64 n)
     free(b.p);
 }
 
+static void arch_nop_pad(Sec *s, i64 n)
+{
+    if (s->nobits || s->absolute) { s->size += n; return; }
+    while (n > 0) {
+        if (A.arch == ARCH_A64 && n >= 4) { badle(&s->data, 0xd503201fu, 4); s->size += 4; n -= 4; }
+        else if (A.arch != ARCH_A64 && n >= 4) { badle(&s->data, 0x00000013u, 4); s->size += 4; n -= 4; }
+        else if (A.arch != ARCH_A64 && n >= 2) { badle(&s->data, 0x0001u, 2); s->size += 2; n -= 2; }
+        else { bad1(&s->data, 0); s->size++; n--; }
+    }
+}
+
 static void apply_align(Sec *s)
 {
     if (A.pend_align > 1) {
         i64 n = A.pend_align;
         i64 r = s->size % n;
-        if (r && A.pend_smart && A.smart_on && !A.has_pend_fill) smart_pad(s, n - r);
+        if (r && A.arch != ARCH_X86 && s->exec && !A.has_pend_fill) arch_nop_pad(s, n - r);
+        else if (r && A.pend_smart && A.smart_on && !A.has_pend_fill) smart_pad(s, n - r);
         else if (r) sec_pad(s, n - r, s->exec ? 0x90 : 0, A.has_pend_fill ? &A.pend_fill : NULL);
         if (!s->absolute && n > s->align) s->align = (int)n;
     }
@@ -976,6 +1041,38 @@ static int const_expr(const char **pp, i64 *out, const char *what)
     return 1;
 }
 
+static int near_mnemonic(const char *w, char *out, size_t sz)
+{
+    size_t n = strlen(w);
+    if (n < 3 || n > 14) return 0;
+    if (!strcasecmp(w, "start") || !strcasecmp(w, "_start") || !strcasecmp(w, "main") || !strcasecmp(w, "_main")) return 0;
+    char t[32];
+    static const char alpha[] = "abcdefghijklmnopqrstuvwxyz0123456789.";
+    for (size_t i = 0; i < n; i++) {
+        size_t k = 0;
+        for (size_t j = 0; j < n; j++) if (j != i) t[k++] = w[j];
+        t[k] = 0;
+        if (k >= 2 && arch_known(A.arch, t)) { snprintf(out, sz, "%s", t); return 1; }
+    }
+    for (size_t i = 0; i < n; i++) {
+        for (const char *a = alpha; *a; a++) {
+            if (*a == w[i] || (isalpha((unsigned char)w[i]) && *a == tolower((unsigned char)w[i]))) continue;
+            memcpy(t, w, n + 1);
+            t[i] = *a;
+            if (arch_known(A.arch, t)) { snprintf(out, sz, "%s", t); return 1; }
+        }
+    }
+    for (size_t i = 0; i <= n; i++) {
+        for (const char *a = alpha; *a; a++) {
+            memcpy(t, w, i);
+            t[i] = *a;
+            memcpy(t + i + 1, w + i, n - i + 1);
+            if (arch_known(A.arch, t)) { snprintf(out, sz, "%s", t); return 1; }
+        }
+    }
+    return 0;
+}
+
 static void do_stmt(const char *p, int kind_hint);
 
 static int word_kind(const char *w, int *unit)
@@ -1040,12 +1137,14 @@ static void define_equ(const char *fname, const Val *v)
 {
     Sym *s = get_sym(fname);
     if (s->ext) { err("symbol `%s' redefined: was declared extern", fname); return; }
-    if (s->defpass == A.pass) { err("symbol `%s' redefined", fname); return; }
+    if (s->defpass == A.pass) { redef_err(s, fname); return; }
     if (!s->defined || !s->isequ || s->eqv.n != v->n || s->eqv.pos != v->pos || s->eqv.neg != v->neg || s->eqv.ext != v->ext || s->eqv.unk != v->unk) A.changed = 1;
     s->defined = 1;
     s->isequ = 1;
     s->eqv = *v;
     s->defpass = A.pass;
+    s->deffile = g_pos.file;
+    s->defln = g_pos.line;
     s->defline = A.cur_line;
 }
 
@@ -1372,12 +1471,14 @@ static void struc_begin(const char *rest)
     char *fn = full_name(w);
     Sym *s = get_sym(fn);
     if (!s->defined || s->sec != SEC_ABS || s->off != 0 || s->isequ) A.changed = 1;
-    if (s->defpass == A.pass) err("symbol `%s' redefined", fn);
+    if (s->defpass == A.pass) redef_err(s, fn);
     s->defined = 1;
     s->isequ = 0;
     s->sec = SEC_ABS;
     s->off = 0;
     s->defpass = A.pass;
+    s->deffile = g_pos.file;
+    s->defln = g_pos.line;
     free(fn);
     free(A.lastlabel);
     A.lastlabel = xstrdup(w);
@@ -1460,7 +1561,16 @@ static void istruc_end(void)
 
 static void do_directive(const char *w, const char *rest)
 {
-    if (is_kw(w, "bits")) {
+    if (A.arch != ARCH_X86 && (is_kw(w, "bits") || is_kw(w, "use16") || is_kw(w, "use32") || is_kw(w, "use64"))) {
+        int want = is_kw(w, "use16") ? 16 : is_kw(w, "use32") ? 32 : is_kw(w, "use64") ? 64 : 0;
+        if (is_kw(w, "bits")) {
+            const char *p = skipws(rest);
+            i64 v;
+            if (!const_expr(&p, &v, "`bits' value")) return;
+            want = (int)v;
+        }
+        if (want != A.default_bits) err("`bits %d' does not match %s, which is %d-bit", want, arch_name(A.arch), A.default_bits);
+    } else if (is_kw(w, "bits")) {
         const char *p = skipws(rest);
         i64 v;
         if (const_expr(&p, &v, "`bits' value")) set_bits((int)v);
@@ -1513,8 +1623,22 @@ static void do_directive(const char *w, const char *rest)
     else if (is_kw(w, "align") || is_kw(w, "alignb")) handle_align(rest, is_kw(w, "alignb"));
     else if (is_kw(w, "cpu")) {
         char n[64];
-        scan_word(skipws(rest), n, sizeof n);
-        insn_cpu_set(n, &A.cpu);
+        const char *q = skipws(rest);
+        size_t k = 0;
+        while ((isalnum((unsigned char)*q) || *q == '_' || *q == '-' || *q == '.') && k < sizeof n - 1) n[k++] = *q++;
+        n[k] = 0;
+        int rv;
+        int a = arch_parse(n, &rv);
+        if (a == -2) err("`cpu %s' is not supported (32-bit ARM is not available; use arm64)", n);
+        else if (a > ARCH_X86) {
+            if (A.cur_line != A.cpu_first) err("`cpu %s' must be the first line of the file", n);
+            else if (a != A.arch && !(arch_rv_generic(n) && A.arch > ARCH_A64)) err("`cpu %s' does not match the target (%s) chosen on the command line", n, arch_name(A.arch));
+        } else if (a == ARCH_X86) {
+            if (A.arch != ARCH_X86) err("`cpu %s' does not match the target (%s)", n, arch_name(A.arch));
+            else insn_cpu_set(n, &A.cpu);
+        } else if (A.arch != ARCH_X86) {
+            err("unknown cpu `%s' (use x86-64, arm64 or risc-v)", n);
+        } else insn_cpu_set(n, &A.cpu);
     } else if (is_kw(w, "import")) {
         char n[256], lib[256], ename[256];
         const char *p = scan_word(skipws(rest), n, sizeof n);
@@ -1600,6 +1724,10 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
     ic.start_off = s->size;
     ic.quiet = quiet;
     ic.need_wide = 0;
+    ic.arch = A.arch;
+    ic.rvext = A.rvext;
+    ic.optimize = A.o->optimize;
+    ic.kernel = A.kernel;
     InsnOut out;
     memset(&out, 0, sizeof out);
     int e0 = g_errors;
@@ -1609,8 +1737,8 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
     g_quiet = q0;
     if (quiet) g_errors = e0;
     ic0->nomatch = ic.nomatch;
-    if (ic.need_wide && A.cur_line < A.nwide && !A.wide[A.cur_line]) {
-        A.wide[A.cur_line] = 1;
+    if (ic.need_wide > 0 && A.cur_line < A.nwide && A.wide[A.cur_line] < (u8)(ic.need_wide > 255 ? 255 : ic.need_wide)) {
+        A.wide[A.cur_line] = (u8)(ic.need_wide > 255 ? 255 : ic.need_wide);
         A.changed = 1;
     }
     if (!ok) {
@@ -1718,8 +1846,73 @@ static int expand_legacy64(const char *mn, int nops, Sec *s, IC *ic)
     return 1;
 }
 
+static char *rewrite_numrefs(const char *s)
+{
+    Str o = {0};
+    char q = 0;
+    for (const char *p = s; *p; ) {
+        if (q) { sfmt(&o, "%c", *p); if (*p == q) q = 0; p++; continue; }
+        if (*p == '"' || *p == '\'') { q = *p; sfmt(&o, "%c", *p); p++; continue; }
+        if (isdigit((unsigned char)*p) && (p == s || !ident_char((unsigned char)p[-1]))) {
+            const char *e = p;
+            while (isdigit((unsigned char)*e)) e++;
+            if ((*e == 'b' || *e == 'f' || *e == 'B' || *e == 'F') && !ident_char((unsigned char)e[1]) && e - p <= 4) {
+                long nv = strtol(p, NULL, 10);
+                int cnt = A.numlab[nv] + ((*e == 'f' || *e == 'F') ? 1 : 0);
+                if (cnt < 1) {
+                    err("local label `%.*s' refers to a label that was not defined yet", (int)(e - p) + 1, p);
+                    cnt = 1;
+                }
+                sfmt(&o, "__num_%ld_%d", nv, cnt);
+                p = e + 1;
+                continue;
+            }
+        }
+        sfmt(&o, "%c", *p);
+        p++;
+    }
+    char *r = o.s ? o.s : xstrdup("");
+    return r;
+}
+
+static void handle_arch_insn(const char *mn, const char *rest, IC *ic)
+{
+    Sec *s = begin_emit(K_CODE);
+    ic->arch = A.arch;
+    ic->rvext = A.rvext;
+    ic->optimize = A.o->optimize;
+    ic->kernel = A.kernel;
+    ic->cur_sec = s->absolute ? -2 : s->idx;
+    ic->start_off = s->size;
+    ic->line = A.cur_line;
+    ic->wide = A.cur_line < A.nwide ? A.wide[A.cur_line] : 0;
+    ic->need_wide = 0;
+    ic->bits = A.default_bits;
+    {
+        int al = (A.arch == ARCH_A64 || !(A.rvext & RVX_C) || !A.o->optimize) ? 4 : 2;
+        if (A.arch != ARCH_A64 && (A.rvext & RVX_C)) al = 2;
+        if (!s->absolute && !s->nobits && A.final && (s->size % al) != 0) warn("instruction is not %d-byte aligned (data before it in the same section?)", al);
+    }
+    InsnOut out;
+    memset(&out, 0, sizeof out);
+    char *rs = rewrite_numrefs(rest);
+    int ok = arch_insn(A.arch, mn, rs, ic, &out);
+    free(rs);
+    if (ic->need_wide > 0 && A.cur_line < A.nwide && A.wide[A.cur_line] < (u8)(ic->need_wide > 255 ? 255 : ic->need_wide)) {
+        A.wide[A.cur_line] = (u8)(ic->need_wide > 255 ? 255 : ic->need_wide);
+        A.changed = 1;
+    }
+    if (!ok) {
+        free(out.code.p);
+        free(out.relocs);
+        return;
+    }
+    commit_insn(s, &out);
+}
+
 static void handle_insn(const char *mn, const char *rest, IC *ic)
 {
+    if (A.arch != ARCH_X86) { handle_arch_insn(mn, rest, ic); return; }
     Sec *s = begin_emit(K_CODE);
     Op ops[5];
     int nops = 0;
@@ -1796,7 +1989,7 @@ static void do_stmt(const char *p0, int kind_hint)
     if (!*p || *p == ';') return;
     IC ic;
     memset(&ic, 0, sizeof ic);
-    for (;;) {
+    for (; A.arch == ARCH_X86;) {
         static const struct { const char *n; int v; } vp[] = { { "{vex}", 1 }, { "{vex2}", 2 }, { "{vex3}", 3 }, { "{evex}", 4 }, { NULL, 0 } };
         int hit = 0;
         for (int i = 0; vp[i].n; i++) {
@@ -1825,6 +2018,18 @@ static void do_stmt(const char *p0, int kind_hint)
     const char *after = skipws(e);
     int unit = 0;
     int kind;
+    if (*after == ':' && after[1] != ':' && A.arch != ARCH_X86 && w[0] && strspn(w, "0123456789") == strlen(w)) {
+        long nv = strtol(w, NULL, 10);
+        if (strlen(w) > 4 || nv < 0 || nv >= 10000) { err("local label number `%s' is too large (0 to 9999)", w); return; }
+        A.numlab[nv]++;
+        char nm[48];
+        snprintf(nm, sizeof nm, "__num_%ld_%d", nv, A.numlab[nv]);
+        add_pending(nm);
+        const char *rest = skipws(after + 1);
+        if (!*rest || *rest == ';') return;
+        do_stmt(rest, 0);
+        return;
+    }
     if (*after == ':' && after[1] != ':') {
         char *fn = full_name(w);
         if (w[0] != '.' || w[1] == '.') { free(A.lastlabel); A.lastlabel = xstrdup(w); }
@@ -1849,7 +2054,7 @@ static void do_stmt(const char *p0, int kind_hint)
         do_stmt(rest, 0);
         return;
     }
-    if (is_prefix_word(w)) {
+    if (A.arch == ARCH_X86 && is_prefix_word(w)) {
         for (;;) {
             if (is_kw(w, "lock")) ic.lock = 1;
             else if (is_kw(w, "rep") || is_kw(w, "repe") || is_kw(w, "repz")) ic.rep = 1;
@@ -1870,7 +2075,7 @@ static void do_stmt(const char *p0, int kind_hint)
     }
     {
         int sr;
-        if (is_segreg(w, &sr) && !insn_known(w)) {
+        if (A.arch == ARCH_X86 && is_segreg(w, &sr) && !insn_known(w)) {
             const char *nx = skipws(e);
             if (*nx == ':') nx = skipws(nx + 1);
             char w2[64];
@@ -1885,16 +2090,23 @@ static void do_stmt(const char *p0, int kind_hint)
         }
     }
     kind = word_kind(w, &unit);
+    if (A.arch != ARCH_X86 && kind >= 0 && is_kw(w, "at") && !A.istruc_name) kind = -1;
     if (kind < 0 && is_kw(w, "times")) { handle_times(e); return; }
-    int dirw = is_directive_word(w) && !(insn_known(w) && !is_kw(w, "at"));
-    if (kind < 0 && !dirw && !insn_known(w) && !is_prefix_word(w)) {
+    int dirw = is_directive_word(w) && !(known(w) && !(is_kw(w, "at") && (A.arch == ARCH_X86 || A.istruc_name)));
+    if (kind < 0 && !dirw && !known(w) && !(A.arch == ARCH_X86 && is_prefix_word(w))) {
         char nw[64];
         const char *ne = scan_word(after, nw, sizeof nw);
         int ok2 = 0;
         if (ne != after) {
-            if (word_kind(nw, NULL) >= 0 || is_kw(nw, "equ") || is_kw(nw, "times") || insn_known(nw) || is_prefix_word(nw) || is_directive_word(nw)) ok2 = 1;
+            if (word_kind(nw, NULL) >= 0 || is_kw(nw, "equ") || is_kw(nw, "times") || known(nw) || (A.arch == ARCH_X86 && is_prefix_word(nw)) || is_directive_word(nw)) ok2 = 1;
         }
         if (ok2 || !*after || *after == ';') {
+            if (!ok2 && !is_directive_word(w)) {
+                char sg[64];
+                int mn_, mx_;
+                if (pp_macro_arity(w, &mn_, &mx_)) err("macro `%s' takes %d parameter%s, none were given", w, mn_, mn_ == 1 ? "" : "s");
+                else if (near_mnemonic(w, sg, sizeof sg)) warn("`%s' alone on a line is taken as a label (did you mean the instruction `%s'? a colon after a label hides this warning)", w, sg);
+            }
             char *fn = full_name(w);
             if (w[0] != '.' || w[1] == '.') { free(A.lastlabel); A.lastlabel = xstrdup(w); }
             free(fn);
@@ -1915,8 +2127,24 @@ static void do_stmt(const char *p0, int kind_hint)
             return;
         }
         {
-            const char *sg = insn_suggest(w);
-            if (sg) err("unknown instruction or directive `%s' (did you mean `%s'?)", w, sg);
+            char sgb[64];
+            const char *sg = A.arch == ARCH_X86 ? insn_suggest(w) : (near_mnemonic(w, sgb, sizeof sgb) ? sgb : NULL);
+            int mn_, mx_;
+            int other = -1;
+            char guess_note[128] = "";
+            if (g_guess_line) snprintf(guess_note, sizeof guess_note, "; the cpu was chosen from `%s' on line %d", g_guess_tok, g_guess_line);
+            if (A.arch != ARCH_X86 && insn_known(w)) other = ARCH_X86;
+            else if (A.arch != ARCH_A64 && a64_known(w) && !arch_known(A.arch, w)) other = ARCH_A64;
+            else if (A.arch != ARCH_RV64 && A.arch != ARCH_RV32 && rv_known(w, RVX_DEFAULT)) other = ARCH_RV64;
+            if (other >= 0 && !pp_macro_arity(w, &mn_, &mx_)) {
+                const char *on = other == ARCH_X86 ? "x86" : other == ARCH_A64 ? "ARM64" : "RISC-V";
+                const char *cn = A.arch == ARCH_X86 ? "x86-64" : A.arch == ARCH_A64 ? "arm64" : "risc-v";
+                err("`%s' is an %s instruction but the cpu is %s (put `cpu %s' on the first line or use -cpu)%s", w, on, cn, other == ARCH_X86 ? "x86-64" : other == ARCH_A64 ? "arm64" : "risc-v", guess_note);
+            } else if (pp_macro_arity(w, &mn_, &mx_)) {
+                if (mx_ < 0) err("macro `%s' needs at least %d parameter%s", w, mn_, mn_ == 1 ? "" : "s");
+                else if (mn_ == mx_) err("macro `%s' takes %d parameter%s", w, mn_, mn_ == 1 ? "" : "s");
+                else err("macro `%s' takes %d to %d parameters", w, mn_, mx_);
+            } else if (sg) err("unknown instruction or directive `%s' (did you mean `%s'?)", w, sg);
             else err("unknown instruction or directive `%s'", w);
         }
         return;
@@ -1976,6 +2204,7 @@ static int first_word_is(const char *text, const char **words)
 static void run_pass(void)
 {
     reset_pass();
+    memset(A.numlab, 0, sizeof A.numlab);
     for (int i = 0; i < A.lines->n; i++) {
         SLine *l = &A.lines->v[i];
         g_pos.file = l->file;
@@ -2005,6 +2234,7 @@ void obj_free(Obj *o) { (void)o; }
 
 int detect_bits(AsmOpts *o)
 {
+    if (o->arch != ARCH_X86) return arch_bits(o->arch);
     if (o->bits) return o->bits;
     for (int i = 0; i < o->lines.n; i++) {
         const char *t = skipws(o->lines.v[i].text);
@@ -2027,7 +2257,17 @@ int assemble(AsmOpts *o, Obj *out)
     A.lines = &o->lines;
     A.kernel = o->kernel;
     A.type = o->type;
+    A.arch = o->arch;
+    A.rvext = o->rvext ? o->rvext : RVX_DEFAULT;
     A.default_bits = detect_bits(o);
+    A.cpu_first = -1;
+    for (int i = 0; i < o->lines.n; i++) {
+        const char *t = skipws(o->lines.v[i].text);
+        if (!*t || *t == ';') continue;
+        char tmp[64];
+        if (arch_cpu_line(t, tmp, sizeof tmp)) A.cpu_first = i;
+        break;
+    }
     reg_mode(A.default_bits);
     insn_init();
     g_hooks.sym_lookup = asm_sym_lookup;
@@ -2053,6 +2293,7 @@ int assemble(AsmOpts *o, Obj *out)
     }
     (void)sysw;
     if (need_rt && A.default_bits == 64 && o->kernel == K_LINUX) need_rt = 0;
+    if (A.arch != ARCH_X86) need_rt = 0;
     if (need_rt) {
         Str rt = {0};
         if (rt_build(o->kernel, o->type, A.default_bits, &rt)) {
@@ -2111,7 +2352,14 @@ int assemble(AsmOpts *o, Obj *out)
             if (!(s->name[0] == '.' && s->name[1] != '.' && 0)) {
                 g_pos.file = s->reffile;
                 g_pos.line = s->refline;
-                err("symbol `%s' is not defined", s->name);
+                if (!strncmp(s->name, "__num_", 6)) {
+                    long nv = strtol(s->name + 6, NULL, 10);
+                    err("local label `%ldf' is used but never defined", nv);
+                } else {
+                    const char *sg = sym_suggest(s->name);
+                    if (sg) err("symbol `%s' is not defined (did you mean `%s'?)", s->name, sg);
+                    else err("symbol `%s' is not defined", s->name);
+                }
                 g_pos.file = NULL;
             }
         }
@@ -2131,6 +2379,8 @@ int assemble(AsmOpts *o, Obj *out)
     out->syms = A.syms;
     out->nsyms = A.nsyms;
     out->bits = A.bits;
+    out->arch = A.arch;
+    out->rvext = A.rvext;
     out->is64 = A.default_bits == 64;
     out->has_org = A.has_org || o->flat_mode;
     out->org = (int)A.org;

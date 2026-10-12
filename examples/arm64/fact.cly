@@ -1,0 +1,50 @@
+cpu arm64
+
+section .text
+global start
+start:
+    mov x0, 10
+    bl fact
+    mov x19, x0
+    adr x1, buf + 16
+    mov x2, 0
+    mov x3, 10
+1:  udiv x4, x19, x3
+    msub x5, x4, x3, x19
+    add x5, x5, '0'
+    sub x1, x1, 1
+    strb w5, [x1]
+    add x2, x2, 1
+    mov x19, x4
+    cbnz x19, 1b
+    mov x0, 1
+    mov x8, 64
+    svc 0
+    mov x0, 1
+    adr x1, nl
+    mov x2, 1
+    mov x8, 64
+    svc 0
+    mov x0, 0
+    mov x8, 93
+    svc 0
+
+fact:
+    cmp x0, 1
+    b.hi 2f
+    mov x0, 1
+    ret
+2:  stp x29, x30, [sp, -32]!
+    mov x29, sp
+    str x0, [sp, 16]
+    sub x0, x0, 1
+    bl fact
+    ldr x1, [sp, 16]
+    mul x0, x0, x1
+    ldp x29, x30, [sp], 32
+    ret
+
+section .data
+nl: db 10
+section .bss
+buf: resb 16

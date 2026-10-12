@@ -1,5 +1,5 @@
 import subprocess, re, sys, os
-CLY = os.environ.get('CLY', '/home/claude/componly/cly')
+CLY = os.environ.get('CLY', '/home/claude/comprinly/cly')
 f = sys.argv[1]
 prune = '--noprune' not in sys.argv
 src = open(f).read().split('\n')

@@ -247,3 +247,27 @@ int rt_boot(Str *s, u32 entry, int nsect, u32 bss, u32 bsslen, int bits)
         "dw 0xAA55\n");
     return 1;
 }
+
+static int in_map(const SysPair *m, int n)
+{
+    for (int i = 0; m[i].x64 >= 0; i++) if (m[i].x64 == n) return 1;
+    return 0;
+}
+
+static int in_list(const int *l, int n)
+{
+    for (; *l >= 0; l++) if (*l == n) return 1;
+    return 0;
+}
+
+int rt_syscall_supported(int kernel, int bits, int n)
+{
+    static const int win[] = { 0, 1, 2, 3, 8, 9, 11, 12, 16, 24, 35, 39, 60, 79, 80, 83, 84, 87, 96, 102, 104, 107, 108, 201, 228, 231, -1 };
+    static const int bare[] = { 0, 1, 3, 9, 11, 12, 16, 24, 35, 39, 60, 231, -1 };
+    static const int macx[] = { 2, 9, 12, 35, 96, 201, 228, -1 };
+    if (kernel == K_WINDOWS) return in_list(win, n);
+    if (kernel == K_BARE) return in_list(bare, n);
+    if (kernel == K_MAC) return in_list(macx, n) || in_map(bits == 64 ? map_mac64 : map_mac, n);
+    if (kernel == K_LINUX && bits == 32) return in_map(map_linux, n) || in_list(macx, n);
+    return 1;
+}

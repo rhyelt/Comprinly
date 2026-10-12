@@ -1,5 +1,5 @@
 import subprocess, sys, os
-CLY = os.environ.get('CLY', '/home/claude/componly/cly')
+CLY = os.environ.get('CLY', '/home/claude/comprinly/cly')
 f = sys.argv[1]
 W = '/tmp/cmplines'
 os.makedirs(W, exist_ok=True)

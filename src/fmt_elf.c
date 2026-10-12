@@ -18,6 +18,23 @@ static void put64(Bytes *b, u64 v) { badle(b, v, 8); }
 #define ELF64_BASE 0x400000
 #define ELF64_HDR 232
 
+static int elf_machine(Obj *o)
+{
+    if (o->arch == ARCH_A64) return 183;
+    if (o->arch == ARCH_RV64 || o->arch == ARCH_RV32) return 243;
+    return o->is64 ? 62 : 3;
+}
+
+static u32 elf_flags(Obj *o)
+{
+    if (o->arch != ARCH_RV64 && o->arch != ARCH_RV32) return 0;
+    u32 f = 0;
+    if (o->rvext & RVX_C) f |= 1;
+    if (o->rvext & RVX_D) f |= 4;
+    else if (o->rvext & RVX_F) f |= 2;
+    return f;
+}
+
 static int fmt_elf64(Obj *o, Bytes *out)
 {
     link_layout(o, ELF64_BASE + ELF64_HDR, 0x1000, 3);
@@ -35,13 +52,13 @@ static int fmt_elf64(Obj *o, Bytes *out)
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', 2, 1, 1, 0 };
     badd(&f, ident, 16);
     put16(&f, 2);
-    put16(&f, 62);
+    put16(&f, (u16)elf_machine(o));
     put32(&f, 1);
     put64(&f, (u64)entry);
     put64(&f, 64);
     size_t shoff_pos = f.n;
     put64(&f, 0);
-    put32(&f, 0);
+    put32(&f, elf_flags(o));
     put16(&f, 64);
     put16(&f, 56);
     put16(&f, (u16)nph);
@@ -167,13 +184,13 @@ int fmt_elf(Obj *o, Bytes *out)
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', 1, 1, 1, 0 };
     badd(&f, ident, 16);
     put16(&f, 2);
-    put16(&f, 3);
+    put16(&f, (u16)elf_machine(o));
     put32(&f, 1);
     put32(&f, (u32)entry);
     put32(&f, 52);
     size_t shoff_pos = f.n;
     put32(&f, 0);
-    put32(&f, 0);
+    put32(&f, elf_flags(o));
     put16(&f, 52);
     put16(&f, 32);
     put16(&f, (u16)nph);
