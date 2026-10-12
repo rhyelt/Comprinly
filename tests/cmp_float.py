@@ -1,5 +1,5 @@
 import random, subprocess, os, struct
-CLY='/home/claude/componly/cly'
+CLY='/home/claude/comprinly/cly'
 W='/tmp/cmpfl'; os.makedirs(W,exist_ok=True)
 random.seed(7)
 vals=[]

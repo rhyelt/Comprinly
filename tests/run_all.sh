@@ -67,6 +67,40 @@ else
     note "nasm compare" "skipped (no nasm)"
 fi
 
+for a in arm64 riscv; do
+    for ex in examples/$a/*.cly; do
+        n=$(basename "$ex" .cly)
+        if ./cly linux "$ex" -q -out "$T/$a.$n" 2>"$T/err"; then :; else note "$a/$n" "FAIL: $(head -1 "$T/err")"; fail=1; fi
+        if ./cly bare "$ex" -hex -q -out "$T/$a.$n.hex" 2>"$T/err"; then :; else note "$a/$n bare" "FAIL: $(head -1 "$T/err")"; fail=1; fi
+    done
+done
+note "arm64 and riscv examples" "built"
+if python3 -c "import unicorn" 2>/dev/null; then
+    for a in arm64 riscv; do
+        ./cly linux examples/$a/hello.cly -q -out "$T/h" && python3 tests/emu/elf_emu.py "$T/h" | grep -q "Hello" && note "$a hello emu" ok || { note "$a hello emu" FAIL; fail=1; }
+        ./cly linux examples/$a/fact.cly -q -out "$T/f" && python3 tests/emu/elf_emu.py "$T/f" | grep -q "3628800" && note "$a fact emu" ok || { note "$a fact emu" FAIL; fail=1; }
+    done
+    r=$(python3 tests/emu/rt_tests.py | tail -1); echo "$r" | grep -qE "bad 0$" && note "arm64 riscv runtime" ok || { note "arm64 riscv runtime" "FAIL"; python3 tests/emu/rt_tests.py | grep FAIL; fail=1; }
+    r=$(python3 tests/rv/li_test.py 2>&1 | tail -1); echo "$r" | grep -qE "bad 0$" && note "riscv li" ok || { note "riscv li" "FAIL: $r"; fail=1; }
+fi
+if command -v llvm-mc >/dev/null 2>&1; then
+    for t in run_int run_mem run_fp run_simd run_ext; do
+        r=$(python3 tests/a64/$t.py 2>&1 | grep "total=" | grep -v "diffs=0 ")
+        [ -z "$r" ] && note "arm64 $t vs llvm" ok || { note "arm64 $t vs llvm" "FAIL"; echo "$r"; fail=1; }
+    done
+    if command -v ld.lld >/dev/null 2>&1 && python3 -c "import unicorn" 2>/dev/null; then sh tests/xlink.sh && note "link with llvm objects" ok || { note "link with llvm objects" FAIL; fail=1; }; fi
+    sh tests/errors.sh >/dev/null && note "error messages" ok || { note "error messages" FAIL; fail=1; }
+    python3 tests/opt_nx_fuzz.py 7 200 | tail -1 | grep -q "bad 0" && note "arm64 riscv optimizer fuzz" ok || { note "arm64 riscv optimizer fuzz" FAIL; fail=1; }
+    for a in rv64 rv64nc rv32 rv32nc; do
+        r=$(python3 tests/rv/run.py $a 2>&1)
+        echo "$r" | grep -q "total=" || { note "riscv $a vs llvm" "FAIL (no output)"; fail=1; continue; }
+        r=$(echo "$r" | grep "total=" | grep -v "diffs=0 ")
+        [ -z "$r" ] && note "riscv $a vs llvm" ok || { note "riscv $a vs llvm" FAIL; echo "$r"; fail=1; }
+    done
+else
+    note "arm64 and riscv vs llvm" "skipped (no llvm-mc)"
+fi
+
 rm -rf "$T"
 [ $fail = 0 ] && echo "all good" || echo "failures"
 exit $fail

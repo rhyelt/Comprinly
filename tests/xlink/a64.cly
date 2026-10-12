@@ -1,0 +1,16 @@
+cpu arm64
+section .text
+global start
+extern helper
+extern counter
+start:
+    mov x0, #20
+    bl helper
+    adrp x1, counter
+    add x1, x1, :lo12:counter
+    ldr x2, [x1]
+    add x0, x0, x2
+    ldr x3, [counter]
+    add x0, x0, x3
+    mov x8, #93
+    svc #0

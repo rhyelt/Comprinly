@@ -1,77 +1,94 @@
+<p align="center">
+  <img src="images/banner.png" alt="Comprinly: simplicity, productivity, portability and agility" width="640">
+</p>
+
 # Comprinly
 
-Comprinly (`cly`) is a small low-level language for x86 and x86-64. It is a simplified and forgiving version of the assembler NASM. It compiles to Linux, Windows, macOS and bare metal, but only Linux is really tested and macOS is experimental.
+Comprinly (`cly`) is a small assembler written in plain C. You write assembly in a relaxed NASM style, tell it which system you are building for, and it hands you a finished program. There is no separate assembler or linker to set up.
+
+It reads x86, ARM64 and RISC-V from the same syntax. The commands you type do not change when the CPU does.
 
 REMINDER: This project is fully vibe-coded, so you may find some bugs. It is purely for recreational purposes.
 
-See HOWTOUSE.md for a full guide and DOCUMENTATION.md for the preprocessor reference.
+## Get it
 
-## Download
-
-Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Componly/releases). Grab the one for your system, or build it yourself below.
-
-## Use
-
-    cly <linux|windows|mac|bare> <file> <-type>
-
-    cly linux print.cly -bin
-    cly windows print.cly -bin
-    cly bare print.cly -bin
-    cly linux print.cly -m32
-
-The result is written next to the source file. Code is 64-bit by default, except for `bare` and raw types, which default to 32-bit. A `bits 32` or `bits 64` line in the source also works.
-
-Types: `-bin` (native format for the kernel), `-elf`, `-exe`, `-macho`, `-obj`, `-coff`, `-flat`, `-img`, `-com`, `-hex`, `-srec`.
-Other options: `-m32`, `-m64`, `-O0` (optimizer off), `-out file`, `-I dir`, `-D name=val`, `-U name`, `-l [file]` (listing), `-E` (preprocess only), `-w`, `-q`, `-v`, `-h`.
-
-## What it does for you
-
-- Data, bss and code go into sections automatically.
-- `start:` is always the entry point.
-- `syscall` uses Linux x86-64 numbers and registers (rax, rdi, rsi, rdx, r10, r8, r9) on every kernel. A tiny runtime is added only when you use it.
-- In 32-bit code the 64-bit names work as 32-bit registers. r8 to r15 live in memory there.
-- In 64-bit code you get the full register set, REX, RIP-relative addressing (`[rel x]`, `default rel`) and SSE through AVX-512.
-- Curly quotes and missing commas are accepted.
-- Symbol names, `start` and `%include` file names ignore case when there is only one match.
-- 32-bit habits like `push eax`, `mov ebp, esp` and `[esp+4]` work in 64-bit code.
-- The optimizer shrinks and speeds up your code by default and keeps behavior the same. `-O0` turns it off.
-- Bare metal builds a bootable image: boot sector, protected or long mode switch, then your code. Output goes to VGA text, serial COM1 and port 0xE9. Exit powers off in QEMU, Bochs and VirtualBox, or halts.
-
-## Build
-
-You need a C compiler and make.
+Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Componly/releases). Or build it yourself. You only need a C compiler and make:
 
     make
 
-or `gcc -O2 -fwrapv -o cly src/*.c`.
+That gives you a `cly` file in the same folder. `make install` copies it to `/usr/local/bin`.
 
-Extra targets:
+## Your first program
 
-- `make static` small static build
-- `make cly32` 32-bit Linux build of cly itself (needs python3 and ziglang)
-- `make cly.exe` 32-bit Windows build of cly itself (needs python3 and ziglang). It still makes 64-bit programs.
-- `make gen` rebuild the instruction tables (needs python3)
-- `make check` run the tests (the NASM comparisons need nasm, the emulator tests need python3 and unicorn)
+Save this as `hello.cly`:
 
-## Instruction data
+    msg db "Hello, World!", 10
 
-`data/insns.dat` is the NASM instruction table (BSD licence, notice kept in the file). `tools/gen_insns.py` turns its AVX and AVX-512 lines into `src/insn_gen.c`, and `tools/gen_insns64.py` does the same for the 64-bit-only lines (`src/insn_gen64.c`).
+    start:
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, msg
+        mov rdx, $ - msg
+        syscall
 
-## Layout
+        mov rax, 60
+        mov rdi, 0
+        syscall
 
-- `src/` compiler (preprocessor, expressions, assembler, linker, format writers)
-- `rt/` runtime sources per kernel, embedded by `rt/gen.py`
-- `tests/` comparison scripts against NASM
-- `examples/` sample programs
-- `dist/` sample outputs
+Build and run it:
 
-## Limits
+    cly linux hello.cly
+    ./hello
 
-- Linux programs were run for real, in 32-bit and 64-bit. Windows, macOS and bare metal output, including the 64-bit runtimes, was only run in an emulator.
-- AVX, AVX2, FMA, BMI, AVX-512 (with masks, broadcast, rounding and FP16) and MPX work. XOP, FMA4 and TBM work too. AMX does not.
-- A few rare old x87 shorthands that NASM accepts are rejected.
-- Bare metal has no interrupt table, and `syscall` only offers the basic Linux calls.
-- No Mach-O object output.
+The finished file is written next to the source file.
+
+## The command
+
+    cly <system> <file> [options]
+
+The system is one of `linux`, `windows`, `mac` or `bare`. A few examples:
+
+    cly linux hello.cly
+    cly windows hello.cly
+    cly bare hello.cly -hex
+    cly linux hello.cly -O0
+    cly linux hello.cly -obj
+
+Run `cly -h` to see every option.
+
+## Choosing a CPU
+
+Comprinly decides the CPU in this order:
+
+1. The `-cpu` option, for example `cly linux hello.cly -cpu arm64`
+2. A `cpu` line at the very top of the file
+3. The first instruction or register in your code that belongs to only one CPU
+4. x86-64, if nothing gives it away
+
+The `cpu` line looks like this:
+
+    cpu arm64
+    cpu x86-64
+    cpu risc-v
+
+If your code mixes CPUs, say `mov eax, 1` in a file that started out as ARM64, Comprinly stops and tells you which line it based its choice on.
+
+## When something goes wrong
+
+Errors name the file, the line, the code and what is wrong, and often suggest a fix. Warnings do not stop the build. `-w` hides them and `-q` hides everything but errors.
+
+## Where to go next
+
+- `HOWTOUSE.md` walks through the whole compiler, one topic at a time.
+- `DOCUMENTATION.md` is the reference for directives, the preprocessor and each CPU.
+- `examples/` has small programs to try.
+- `CHANGELOG.md` lists what changed in each version.
+
+## Tests
+
+    make check
+
+runs everything it has tools for and skips the rest.
 
 ## Licence
 

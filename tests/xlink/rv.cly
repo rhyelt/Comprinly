@@ -1,0 +1,15 @@
+cpu rv64
+section .text
+global start
+extern helper
+extern counter
+start:
+    li a0, 20
+    call helper
+    la t0, counter
+    ld a1, 0(t0)
+    add a0, a0, a1
+    ld a2, counter
+    add a0, a0, a2
+    li a7, 93
+    ecall

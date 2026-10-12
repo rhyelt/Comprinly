@@ -1,5 +1,5 @@
 import subprocess, sys, re, itertools, os, random
-CLY = os.environ.get('CLY', '/home/claude/componly/cly')
+CLY = os.environ.get('CLY', '/home/claude/comprinly/cly')
 BITS = os.environ.get('BITS', '32')
 W = '/tmp/cmpwork' + BITS
 os.makedirs(W, exist_ok=True)
