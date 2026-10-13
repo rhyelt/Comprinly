@@ -1750,6 +1750,15 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
     return 1;
 }
 
+static void auto_extern(void)
+{
+    if (A.type != T_OBJ) return;
+    for (int i = 0; i < A.nsyms; i++) {
+        Sym *s = A.syms[i];
+        if (s->referenced && !s->defined && !s->ext && !s->common && strncmp(s->name, "__num_", 6) && strcmp(s->name, "__cly_syscall")) s->ext = 1;
+    }
+}
+
 static void handle_syscall(Sec *s, IC *ic)
 {
     A.uses_syscall = 1;
@@ -1784,13 +1793,15 @@ static void promote_regs(const char *mn, Op *ops, int nops, IC *ic)
 {
     if (ic->a32) return;
     int stackdest = nops >= 1 && is_stackreg32(&ops[0]);
+    int memstack = 0;
     for (int i = 0; i < nops; i++) {
         Op *o = &ops[i];
         if (o->kind != OK_MEM || o->asize == 32) continue;
         int b32 = o->base && REGCLS(o->base) == RC_R32;
         int i32 = o->index && REGCLS(o->index) == RC_R32;
         int stack = (b32 && (REGNUM(o->base) == 4 || REGNUM(o->base) == 5)) || (i32 && REGNUM(o->index) == 5);
-        if (!(b32 || i32) || !(stack || (stackdest && !strcasecmp(mn, "lea")))) continue;
+        if (!(b32 || i32) || !(stack)) continue;
+        if (stack) memstack = 1;
         if (b32) o->base = REGID(RC_R64, REGNUM(o->base));
         if (i32) o->index = REGID(RC_R64, REGNUM(o->index));
     }
@@ -1805,20 +1816,17 @@ static void promote_regs(const char *mn, Op *ops, int nops, IC *ic)
         ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
         return;
     }
-    if (nops == 1 && is_s1 && is_stackreg32(&ops[0])) {
-        ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
-        return;
-    }
+    (void)is_s1;
     if (nops == 2 && is_s2 && stackdest) {
         int ok = 0;
-        if (is_stackreg32(&ops[1])) ok = 1;
-        else if (ops[1].kind == OK_IMM) ok = 1;
-        else if (ops[1].kind == OK_MEM && !strcasecmp(mn, "lea")) ok = 1;
+        if (is_stackreg32(&ops[1]) && ops[1].reg != ops[0].reg) ok = 1;
+        else if (ops[1].kind == OK_IMM && REGNUM(ops[0].reg) == 4 && (!strcasecmp(mn, "add") || !strcasecmp(mn, "sub") || !strcasecmp(mn, "and"))) ok = 1;
+        else if (ops[1].kind == OK_MEM && !strcasecmp(mn, "lea") && memstack) ok = 1;
         if (ok) {
             ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
             if (ops[1].kind == OK_REG) ops[1].reg = REGID(RC_R64, REGNUM(ops[1].reg));
         }
-    } else if (nops == 2 && is_s2 && is_stackreg32(&ops[1]) && is_stackreg32(&ops[0])) {
+    } else if (nops == 2 && is_s2 && is_stackreg32(&ops[1]) && is_stackreg32(&ops[0]) && ops[0].reg != ops[1].reg) {
         ops[0].reg = REGID(RC_R64, REGNUM(ops[0].reg));
         ops[1].reg = REGID(RC_R64, REGNUM(ops[1].reg));
     }
@@ -2256,6 +2264,7 @@ int assemble(AsmOpts *o, Obj *out)
     A.o = o;
     A.lines = &o->lines;
     A.kernel = o->kernel;
+    g_no_abs32 = o->kernel == K_MAC;
     A.type = o->type;
     A.arch = o->arch;
     A.rvext = o->rvext ? o->rvext : RVX_DEFAULT;
@@ -2325,6 +2334,7 @@ int assemble(AsmOpts *o, Obj *out)
     int converged = 0;
     i64 prev_sum = -1;
     for (pass = 1; pass <= 200; pass++) {
+        if (pass >= 2) auto_extern();
         A.pass = pass;
         A.changed = 0;
         A.final = 0;
@@ -2340,6 +2350,7 @@ int assemble(AsmOpts *o, Obj *out)
         prev_sum = sum;
     }
     if (!converged) warn("assembly did not converge after %d passes", pass - 1);
+    auto_extern();
     A.pass++;
     A.final = 1;
     A.changed = 0;

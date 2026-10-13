@@ -213,7 +213,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
             if (r->kind == RK_REL) {
                 add = v->n + r->off - r->relbase;
                 type = r->size == 8 ? 24 : r->size == 4 ? 2 : r->size == 2 ? 13 : 15;
-            } else type = r->size == 8 ? 1 : r->size == 4 ? 10 : r->size == 2 ? 12 : 14;
+            } else type = r->size == 8 ? 1 : r->size == 4 ? (r->sext ? 11 : 10) : r->size == 2 ? 12 : 14;
             if (!s->nobits && (size_t)(r->off + r->size) <= s->data.n) bputle(&s->data, (size_t)r->off, 0, r->size);
             badle(&rel[r->sec], (u64)r->off, 8);
             badle(&rel[r->sec], ((u64)symi << 32) | (u64)type, 8);
@@ -244,6 +244,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
     int n_symtab = add_str(&shstr, ".symtab");
     int n_strtab = add_str(&shstr, ".strtab");
     int n_shstr = add_str(&shstr, ".shstrtab");
+    int n_gnustack = add_str(&shstr, ".note.GNU-stack");
     Bytes f = {0};
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', (u8)(W64 ? 2 : 1), 1, 1, 0 };
     badd(&f, ident, 16);
@@ -258,7 +259,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
     size_t shoff_pos = f.n;
     putwd(&f, 0); put32(&f, eflags);
     put16(&f, W64 ? 64 : 52); put16(&f, 0); put16(&f, 0); put16(&f, W64 ? 64 : 40);
-    int total = 1 + ns + 3 + nrels;
+    int total = 1 + ns + 3 + nrels + 1;
     put16(&f, (u16)total);
     put16(&f, (u16)(ns + 3));
     size_t *soff = xcalloc((size_t)ns + 1, sizeof(size_t));
@@ -298,6 +299,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
         if (!rel[i].n) continue;
         shdr(&f, (u32)rname[i], (W64 || narch) ? 4 : 9, 0x40, roff[i], rel[i].n, (u32)symtab_idx, (u32)(i + 1), W64 ? 8 : 4, W64 ? 24 : (narch ? 12 : 8));
     }
+    shdr(&f, (u32)n_gnustack, 1, 0, 0, 0, 0, 0, 1, 0);
     bputle(&f, shoff_pos, (u64)sh_off, W64 ? 8 : 4);
     badd(out, f.p, f.n);
     free(sname); free(rname); free(soff); free(roff); free(rel); free(symidx);

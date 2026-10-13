@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Fix: `cmp ebp,-1`, `xor ebp,ebp`, `test ebp,ebp` and `lea ebp,[rax+1]` were shortened wrongly and changed meaning. Fixed.
+- New: 64-bit `add`, `cmp` and similar accept a symbol as the immediate.
+- New: `-obj` treats undefined symbols as external. ELF objects carry a `.note.GNU-stack` section so `ld` stays quiet.
+
 ## 1.2.0
 
 - New: ARM64 support. Base ISA, floating point, NEON, crypto, LSE atomics, pointer authentication, memory tagging and the usual extensions.

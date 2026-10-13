@@ -90,6 +90,7 @@ if command -v llvm-mc >/dev/null 2>&1; then
     done
     if command -v ld.lld >/dev/null 2>&1 && python3 -c "import unicorn" 2>/dev/null; then sh tests/xlink.sh && note "link with llvm objects" ok || { note "link with llvm objects" FAIL; fail=1; }; fi
     sh tests/errors.sh >/dev/null && note "error messages" ok || { note "error messages" FAIL; fail=1; }
+    sh tests/promo.sh >/dev/null && note "register promotion" ok || { note "register promotion" FAIL; fail=1; }
     python3 tests/opt_nx_fuzz.py 7 200 | tail -1 | grep -q "bad 0" && note "arm64 riscv optimizer fuzz" ok || { note "arm64 riscv optimizer fuzz" FAIL; fail=1; }
     for a in rv64 rv64nc rv32 rv32nc; do
         r=$(python3 tests/rv/run.py $a 2>&1)

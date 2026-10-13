@@ -79,7 +79,9 @@ static int match_spec(int s, const Op *o, IC *ic, const Ent *e, const Ent *head)
     case S_RAX: return o->kind == OK_REG && o->reg == REGID(RC_R64, 0);
     case S_RCX: return o->kind == OK_REG && o->reg == REGID(RC_R64, 1);
     case S_IMM64: return k == OK_IMM && (o->size == 0 || o->size == 8);
-    case S_SD: return k == OK_IMM && val_isconst(&o->val) && (o->size == 0 || o->size == 4) && o->val.n >= -2147483648LL && o->val.n <= 2147483647LL;
+    case S_SD:
+        if (k == OK_IMM && !g_no_abs32 && (o->size == 0 || o->size == 4) && !o->val.hasreg && !o->val.isfloat && (o->val.unk || (!val_isconst(&o->val) && o->val.ext && o->val.neg < 0) || (!val_isconst(&o->val) && !o->val.ext && o->val.pos >= 0 && o->val.neg < 0))) return 1;
+        return k == OK_IMM && val_isconst(&o->val) && (o->size == 0 || o->size == 4) && o->val.n >= -2147483648LL && o->val.n <= 2147483647LL;
     case S_UD: return k == OK_IMM && val_isconst(&o->val) && (o->size == 0 || o->size == 4) && o->val.n >= 0 && o->val.n <= 4294967295LL;
     case S_MO64: {
         if (k != OK_MEM || o->base || o->index || (o->flags & OF_FAR) || (o->flags & OF_NOSPLIT)) return 0;
@@ -263,13 +265,15 @@ static int rfield(Buf *bf, int reg, int *bit)
     return n & 7;
 }
 
+int g_no_abs32;
+
 static void put_val(Buf *bf, const Val *v, int size, int kind, IC *ic)
 {
     if (v->unk || (val_isconst(v) && kind == RK_ABS)) {
         i64 n = v->n;
         if (kind == RK_ABS && !v->unk) {
             int ok;
-            if (size == 1) ok = n >= -128 && n <= 255;
+            if (size == 1) ok = (n >= -128 && n <= 255) || (n >= 0xFFFFFF80LL && n <= 0xFFFFFFFFLL) || (n >= 0xFF80LL && n <= 0xFFFFLL);
             else if (size == 2) ok = n >= -32768 && n <= 65535;
             else if (size == 4) ok = n >= -2147483648LL && n <= 4294967295LL;
             else ok = 1;
@@ -655,8 +659,9 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
             Op *io = &ops[immidx[imi++]];
             int sz = t[1] == 'b' ? 1 : (t[1] == 'w' ? 2 : (t[1] == 'q' ? 8 : 4));
             if (val_isconst(&io->val) && io->val.n >= -128 && io->val.n <= 255 && sz == 1) {}
-            else if (sz == 1 && val_isconst(&io->val)) warn("byte data exceeds bounds");
+            else if (sz == 1 && val_isconst(&io->val) && !((io->val.n >= 0xFFFFFF80LL && io->val.n <= 0xFFFFFFFFLL) || (io->val.n >= 0xFF80LL && io->val.n <= 0xFFFFLL))) warn("byte data exceeds bounds");
             put_val(&bf, &io->val, sz, RK_ABS, ic);
+            if (sz == 4 && bf.rw && bf.nr && bf.r[bf.nr - 1].off == (i64)bf.b.n - 4) bf.r[bf.nr - 1].sext = 1;
             continue;
         }
         if (!strcmp(t, "cb") || !strcmp(t, "cw") || !strcmp(t, "cd") || !strcmp(t, "cz")) {

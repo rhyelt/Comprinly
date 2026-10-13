@@ -15,7 +15,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.2.0"
+#define CLY_VERSION "1.2.1"
 
 typedef int64_t i64;
 typedef uint64_t u64;
@@ -188,6 +188,7 @@ typedef struct {
     i64 relbase;
     Val v;
     int line;
+    int sext;
 } Reloc;
 
 struct Sym {
@@ -308,6 +309,7 @@ int arch_rv_generic(const char *name);
 int arch_cpu_line(const char *text, char *arg, size_t sz);
 int arch_first_cpu(const LineVec *lv, char *arg, size_t sz, int *lineno);
 int arch_guess(const LineVec *lv, int *rvext);
+extern int g_no_abs32;
 void sysval_run(const LineVec *lv, int arch, int kernel, int bits);
 int rt_syscall_supported(int kernel, int bits, int n);
 int arch_check_foreign(const LineVec *lv, int arch);
