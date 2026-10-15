@@ -2,7 +2,7 @@ import re
 import sys
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "data/insns.dat"
-DST = sys.argv[2] if len(sys.argv) > 2 else "src/insn_gen64.c"
+DST = sys.argv[2] if len(sys.argv) > 2 else "src/x86/insn_gen64.c"
 
 LV = {"386": 3, "486": 4, "PENT": 5, "P6": 6, "KATMAI": 7, "SSE": 7, "WILLAMETTE": 8, "SSE2": 8, "PRESCOTT": 9, "SSE3": 9,
       "SSSE3": 10, "SSE41": 12, "SSE42": 12, "NEHALEM": 12, "WESTMERE": 12}

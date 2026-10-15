@@ -1,7 +1,7 @@
 #include "cly.h"
 #include <errno.h>
 
-static int g_dumprt;
+static int g_dumprt, g_dumpopt;
 static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-bin|-elf|-exe|-macho|-obj|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
 
 static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
@@ -9,10 +9,22 @@ static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
 static const char *usage_text =
     "Comprinly " CLY_VERSION "\n"
     "\n"
-    "usage: cly <kernel> <file> [-type] [options]\n"
+    "usage: cly <kernel> <file> [-type] [modes] [options]\n"
     "\n"
     "kernels: bare, windows, linux, mac\n"
     "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -coff\n"
+    "\n"
+    "modes (any order, any number):\n"
+    "  -nasm         behave exactly like NASM: x86 only, no library, no leak check, no optimizer,\n"
+    "                no guessing, no typo hints, case-sensitive symbols, externs must be declared\n"
+    "  -nolibc       do not add the built-in C library\n"
+    "  -noleak       skip the memory leak check\n"
+    "  -fix          make the leak-free copy the main output\n"
+    "  -fixsrc       also write the source of the leak-free copy\n"
+    "  -O0           turn the optimizer off (it is on by default)\n"
+    "  -Werror       treat warnings as errors\n"
+    "  -M, -MD       print a make rule with the files used, or write it to <output>.d\n"
+    "  -log[=FILE]   log every compile step with timestamps (screen or file)\n"
     "\n"
     "options:\n"
     "  -out FILE     output file name\n"
@@ -24,10 +36,10 @@ static const char *usage_text =
     "  -m32, -m64    force 32-bit or 64-bit code (default: 64 for linux, windows, mac; 32 for bare)\n"
     "  -cpu NAME     target cpu: x86-64, arm64 or risc-v (rv64gc, rv32imac, ...); a `cpu' line on\n"
     "                the first line of the source does the same, otherwise it is guessed\n"
-    "  -O0           turn the optimizer off (it is on by default)\n"
     "  -E            preprocess only\n"
     "  -w            hide warnings\n"
     "  -q            quiet\n"
+    "  --dump-opt    print the source after optimizing, to stderr\n"
     "  --dump-insns  print the instruction table\n"
     "  -v            version\n"
     "  -h            help\n";
@@ -114,13 +126,66 @@ static int has_org(const LineVec *l)
     return 0;
 }
 
+static size_t g_last_size;
+static int g_nolibc;
+
+static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *oname, const char *file, int quiet, int optimize)
+{
+    LineVec work;
+    memset(&work, 0, sizeof work);
+    for (int i = 0; i < ao->lines.n; i++) lv_add(&work, ao->lines.v[i].text, ao->lines.v[i].file, ao->lines.v[i].line);
+    AsmOpts a2 = *ao;
+    a2.lines = work;
+    if (arch == ARCH_X86 && !g_nolibc) {
+        int n0 = a2.lines.n;
+        xlog("libc", "scanning for library calls (%d lines)", n0);
+        libc_run(&a2.lines, kernel, type, detect_bits(&a2));
+        xlog("libc", "%s, %d lines now", a2.lines.n != n0 ? "library code added" : "nothing to add", a2.lines.n);
+    } else xlog("libc", "skipped");
+    g_strip = optimize;
+    if (optimize) {
+        int n0 = a2.lines.n;
+        xlog("optimize", "running peephole passes (%d lines)", n0);
+        if (arch == ARCH_X86) opt_run(&a2.lines, detect_bits(&a2), kernel, type);
+        else opt_run_nx(&a2.lines, arch, kernel, type);
+        xlog("optimize", "%d lines in, %d lines out", n0, a2.lines.n);
+    } else xlog("optimize", "off");
+    if (g_dumpopt) for (int i = 0; i < a2.lines.n; i++) fprintf(stderr, "%s\n", a2.lines.v[i].text);
+    xlog("assemble", "starting (%d lines)", a2.lines.n);
+    Obj obj;
+    memset(&obj, 0, sizeof obj);
+    if (!assemble(&a2, &obj) || g_errors) {
+        fprintf(stderr, "cly: %d error%s", g_errors, g_errors == 1 ? "" : "s");
+        if (g_warnings) fprintf(stderr, ", %d warning%s", g_warnings, g_warnings == 1 ? "" : "s");
+        fputc('\n', stderr);
+        return 1;
+    }
+    Bytes out = {0};
+    xlog("link", "building the %s image", fmt_name(kernel, type, detect_bits(&a2)));
+    if (!link_obj(&obj, kernel, type, &out) || g_errors) {
+        fprintf(stderr, "cly: link failed\n");
+        return 1;
+    }
+    int exec = (type == T_ELF || type == T_MACHO || (type == T_BIN && (kernel == K_LINUX || kernel == K_MAC)));
+    errno = 0;
+    if (write_file(oname, out.p, out.n, exec)) {
+        fprintf(stderr, "cly: cannot write `%s': %s\n", oname, errno ? strerror(errno) : "unknown error");
+        return 1;
+    }
+    xlog("write", "%s, %zu bytes", oname, out.n);
+    g_last_size = out.n;
+    if (!quiet) printf("%s: %zu bytes\n", oname, out.n);
+    (void)file;
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int kernel = -1, type = T_BIN, type_set = 0;
     const char *file = NULL, *outpath = NULL;
     PPOpts po;
     memset(&po, 0, sizeof po);
-    int pponly = 0, quiet = 0, list = 0, dump = 0;
+    int fix_src = 0, no_leak = 0, fix_main = 0, pponly = 0, quiet = 0, list = 0, dump = 0;
     char *listpath = NULL;
     char **pos = xmalloc(sizeof(char *) * (size_t)(argc + 1));
     int npos = 0;
@@ -130,7 +195,7 @@ int main(int argc, char **argv)
     char **pre = xmalloc(sizeof(char *) * (size_t)(argc + 1));
     int ni = 0, nd = 0, nu = 0, np = 0;
     int mbits = 0;
-    int optimize = 1;
+    int optimize = 1, depmode = 0;
     int cli_arch = -1, cli_rvext = 0, rv_generic = 0;
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
@@ -152,6 +217,7 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
         if (!strcmp(a, "--dump-insns")) { dump = 1; continue; }
         if (!strcmp(a, "--dump-rt")) { g_dumprt = 1; continue; }
+        if (!strcmp(a, "--dump-opt")) { g_dumpopt = 1; continue; }
         if (!strcmp(a, "-out") || !strcmp(a, "-o") || !strcmp(a, "--out")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a file name\n", a); return 1; }
             outpath = argv[++i];
@@ -170,7 +236,17 @@ int main(int argc, char **argv)
             continue;
         }
         if (!strcmp(a, "-E")) { pponly = 1; continue; }
+        if (!strcmp(a, "-nasm")) { g_nasm = 1; continue; }
+        if (!strcmp(a, "-nolibc")) { g_nolibc = 1; continue; }
+        if (!strcmp(a, "-log")) { log_open(NULL); continue; }
+        if (!strncmp(a, "-log=", 5)) { if (!log_open(a + 5)) fprintf(stderr, "cly: cannot open log file `%s'\n", a + 5); continue; }
+        if (!strcmp(a, "-noleak")) { no_leak = 1; continue; }
+        if (!strcmp(a, "-fix")) { fix_main = 1; continue; }
+        if (!strcmp(a, "-fixsrc")) { fix_src = 1; continue; }
         if (!strcmp(a, "-w")) { g_nowarn = 1; continue; }
+        if (!strcmp(a, "-Werror")) { g_werror = 1; continue; }
+        if (!strcmp(a, "-M")) { depmode = 1; continue; }
+        if (!strcmp(a, "-MD")) { depmode = 2; continue; }
         if (!strcmp(a, "-q")) { quiet = 1; continue; }
         if (!strcmp(a, "-l")) {
             list = 1;
@@ -190,6 +266,13 @@ int main(int argc, char **argv)
             return 1;
         }
         pos[npos++] = (char *)a;
+    }
+    if (g_nasm) {
+        g_nolibc = 1;
+        no_leak = 1;
+        optimize = 0;
+        if (fix_main || fix_src) { fprintf(stderr, "cly: -fix and -fixsrc do not work with -nasm\n"); return 1; }
+        if (cli_arch > 0) { fprintf(stderr, "cly: -nasm is x86 only; `-cpu' chose %s\n", arch_name(cli_arch)); return 1; }
     }
     if (dump) {
         insn_init();
@@ -289,6 +372,7 @@ int main(int argc, char **argv)
                 int fx = 0;
                 int fa = arch_parse(arg, &fx);
                 if (fa == -2) { fprintf(stderr, "cly: `cpu %s' is not supported (32-bit ARM is not available; use arm64)\n", arg); return 1; }
+                if (g_nasm && fa > 0) { fprintf(stderr, "cly: -nasm is x86 only; the source says `cpu %s'\n", arg); return 1; }
                 if (fa >= 0) {
                     int ca = arch == ARCH_X86 ? 0 : arch == ARCH_A64 ? 1 : 2;
                     int cf = fa == ARCH_X86 ? 0 : fa == ARCH_A64 ? 1 : 2;
@@ -311,7 +395,7 @@ int main(int argc, char **argv)
     if (arch < 0) arch = ARCH_X86;
     else guessed = 1;
     (void)arch_from_file;
-    int need_guess = !guessed;
+    int need_guess = !guessed && !g_nasm;
     int defbits;
     LineVec lines;
     for (int attempt = 0; attempt < 2; attempt++) {
@@ -323,13 +407,15 @@ int main(int argc, char **argv)
             arch = ARCH_RV64;
         }
         if (arch == ARCH_A64 && mbits && mbits != 64) { fprintf(stderr, "cly: ARM64 is 64-bit only; -m%d does not apply\n", mbits); return 1; }
-        defbits = arch != ARCH_X86 ? arch_bits(arch) : (mbits ? mbits : ((kernel == K_BARE || rawtype) ? 32 : 64));
+        defbits = arch != ARCH_X86 ? arch_bits(arch) : (mbits ? mbits : (g_nasm && rawtype) ? 16 : ((kernel == K_BARE || rawtype) ? 32 : 64));
         po.outfmt = fmt_name(kernel, type, defbits);
         po.bits = defbits;
         po.arch = arch;
         memset(&lines, 0, sizeof lines);
         g_errors = 0;
+        xlog("preprocess", "reading `%s' (%s, %d-bit)", file, arch_name(arch), defbits);
         if (!pp_run(file, &po, &lines) || g_errors) return 1;
+        xlog("preprocess", "done, %d lines", lines.n);
         if (need_guess && attempt == 0) {
             int gx = 0;
             int ga = arch_guess(&lines, &gx);
@@ -351,7 +437,7 @@ int main(int argc, char **argv)
         }
         if (type == T_IMG) type = T_FLAT;
     }
-    if (!pponly) sysval_run(&lines, arch, kernel, defbits);
+    if (!pponly && !g_nasm) sysval_run(&lines, arch, kernel, defbits);
     if (pponly) {
         for (int i = 0; i < lines.n; i++) puts(lines.v[i].text);
         return 0;
@@ -362,7 +448,7 @@ int main(int argc, char **argv)
     ao.type = type;
     ao.srcpath = file;
     ao.cpu = 99;
-    ao.bits = mbits;
+    ao.bits = g_nasm ? defbits : mbits;
     ao.arch = arch;
     ao.rvext = rvext;
     ao.optimize = optimize;
@@ -374,9 +460,17 @@ int main(int argc, char **argv)
         if (!has_org(&lines)) lv_add(&ao.lines, "org 0x100", "<com>", 2);
     }
     for (int i = 0; i < lines.n; i++) lv_add(&ao.lines, lines.v[i].text, lines.v[i].file, lines.v[i].line);
-    g_strip = optimize;
-    if (optimize && arch == ARCH_X86) opt_run(&ao.lines, detect_bits(&ao), kernel, type);
-    else if (optimize) opt_run_nx(&ao.lines, arch, kernel, type);
+    LineVec fixed;
+    memset(&fixed, 0, sizeof fixed);
+    int nleaks = 0, nfix = 0;
+    if (arch == ARCH_X86 && !no_leak && !g_nowarn && !g_quiet) {
+        int lb = detect_bits(&ao);
+        if (lb == 32 || lb == 64) {
+            xlog("leakcheck", "scanning %d-bit code", lb);
+            nleaks = leak_check(&ao.lines, lb, &fixed, &nfix);
+            xlog("leakcheck", "%d leak%s found", nleaks, nleaks == 1 ? "" : "s");
+        }
+    }
     char *base = strip_ext(file);
     if (list) {
         if (!listpath) {
@@ -385,19 +479,6 @@ int main(int argc, char **argv)
             listpath = sget(&s);
         }
         ao.listpath = listpath;
-    }
-    Obj obj;
-    memset(&obj, 0, sizeof obj);
-    if (!assemble(&ao, &obj) || g_errors) {
-        fprintf(stderr, "cly: %d error%s", g_errors, g_errors == 1 ? "" : "s");
-        if (g_warnings) fprintf(stderr, ", %d warning%s", g_warnings, g_warnings == 1 ? "" : "s");
-        fputc('\n', stderr);
-        return 1;
-    }
-    Bytes out = {0};
-    if (!link_obj(&obj, kernel, type, &out) || g_errors) {
-        fprintf(stderr, "cly: link failed\n");
-        return 1;
     }
     char *oname;
     if (outpath) oname = xstrdup(outpath);
@@ -411,16 +492,59 @@ int main(int argc, char **argv)
             oname = sget(&s);
         }
     }
-    int exec = (type == T_ELF || type == T_MACHO || (type == T_BIN && (kernel == K_LINUX || kernel == K_MAC)));
     if (!strcmp(oname, file)) {
         fprintf(stderr, "cly: output would overwrite the input file `%s'\n", file);
         return 1;
     }
-    errno = 0;
-    if (write_file(oname, out.p, out.n, exec)) {
-        fprintf(stderr, "cly: cannot write `%s': %s\n", oname, errno ? strerror(errno) : "unknown error");
+    int canfix = nfix && kernel == K_LINUX && (type == T_ELF || type == T_BIN);
+    if (nleaks && !canfix && nfix) nfix = 0;
+    if (fix_main && canfix) {
+        ao.lines = fixed;
+        nleaks = 0;
+    }
+    xlog("target", "kernel %d, output type %d, file `%s'", kernel, type, oname);
+    int rc = build_image(&ao, arch, kernel, type, oname, file, quiet, optimize);
+    if (!rc && g_werror && g_warnings) {
+        fprintf(stderr, "cly: %d warning%s treated as error%s (-Werror)\n", g_warnings, g_warnings == 1 ? "" : "s", g_warnings == 1 ? "" : "s");
+        remove(oname);
         return 1;
     }
-    if (!quiet) printf("%s: %zu bytes\n", oname, out.n);
+    if (!rc && depmode) {
+        Str ds = {0};
+        sfmt(&ds, "%s: %s", oname, file);
+        for (int i = 0; i < dep_count(); i++) { sadd(&ds, " "); sadd(&ds, dep_get(i)); }
+        sadc(&ds, '\n');
+        if (depmode == 1) fputs(ds.s, stdout);
+        else {
+            Str dn = {0};
+            sfmt(&dn, "%s.d", oname);
+            write_file(sget(&dn), ds.s, ds.n, 0);
+        }
+    }
+    if (rc) { xlog("done", "failed with %d error%s, %d warning%s", g_errors, g_errors == 1 ? "" : "s", g_warnings, g_warnings == 1 ? "" : "s"); return rc; }
+    if (nleaks && canfix && !fix_main) {
+        Str fs = {0};
+        if (outpath) sfmt(&fs, "%s_fixed", outpath);
+        else {
+            sfmt(&fs, "%s_fixed%s", base, ext_for(kernel, type));
+        }
+        char *fname = sget(&fs);
+        if (fix_src) {
+            Str ts = {0};
+            for (int q = 0; q < fixed.n; q++) { sadd(&ts, fixed.v[q].text); sadc(&ts, '\n'); }
+            Str pn = {0};
+            sfmt(&pn, "%s.asm", fname);
+            write_file(sget(&pn), ts.s ? ts.s : "", ts.n, 0);
+        }
+        AsmOpts ao2 = ao;
+        ao2.lines = fixed;
+        ao2.listpath = NULL;
+        ao2.list = 0;
+        if (build_image(&ao2, arch, kernel, type, fname, file, 1, optimize)) {
+            fprintf(stderr, "cly: could not build the leak-free copy\n");
+            return 1;
+        }
+        if (!quiet) printf("%s: leak-free copy, %zu bytes\n", fname, g_last_size);
+    }
     return 0;
 }

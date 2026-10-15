@@ -2,7 +2,7 @@ import re
 import sys
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "data/insns.dat"
-DST = sys.argv[2] if len(sys.argv) > 2 else "src/insn_gen.c"
+DST = sys.argv[2] if len(sys.argv) > 2 else "src/x86/insn_gen.c"
 
 SFLAGS = {"SB", "SW", "SD", "SQ", "SO", "SY", "SZ", "SX"}
 SKIP_FLAGS = {"LONG", "AMXTILE", "AMXINT8", "AMXBF16", "SM2", "X64"}

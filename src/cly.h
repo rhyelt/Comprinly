@@ -15,7 +15,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.2.1"
+#define CLY_VERSION "1.3.0"
 
 typedef int64_t i64;
 typedef uint64_t u64;
@@ -55,6 +55,7 @@ int file_exists(const char *path);
 typedef struct HEnt { char *key; void *val; struct HEnt *next; } HEnt;
 typedef struct { HEnt **b; size_t nb, cnt; } HT;
 void *ht_get(HT *h, const char *k);
+char *lower_dup(const char *s);
 void ht_put(HT *h, const char *k, void *v);
 int ht_del(HT *h, const char *k);
 extern int g_quiet;
@@ -65,7 +66,15 @@ int edit_distance(const char *a, const char *b);
 const char *insn_suggest(const char *mn);
 typedef struct { const char *file; int line; } Pos;
 extern Pos g_pos;
-extern int g_strip, g_errors, g_warnings, g_nowarn;
+extern int g_log;
+int log_open(const char *path);
+void log_close(void);
+void dep_add(const char *path);
+int dep_count(void);
+const char *dep_get(int i);
+extern int g_werror;
+void xlog(const char *phase, const char *fmt, ...);
+extern int g_strip, g_errors, g_warnings, g_nowarn, g_nasm, g_objmode;
 void err(const char *fmt, ...);
 void warn(const char *fmt, ...);
 void fatal(const char *fmt, ...);
@@ -84,6 +93,7 @@ typedef struct {
     int unk;
     int seg;
     int wrt;
+    int wk;
     int hasreg;
     int isfloat;
     signed char r[VR_N];
@@ -164,6 +174,7 @@ typedef struct Sec {
     i64 start, vstart;
     char *follows, *vfollows;
     int idx;
+    int declared, order;
     int absolute;
     i64 base;
     i64 vbase;
@@ -193,6 +204,7 @@ typedef struct {
 
 struct Sym {
     char *name;
+    Sym *cinext;
     int defined;
     int isequ;
     int sec;
@@ -212,6 +224,9 @@ struct Sym {
     const char *deffile;
     int defln;
     int isabs;
+    int stype, svis, commonalign;
+    i64 ssize;
+    char *sexpr;
 };
 
 typedef struct {
@@ -229,6 +244,7 @@ typedef struct {
     int uses_syscall;
     char **listing;
     int nlist;
+    const char *src;
 } Obj;
 
 typedef struct {
@@ -257,6 +273,8 @@ typedef struct {
     int arch_given;
 } AsmOpts;
 int detect_bits(AsmOpts *o);
+void libc_run(LineVec *lv, int kernel, int type, int defbits);
+int leak_check(LineVec *lv, int bits, LineVec *fixed, int *nfixed);
 
 int assemble(AsmOpts *o, Obj *out);
 void obj_free(Obj *o);
