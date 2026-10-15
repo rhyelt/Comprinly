@@ -283,6 +283,18 @@ Pseudo instructions: `li`, `la`, `lla`, `lga`, `mv`, `not`, `neg`, `negw`, `sext
 
 "Raw only" means flat bytes, Intel HEX or S-records with no boot code added.
 
+## NASM programs and the built-in library
+
+For Linux executables on x86 and x86-64, Comprinly adds the C library functions a program calls and leaves the rest out. Names in the library: exit, _exit, abort, write, read, getpid, strlen, strcpy, strncpy, strcat, strncat, strcmp, strncmp, strchr, strrchr, strstr, strdup, memcpy, memmove, memset, memcmp, atoi, atol, strtol, strtoll, strtoul, strtoull, abs, labs, llabs, toupper, tolower, isdigit, isalpha, isalnum, isspace, isupper, islower, rand, srand, time, usleep, sleep, malloc, free, calloc, realloc, putchar, puts, stdin, stdout, stderr, fputs, fputc, putc, fflush, fclose, fwrite, getchar, fgetc, getc, fgets, gets, printf, fprintf, sprintf, snprintf, scanf, sscanf, strtod, atof, qsort, sqrt, fabs, floor, ceil, trunc, round, fmod, fmin, fmax, hypot, sin, cos, tan, asin, acos, atan, atan2, exp, exp2, log, log10, log2 and pow.
+
+`extern` lines for these names are dropped. `wrt ..plt`, `wrt ..got` and `@PLT` are accepted. If `main` exists and there is no `_start`, a start stub is added that calls `main` and exits with its return value. `-nolibc` disables everything here.
+
+`printf` handles `-`, `0`, `+`, space and `#` flags, width, precision, `*`, `l`, `z`, `j`, `t`, `q`, and `d i u x X o c s p f F e E g G %`. `scanf` and `sscanf` handle `d i u x s c f e g` with `*`, width and `l`. The math functions use the x87 unit and take and return doubles.
+
+## Leak check
+
+The check runs per function and follows the registers and stack slots that hold a block. It reports blocks that reach `ret`, `exit` or the exit system call without being freed, and blocks whose last pointer is overwritten. Pointers stored through other pointers, kept in globals or passed to unknown calls count as handed off. The fixed copy adds `free` calls on the paths that leak.
+
 ## Coverage compared with NASM
 
 Things NASM does that Comprinly does too: the whole preprocessor, macros with ranges and defaults, contexts, `%rep`, conditionals including `%ifidn`, `%ifnum`, `%ifstr`, `%ifmacro`, `%ifctx` and `%ifenv`, string functions, `%include` and `%pathsearch`, `incbin`, `times`, `struc`, local labels, `$` and `$$`, floating point data, `equ`, `seg`, `wrt`, `{vex}` and `{evex}` prefixes, `align` and `alignmode`, `-D`, `-U`, `-P`, `-I`, `-E` and listings. Instruction coverage for x86 goes up to AVX-512 and FP16 and was compared with NASM.
@@ -291,13 +303,27 @@ Things Comprinly adds on top: ARM64 and RISC-V from the same syntax, one-step li
 
 Things NASM and other assemblers have that Comprinly does not are listed next.
 
+## Source layout
+
+    src/cly.h      shared header
+    src/main.c     command line and build steps
+    src/core/      preprocessor, expressions, assembler core, logging
+    src/x86/       x86 and x86-64 encoder and tables
+    src/arm64/     ARM64 encoder
+    src/riscv/     RISC-V encoder
+    src/opt/       optimizer
+    src/format/    ELF, PE, Mach-O, COFF writers and the linker
+    src/runtime/   runtime helpers for ARM64 and RISC-V
+    src/extras/    built-in C library and the leak check
+
+The build uses `-Isrc`, so every file just includes `cly.h`. Generated files (`rt_data.c`, `libc_data.c`, `insn_gen*.c`) come from the scripts in `rt/` and `tools/`.
+
 ## Not supported
 
 These are not in Comprinly, so they are not documented above:
 
 - APX (the extended general registers `r16` to `r31` and the new instruction forms)
 - OMF and `.obj` output for 16-bit tools (`-coff` and `-obj` make COFF and ELF)
-- dependency files (`-M` style output)
 - debug information of any kind: DWARF, STABS, and the `-g` option
 - debugger integration
 - a disassembler like NDISASM

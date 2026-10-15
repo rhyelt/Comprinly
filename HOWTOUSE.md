@@ -13,7 +13,7 @@ You need a C compiler.
     make check      run the tests
     make install    copy to /usr/local/bin
 
-Without make: `gcc -O2 -fwrapv -o cly src/*.c`
+Without make: `gcc -O2 -fwrapv -Isrc -o cly src/main.c src/*/*.c`
 
 ## 2. Your first program
 
@@ -74,7 +74,7 @@ The same source can work in both modes if you stick to `eax`, `ebx`, `ecx`, `edx
 
 ## 4. The command
 
-    cly <kernel> <file> [-type] [options]
+    cly <kernel> <file> [-type] [modes] [options]
 
 Kernels: `linux`, `windows`, `mac`, `bare`.
 
@@ -91,6 +91,22 @@ Types:
 | `-com` | DOS .com file |
 | `-hex` `-srec` | Intel HEX or Motorola S-record |
 
+Modes switch behaviours on and can be combined in any order after the type:
+
+    cly linux prog.asm -bin -nasm
+    cly linux prog.asm -elf -nolibc -noleak -m32
+    cly linux prog.asm -bin -fix
+
+| Mode | What it does |
+|------|--------------|
+| `-nasm` | Acts like NASM and nothing more. See section 16. |
+| `-nolibc` | Leave out the built-in C library |
+| `-noleak` | Skip the leak check |
+| `-fix` | The leak-free copy becomes the main output |
+| `-fixsrc` | Also write the source of the leak-free copy |
+| `-O0` | Turn the optimizer off |
+| `--dump-opt` | Print the source after optimizing, to stderr |
+
 Options:
 
     -out FILE     name the output
@@ -101,7 +117,6 @@ Options:
     -l [FILE]     write a listing
     -m32 -m64     force 32-bit or 64-bit code
     -cpu NAME     x86-64, arm64, risc-v, rv32, rv64, rv64gc, rv32imac ...
-    -O0           turn the optimizer off
     -E            only run the preprocessor
     -w            hide warnings
     -q            quiet
@@ -116,6 +131,8 @@ What it does:
 - `mov eax, 0` becomes `xor eax, eax` when nothing reads the flags afterwards
 - `cmp reg, 0` becomes `test reg, reg`
 - `add reg, 1` and `sub reg, 1` become `inc` and `dec` when the carry flag is not needed
+- removes `add` or `sub` of 0 when the flags are not needed, shifts and rotates by 0, `lea r, [r]`, and `push r` right before `pop r`
+- turns `mov r, -1` into the shorter `or r, -1` when the flags are not needed
 - removes `mov a, a`, a repeated `mov b, a` after `mov a, b`, and a load right after a store to the same place
 - removes code that can never run (after `jmp` or `ret`, until the next label)
 - removes a `jmp` to the next line, and turns `jcc over; jmp x; over:` into one inverted jump
@@ -340,7 +357,54 @@ More in `examples/riscv/`.
 
 `-obj` writes a relocatable ELF object. For ARM64 and RISC-V it is a standard RELA object, so you can link Comprinly output with LLVM or GNU objects using `ld.lld` or `ld`. Declare shared names with `global` and `extern`. The tests link Comprinly objects with LLVM-built ones both ways.
 
-## 16. Warnings you may see
+## 16. Strict NASM mode
+
+`-nasm` turns every Comprinly extra off so the source is judged the way NASM would judge it:
+
+- x86 only. `-cpu arm64`, `cpu riscv` and similar are errors, and the CPU is never guessed.
+- No built-in library, no leak check, no optimizer and no syscall checks. `-fix` and `-fixsrc` are refused.
+- Symbols are case-sensitive and undefined symbols are errors, also with `-obj`. Declare them with `extern`.
+- Missing commas between operands are errors.
+- No typo hints. A lone word on a line gives NASM's own orphan label warning.
+- The entry point is `..start` or `_start`, nothing else.
+- Raw outputs (`-flat`, `-hex`, `-srec`, `-img`) start in 16-bit mode like `nasm -f bin`, unless you say `bits` or `-m32`/`-m64`.
+
+More of NASM's own behaviour is followed in this mode:
+
+- `-obj` writes the same sections, symbols and relocations NASM does. Empty sections you never used are left out, `global name:function size`, `common` and the visibility words work, and `wrt ..plt`, `..got`, `..gotoff`, `..gotpc` and `..gottpoff` pick the matching relocation types.
+- `mov r64, symbol` uses the 64-bit immediate form, and `dq symbol` gets a 64-bit relocation.
+- Two labels on one line, a data list with a missing comma and `%comment` are errors.
+- `align` pads code with `nop` bytes and numbers like `0x_ff` are read the way NASM reads them.
+
+The tests compare accept and reject decisions and the generated code with a real NASM.
+
+## 16b. Compile log
+
+`-log` prints what the compiler does while it builds, with the time since the start:
+
+    [ 0.000055] preprocess reading `lt.asm' (x86-64, 64-bit)
+    [ 0.000222] preprocess include `x.inc' from lt.asm:1
+    [ 0.005599] leakcheck  scanning 32-bit code
+    [ 0.005855] libc       library code added, 20 lines now
+    [ 0.005942] optimize   20 lines in, 20 lines out
+    [ 0.006038] assemble   pass 1: 38440 bytes, layout changed
+    [ 0.006854] write      lt, 200 bytes
+
+It covers reading the file, includes and macros, the leak check, the library, the optimizer, every assembler pass, linking and writing. It never logs the running of the program. `-log=FILE` writes the log to a file instead of the screen. It works with every other mode.
+
+## 16c. Warnings as errors and dependency rules
+
+`-Werror` makes any warning fail the build, and the output file is removed. `-M` prints a make rule such as `prog: prog.asm defs.inc data.bin` to the screen once the build works. `-MD` writes the same rule to `<output>.d`. Both list every `%include` and `incbin` file.
+
+## 17. NASM files and the built-in library
+
+On Linux with x86 or x86-64 you can feed Comprinly a normal NASM file. `global main`, `extern printf`, `_start`, `wrt ..plt` and `wrt ..got` all work, and `main` can simply `ret` with its exit code. Functions like `printf`, `scanf`, `puts`, `malloc`, `free`, `strlen`, `memcpy`, `atoi`, `strtod`, `sscanf`, `qsort`, `rand`, `sin`, `pow`, `sqrt` and `exit` are supplied by Comprinly, and only the ones you use end up in the program. A `printf` or `puts` with plain text becomes a direct write, so small programs stay small. If you define a function with the same name yourself, yours wins. `-nolibc` turns all of this off.
+
+## 18. Leak warnings
+
+Comprinly watches `malloc`, `calloc`, `strdup`, `realloc`, anonymous `mmap` and your own functions that return such blocks. If a block can reach the end of the program or lose its last pointer without a `free`, you get a warning with the line numbers and the program still builds. A second file, `<name>_fixed`, is built with the missing `free` calls added. `-fix` makes it the main output, `-fixsrc` writes its source, `-noleak` skips the check. Pointers you store in memory or pass to functions Comprinly does not know are treated as handed off, so they are not reported.
+
+## 19. Warnings you may see
 
 - A word alone on a line is a label, like in NASM. If that word is one letter away from a real instruction (`retaa` typed as `retta`), you get a warning, because it was probably a typo.
 - Dropped trailing zero in `$ - label`, see section 6.

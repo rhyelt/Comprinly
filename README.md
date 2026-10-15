@@ -8,7 +8,11 @@ Comprinly (`cly`) is a small assembler written in plain C. You write assembly in
 
 It reads x86, ARM64 and RISC-V from the same syntax. The commands you type do not change when the CPU does.
 
-REMINDER: This project is fully vibe-coded, so you may find some bugs. It is purely for recreational purposes.
+## Project status
+
+Comprinly started as an experiment. It was vibe-coded from the first line, and it was only meant to be a proof of concept. It has grown past that and is now becoming a serious project, so it is open to collaborators.
+
+From 1.3.0 on, the project is no longer fully vibe-coded. It is partly vibe-coded and partly written by hand by me and, hopefully, by the people who join. You may still run into bugs, so please report them. See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to help.
 
 ## Get it
 

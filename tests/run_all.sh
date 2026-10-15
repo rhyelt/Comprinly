@@ -102,6 +102,14 @@ else
     note "arm64 and riscv vs llvm" "skipped (no llvm-mc)"
 fi
 
+if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ]; then
+    sh tests/progs.sh >/dev/null 2>&1 && note "nasm programs" ok || { note "nasm programs" FAIL; fail=1; }
+    sh tests/leaks.sh >/dev/null 2>&1 && note "leak warnings" ok || { note "leak warnings" FAIL; fail=1; }
+    sh tests/log.sh && note "compile log" ok || { note "compile log" FAIL; fail=1; }
+    if command -v nasm >/dev/null 2>&1; then sh tests/compat.sh >/dev/null 2>&1 && note "nasm compat" ok || { note "nasm compat" FAIL; fail=1; }; fi
+    if command -v nasm >/dev/null 2>&1; then bash tests/nasm_strict.sh >/dev/null 2>&1 && note "nasm strict mode" ok || { note "nasm strict mode" FAIL; fail=1; }; fi
+fi
+
 rm -rf "$T"
 [ $fail = 0 ] && echo "all good" || echo "failures"
 exit $fail

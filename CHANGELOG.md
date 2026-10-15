@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0
+
+- New: plain NASM programs build and run. `global`, `extern`, `main`, `_start`, `wrt ..plt`, `wrt ..got`, `@PLT`, `section`, `istruc` and friends are accepted.
+- New: a small built-in C library for Linux x86 and x86-64 (`printf`, `scanf`, `malloc`, string and memory functions, `puts`, `exit` and more). Only what the program uses is added, so a `printf "Hello"` program stays tiny.
+- New: calls to `printf`, `puts`, `putchar` and `exit` with constant text turn into a direct write or exit. A NASM hello world comes out at about the same size as the Comprinly one.
+- New: leak warnings. When a block from `malloc`, `calloc`, `strdup`, `realloc`, `mmap` or a function that returns one may never be freed, the warning names the lines. The program still builds.
+- New: a leak-free copy is built next to the output as `<name>_fixed`. `-fix` makes the fixed copy the main output, `-fixsrc` also writes its source.
+- New: `sscanf`, `strtod`, `atof`, `qsort`, `%e` and `%g` in `printf`, and math functions (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `log10`, `log2`, `pow`, `fmod`, `hypot`, `round`, `trunc`, `fmin`, `fmax`).
+- New: `-nasm` mode. Strict NASM behaviour: x86 only, case-sensitive symbols, declared externs, no missing commas, no guessing, no hints, no library, no leak check, no optimizer.
+- New: modes can be given in any order after the output type.
+- New: `-nolibc` and `-noleak`.
+- New: `-log` and `-log=FILE`. Timestamped log of the compile steps: preprocessing, includes, macros, library, optimizer, assembler passes, link and write.
+- New: `-Werror` fails the build when any warning was shown. `-M` prints a make rule with the include and incbin files, `-MD` writes it to `<output>.d`.
+- Improved: the optimizer also drops `add/sub r, 0`, shifts and rotates by 0, `lea r, [r]` and `push r` followed by `pop r`, and turns `mov r, -1` into the shorter `or r, -1`. Each one only fires when it cannot change a register or a flag the program uses. `--dump-opt` prints the optimized source.
+- Fixed: a warning that came up twice for one line is now shown once.
+- Improved: `-nasm` follows NASM much more closely. Object files match NASM's sections, symbols, relocation types, `common`, `global` attributes, FILE symbol and `align` fill. `mov r64, symbol`, `dq symbol`, `%[...]` joins, `%isdef` style functions, `0x_ff` numbers and several error cases now behave the same. A compare suite in `tests/compat` checks this against a real NASM.
+- Fixed: large sources were slow because every undefined name was matched case-insensitively against all symbols. A 200,000 line file went from 29 seconds to 4.
+- Changed: the source is sorted into `src/core`, `src/x86`, `src/arm64`, `src/riscv`, `src/opt`, `src/format`, `src/runtime` and `src/extras`.
+- Project: Comprinly began as a vibe-coded proof of concept and is now a serious project open to collaborators. From 1.3.0 it is partly vibe-coded and partly hand-written. See `CONTRIBUTING.md`.
+
 ## 1.2.1
 
 - Fix: `cmp ebp,-1`, `xor ebp,ebp`, `test ebp,ebp` and `lea ebp,[rax+1]` were shortened wrongly and changed meaning. Fixed.

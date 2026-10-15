@@ -1,0 +1,26 @@
+start:
+    mov rbx, 5
+    add rbx, 0
+    sub rbx, 0
+    shl rbx, 0
+    ror rbx, 0
+    lea rbx, [rbx]
+    push rbx
+    pop rbx
+    mov rax, -1
+    mov ecx, -1
+    cmp rbx, 5
+    mov rdx, -1
+    jne bad
+    mov rdi, 0
+    cmp rax, rdx
+    jne bad
+    cmp ecx, 0xffffffff
+    jne bad
+    mov rdi, 0
+    jmp done
+bad:
+    mov rdi, 1
+done:
+    mov rax, 60
+    syscall
