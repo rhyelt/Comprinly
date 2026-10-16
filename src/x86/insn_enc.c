@@ -1,18 +1,22 @@
+/* x86 instruction encoder. Takes a mnemonic and parsed operands, picks the best table entry (shortest form that fits) and emits prefixes, opcode, ModRM, SIB, displacement and immediate. Also contains the VEX/EVEX path for AVX and AVX-512. */
 #include "insn.h"
 
 static int cur_bits = 32;
 
+/* True if n fits a sign-extended 8-bit immediate at operand width w. */
 static int fits_sb(i64 n, int w)
 {
     if (w == 16) return (n >= -128 && n <= 127) || (n >= 0xFF80 && n <= 0xFFFF);
     return (n >= -128 && n <= 127) || (n >= 0xFFFFFF80LL && n <= 0xFFFFFFFFLL);
 }
 
+/* True if a memory operand's size matches what an entry wants (0 means unspecified). */
 static int memsz_ok(const Op *o, int sz)
 {
     return o->size == 0 || sz == 0 || o->size == sz;
 }
 
+/* True if the operand is a register of class c (in the current bit mode). */
 static int cls_is(const Op *o, int c)
 {
     if (o->kind != OK_REG || REGCLS(o->reg) != c) return 0;
@@ -20,6 +24,7 @@ static int cls_is(const Op *o, int c)
     return 1;
 }
 
+/* True for vector or mask registers with a valid number for the mode. */
 static int vreg_ok(const Op *o, int rc)
 {
     if (o->kind != OK_REG || REGCLS(o->reg) != rc) return 0;
@@ -29,17 +34,20 @@ static int vreg_ok(const Op *o, int rc)
 
 static const int sv_rc[4] = { RC_XMM, RC_YMM, RC_ZMM, RC_K };
 
+/* Memory size in bytes encoded in a vector spec. */
 static int sv_msize(int s)
 {
     int c = SV_MEM(s);
     return c ? 1 << (c - 1) : 0;
 }
 
+/* Memory size of any operand spec. */
 static int spec_bytes(int s)
 {
     return IS_SV(s) ? sv_msize(s) : spec_msize(s);
 }
 
+/* Does a vector operand spec (xmm, ymm, zmm, vsib, memory forms) match this operand? */
 static int match_sv(int s, const Op *o)
 {
     int rc = sv_rc[SV_CLS(s)];
@@ -51,6 +59,7 @@ static int match_sv(int s, const Op *o)
     return 1;
 }
 
+/* True if some table entry uses a relative displacement, so a jump can choose short or near. */
 static int has_near_alt(const Ent *head)
 {
     for (const Ent *e = head; e; e = e->next)
@@ -58,6 +67,33 @@ static int has_near_alt(const Ent *head)
     return 0;
 }
 
+/* Classifies an encoding token as a prefix (66, f2, f3, a32, rex.w, only64 ...). Returns 0 if it is not one. */
+static int pfx_kind(const char *t)
+{
+    switch (t[0]) {
+    case '6': return t[1] == '6' && !t[2] ? 1 : 0;
+    case 'f': return (t[1] == '2' || t[1] == '3') && !t[2] ? (t[1] == '2' ? 2 : 3) : 0;
+    case 'o':
+        if (!strcmp(t, "o16")) return 4;
+        if (!strcmp(t, "o32")) return 5;
+        if (!strcmp(t, "o64")) return 6;
+        if (!strcmp(t, "o64nw")) return 7;
+        return !strcmp(t, "only64") ? 11 : 0;
+    case 'a':
+        if (!strcmp(t, "a16")) return 8;
+        if (!strcmp(t, "a32")) return 9;
+        if (!strcmp(t, "a64")) return 10;
+        return 0;
+    case 'n':
+        if (!strcmp(t, "no64")) return 12;
+        if (!strcmp(t, "norexw")) return 13;
+        return 0;
+    case 'r': return !strcmp(t, "rex.l") ? 14 : 0;
+    }
+    return 0;
+}
+
+/* Does one operand spec from the table (r8, rm32, imm8, mem, rel ...) accept this operand? */
 static int match_spec(int s, const Op *o, IC *ic, const Ent *e, const Ent *head)
 {
     int k = o->kind;
@@ -168,6 +204,7 @@ static int match_spec(int s, const Op *o, IC *ic, const Ent *e, const Ent *head)
     return 0;
 }
 
+/* Checks that a memory operand's size agrees with the spec. */
 static int o_sizeok(int s, const Op *o)
 {
     if (o->kind != OK_MEM || SV_VSIB(s)) return 1;
@@ -175,6 +212,7 @@ static int o_sizeok(int s, const Op *o)
     return o->size == 0 || o->size == ms || o->bcst;
 }
 
+/* Checks AVX-512 decorators ({k}, {z}, broadcast, rounding) against what the entry allows. */
 static int deco_ok(const Ent *e, int i, const Op *o, IC *ic)
 {
     int dc = e->dc[i];
@@ -194,6 +232,7 @@ static int deco_ok(const Ent *e, int i, const Op *o, IC *ic)
     return 1;
 }
 
+/* True if a table entry fits the operand list, mode and CPU level. */
 static int entry_matches(const Ent *e, const Op *ops, int nops, IC *ic, const Ent *head)
 {
     if (e->nops != nops) return 0;
@@ -218,6 +257,7 @@ static int entry_matches(const Ent *e, const Op *ops, int nops, IC *ic, const En
     return 1;
 }
 
+/* True if the spec puts a register in the ModRM reg field. */
 static int is_reg_role(int s)
 {
     switch (s) {
@@ -226,6 +266,7 @@ static int is_reg_role(int s)
     return 0;
 }
 
+/* True if the spec is placed in the ModRM r/m field. */
 static int is_rm_role(int s)
 {
     switch (s) {
@@ -238,6 +279,7 @@ static int is_rm_role(int s)
     return 0;
 }
 
+/* True for immediate specs. */
 static int is_imm_spec(int s)
 {
     return s == S_IMM8 || s == S_IMM16 || s == S_IMM32 || s == S_SB16 || s == S_SB32 || s == S_IMM64 || s == S_SD || s == S_UD || s == S_SB64 || s == S_IBS || s == S_IBU;
@@ -250,6 +292,7 @@ typedef struct {
     int rw, rr, rx, rb, needrex, high8;
 } Buf;
 
+/* Gets the 3 low bits of a register number and whether it needs a REX or EVEX extension bit. */
 static int rfield(Buf *bf, int reg, int *bit)
 {
     int n = REGNUM(reg);
@@ -267,6 +310,7 @@ static int rfield(Buf *bf, int reg, int *bit)
 
 int g_no_abs32;
 
+/* Writes an immediate or displacement, recording a relocation when the value is a symbol. */
 static void put_val(Buf *bf, const Val *v, int size, int kind, IC *ic)
 {
     if (v->unk || (val_isconst(v) && kind == RK_ABS)) {
@@ -295,6 +339,7 @@ static void put_val(Buf *bf, const Val *v, int size, int kind, IC *ic)
 
 static int log2sc(int s) { return s == 1 ? 0 : (s == 2 ? 1 : (s == 4 ? 2 : 3)); }
 
+/* Encodes a memory operand: ModRM, SIB and displacement, picking the shortest form and 16/32/64-bit addressing. */
 static int emit_ea(const Op *m, int regf, IC *ic, Buf *bf, int *asz_out, int d8n)
 {
     int asz;
@@ -423,12 +468,14 @@ static int emit_ea(const Op *m, int regf, IC *ic, Buf *bf, int *asz_out, int d8n
     return 1;
 }
 
+/* Prefix byte for a segment override. */
 static int seg_prefix_byte(int reg)
 {
     static const u8 p[] = { 0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65 };
     return p[REGNUM(reg)];
 }
 
+/* Next token of an encoding string. */
 static char *nexttok(char **pp)
 {
     char *p = *pp;
@@ -442,6 +489,7 @@ static char *nexttok(char **pp)
 }
 
 
+/* EVEX disp8*N scale for the entry's tuple type. */
 static int tuple_n(const Ent *e, int rmi, int bc)
 {
     int vlb = 16 << e->vL;
@@ -468,6 +516,7 @@ static int tuple_n(const Ent *e, int rmi, int bc)
     return 1;
 }
 
+/* Encoder for VEX and EVEX forms: builds the prefix bytes, opcode, ModRM and operands. */
 static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre, int *need67, int *memseg)
 {
     int regop = -1, rmop = -1, vvop = -1, immop = -1, sop = -1;
@@ -586,6 +635,7 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
     return 1;
 }
 
+/* Encodes one table entry for the given operands: prefixes, REX, opcode bytes, ModRM, SIB, displacement, immediate. */
 static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
 {
     Buf bf;
@@ -627,14 +677,15 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
     }
     for (char *t = nexttok(&save); t; t = nexttok(&save)) {
         if (tokn++ == 0 && !strcmp(t, "9b")) { fwait = 1; continue; }
-        if (rexpos == (size_t)-1 && strcmp(t, "66") && strcmp(t, "f2") && strcmp(t, "f3") && strcmp(t, "o16") && strcmp(t, "o32") && strcmp(t, "o64") && strcmp(t, "o64nw") && strcmp(t, "a16") && strcmp(t, "a32") && strcmp(t, "a64") && strcmp(t, "only64") && strcmp(t, "no64") && strcmp(t, "norexw") && strcmp(t, "rex.l")) rexpos = bf.b.n;
-        if (!strcmp(t, "only64") || !strcmp(t, "no64") || !strcmp(t, "norexw") || !strcmp(t, "rex.l") || !strcmp(t, "o64nw")) continue;
-        if (!strcmp(t, "o16")) { osz16 = 16; if (obits == 32) need66 = 1; continue; }
-        if (!strcmp(t, "o32")) { osz16 = 32; if (obits == 16) need66 = 1; continue; }
-        if (!strcmp(t, "o64")) { bf.rw = 1; continue; }
-        if (!strcmp(t, "a16")) { if (bits != 16) need67 = 1; continue; }
-        if (!strcmp(t, "a32")) { if (bits != 32) need67 = 1; continue; }
-        if (!strcmp(t, "a64")) { continue; }
+        int pk = pfx_kind(t);
+        if (rexpos == (size_t)-1 && !pk) rexpos = bf.b.n;
+        if (pk == 7 || (pk >= 11 && pk <= 14)) continue;
+        if (pk == 4) { osz16 = 16; if (obits == 32) need66 = 1; continue; }
+        if (pk == 5) { osz16 = 32; if (obits == 16) need66 = 1; continue; }
+        if (pk == 6) { bf.rw = 1; continue; }
+        if (pk == 8) { if (bits != 16) need67 = 1; continue; }
+        if (pk == 9) { if (bits != 32) need67 = 1; continue; }
+        if (pk == 10) continue;
         if (t[0] == '/') {
             int regf;
             int rm = rmop;
@@ -784,6 +835,7 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
     return 1;
 }
 
+/* Expands entries with a * operand (any of several sizes) into one operand set. */
 static int expand_star(const Ent *e, const Op *ops, int nops, Op *tmp)
 {
     int j = -1;
@@ -798,6 +850,7 @@ static int expand_star(const Ent *e, const Op *ops, int nops, Op *tmp)
     return 1;
 }
 
+/* Out of several matching entries picks the best: shortest, preferring an exact size match. */
 static const Ent *choose(const Ent **c, int n, const Op *ops, int nops, IC *ic)
 {
     if (n == 1) return c[0];
@@ -824,6 +877,7 @@ static const Ent *choose(const Ent **c, int n, const Op *ops, int nops, IC *ic)
     return c[0];
 }
 
+/* Public entry. Looks up the mnemonic, tries entries until one fits and encodes it. Reports the right error if none does. */
 int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
 {
     char key[40];
@@ -918,6 +972,7 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     return emit_entry(e, use, un, ic, out);
 }
 
+/* Builds the instruction table once. */
 void insn_init(void)
 {
     static int done;
@@ -926,6 +981,7 @@ void insn_init(void)
     insn_tab_init();
 }
 
+/* Sets the allowed CPU level from a cpu directive (8086 ... 686, sse, avx ...). */
 void insn_cpu_set(const char *name, int *lvl)
 {
     static const struct { const char *n; int l; } t[] = {

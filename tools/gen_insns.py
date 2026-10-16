@@ -1,5 +1,11 @@
+# Generates src/x86/insn_gen.c: the 32-bit instruction rows, packed with tools/lz.py.
+# Each row is a level line (#N) or mnemonic, operand specs and encoding separated by tabs.
 import re
 import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lz
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "data/insns.dat"
 DST = sys.argv[2] if len(sys.argv) > 2 else "src/x86/insn_gen.c"
@@ -207,14 +213,15 @@ def main():
         seen.add(key)
         late = "LATEVEX" in flags.split(",")
         out["L" if late else r[0]].append(r)
+    rows = []
+    for k, lv in (("V", 14), ("E", 15), ("L", 14), ("X", 14)):
+        rows.append("#%d" % lv)
+        for _, mn, ops, enc in out[k]:
+            rows.append("\t".join((mn, ops, enc)))
     with open(DST, "w") as f:
-        f.write('#include "cly.h"\n#include "insn.h"\n\n')
-        f.write("void gen_tab(void)\n{\n")
-        for k, lv in (("V", 14), ("E", 15), ("L", 14), ("X", 14)):
-            f.write("    tab_lv(%d);\n" % lv)
-            for _, mn, ops, enc in out[k]:
-                f.write('    T("%s", "%s", "%s");\n' % (mn, ops, enc))
-        f.write("}\n")
+        f.write('/* Generated file. Do not edit; run make gen or make rt. */\n#include "cly.h"\n#include "insn.h"\n\n')
+        f.write(lz.pack("gen_blob", "\n".join(rows) + "\n"))
+        f.write("\nvoid gen_tab(void) { tab_blob(gen_blob, sizeof gen_blob, gen_blob_raw); }\n")
     sys.stderr.write("generated %d vex, %d evex, skipped %d\n" % (len(out["V"]), len(out["E"]), skipped))
 
 

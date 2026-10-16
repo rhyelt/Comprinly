@@ -1,3 +1,4 @@
+/* System register names for mrs and msr: name, op0, op1, CRn, CRm, op2. */
     { "nzcv", 3, 3, 4, 2, 0 },
     { "fpcr", 3, 3, 4, 4, 0 },
     { "fpsr", 3, 3, 4, 4, 1 },

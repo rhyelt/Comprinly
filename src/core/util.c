@@ -1,8 +1,10 @@
+/* General helpers: checked allocation, growable strings and byte buffers, file access, a string hash table, error and warning output, and small utilities. */
 #include "cly.h"
 
 Pos g_pos;
-int g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode;
+int g_hidewarn, g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode;
 
+/* malloc that never returns NULL. Exits with an out of memory message instead. */
 void *xmalloc(size_t n)
 {
     void *p = malloc(n ? n : 1);
@@ -10,6 +12,7 @@ void *xmalloc(size_t n)
     return p;
 }
 
+/* calloc with the same never-fails rule. */
 void *xcalloc(size_t n, size_t m)
 {
     void *p = calloc(n ? n : 1, m ? m : 1);
@@ -17,6 +20,7 @@ void *xcalloc(size_t n, size_t m)
     return p;
 }
 
+/* realloc with the same never-fails rule. */
 void *xrealloc(void *p, size_t n)
 {
     p = realloc(p, n ? n : 1);
@@ -24,6 +28,7 @@ void *xrealloc(void *p, size_t n)
     return p;
 }
 
+/* Copies a string into new memory. */
 char *xstrdup(const char *s)
 {
     size_t n = strlen(s);
@@ -32,6 +37,7 @@ char *xstrdup(const char *s)
     return r;
 }
 
+/* Copies at most n bytes of a string into new memory and adds the NUL. */
 char *xstrndup(const char *s, size_t n)
 {
     char *r = xmalloc(n + 1);
@@ -40,6 +46,7 @@ char *xstrndup(const char *s, size_t n)
     return r;
 }
 
+/* Makes sure a Str has room for need more bytes plus the NUL. Capacity doubles so appends stay cheap. */
 static void sgrow(Str *s, size_t need)
 {
     if (s->n + need + 1 > s->cap) {
@@ -50,6 +57,7 @@ static void sgrow(Str *s, size_t need)
     }
 }
 
+/* Appends n bytes to a Str. */
 void saddn(Str *s, const char *t, size_t n)
 {
     sgrow(s, n);
@@ -60,6 +68,7 @@ void saddn(Str *s, const char *t, size_t n)
 
 void sadd(Str *s, const char *t) { saddn(s, t, strlen(t)); }
 
+/* Appends one character to a Str. */
 void sadc(Str *s, int c)
 {
     sgrow(s, 1);
@@ -67,6 +76,7 @@ void sadc(Str *s, int c)
     s->s[s->n] = 0;
 }
 
+/* printf into a Str. Uses a stack buffer first and a heap buffer when the text is longer. */
 void sfmt(Str *s, const char *fmt, ...)
 {
     char buf[1024];
@@ -86,6 +96,7 @@ void sfmt(Str *s, const char *fmt, ...)
     }
 }
 
+/* Returns the Str's text, making sure it is never NULL. */
 char *sget(Str *s)
 {
     sgrow(s, 0);
@@ -94,12 +105,14 @@ char *sget(Str *s)
     return s->s;
 }
 
+/* Empties a Str but keeps its memory. */
 void sclear(Str *s)
 {
     s->n = 0;
     if (s->s) s->s[0] = 0;
 }
 
+/* Makes room in a Bytes buffer. Refuses to grow past 256 MB so a runaway source cannot eat all memory. */
 static void bgrow(Bytes *b, size_t need)
 {
     if (need > ((size_t)1 << 28) || b->n + need > ((size_t)1 << 28)) {
@@ -114,6 +127,7 @@ static void bgrow(Bytes *b, size_t need)
     }
 }
 
+/* Appends raw bytes to a Bytes buffer. */
 void badd(Bytes *b, const void *d, size_t n)
 {
     if (!n) return;
@@ -122,22 +136,26 @@ void badd(Bytes *b, const void *d, size_t n)
     b->n += n;
 }
 
+/* Appends one byte. */
 void bad1(Bytes *b, u8 c)
 {
     bgrow(b, 1);
     b->p[b->n++] = c;
 }
 
+/* Appends the low n bytes of v in little endian order, sign extending past 8 bytes. */
 void badle(Bytes *b, u64 v, int n)
 {
     for (int i = 0; i < n; i++) bad1(b, i < 8 ? (u8)(v >> (8 * i)) : (u8)((i64)v < 0 ? 0xff : 0));
 }
 
+/* Overwrites n bytes at offset off with v in little endian order. Used to patch values after the fact. */
 void bputle(Bytes *b, size_t off, u64 v, int n)
 {
     for (int i = 0; i < n; i++) b->p[off + i] = i < 8 ? (u8)(v >> (8 * i)) : 0;
 }
 
+/* Appends n copies of byte c. */
 void bfill(Bytes *b, u8 c, size_t n)
 {
     if (!n) return;
@@ -146,6 +164,7 @@ void bfill(Bytes *b, u8 c, size_t n)
     b->n += n;
 }
 
+/* Pads the buffer with fill bytes until its size is a multiple of align. */
 void bpad(Bytes *b, size_t align, u8 fill)
 {
     if (align <= 1) return;
@@ -153,6 +172,7 @@ void bpad(Bytes *b, size_t align, u8 fill)
     if (r) bfill(b, fill, align - r);
 }
 
+/* Reads a whole file into new memory. Returns NULL on failure and the size in *len. */
 char *read_file(const char *path, size_t *len)
 {
     FILE *f = fopen(path, "rb");
@@ -174,6 +194,7 @@ char *read_file(const char *path, size_t *len)
 #define S_ISDIR(m) (((m) & 0170000) == 0040000)
 #endif
 
+/* Writes a whole file. When exec is set the file is made executable. */
 int write_file(const char *path, const void *data, size_t len, int exec)
 {
     FILE *f = fopen(path, "wb");
@@ -188,12 +209,14 @@ int write_file(const char *path, const void *data, size_t len, int exec)
     return 0;
 }
 
+/* True if the path is a directory. */
 int is_dir(const char *path)
 {
     struct stat st;
     return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
 }
 
+/* True if the path is a readable file (not a directory). */
 int file_exists(const char *path)
 {
     if (is_dir(path)) return 0;
@@ -203,6 +226,7 @@ int file_exists(const char *path)
     return 1;
 }
 
+/* Returns the folder part of a path, handling both / and \\ separators. */
 char *path_dir(const char *path)
 {
     const char *s = strrchr(path, '/');
@@ -212,6 +236,7 @@ char *path_dir(const char *path)
     return xstrndup(path, (size_t)(s - path + 1));
 }
 
+/* Joins a folder and a name with exactly one separator. */
 char *path_join(const char *dir, const char *name)
 {
     size_t n = strlen(dir);
@@ -228,6 +253,7 @@ char *path_join(const char *dir, const char *name)
     return sget(&s);
 }
 
+/* FNV style hash of a string for the hash table. */
 static size_t hash_str(const char *s)
 {
     size_t h = 1469598103u;
@@ -235,12 +261,14 @@ static size_t hash_str(const char *s)
     return h;
 }
 
+/* Allocates the first 256 buckets of a hash table. */
 static void ht_init(HT *h)
 {
     h->nb = 256;
     h->b = xcalloc(h->nb, sizeof(HEnt *));
 }
 
+/* Looks up a key. Returns its value or NULL. */
 void *ht_get(HT *h, const char *k)
 {
     if (!h->b) return NULL;
@@ -249,6 +277,7 @@ void *ht_get(HT *h, const char *k)
     return NULL;
 }
 
+/* Inserts or replaces a key. The table grows 4x when the load passes 2 entries per bucket. */
 void ht_put(HT *h, const char *k, void *v)
 {
     if (!h->b) ht_init(h);
@@ -261,8 +290,26 @@ void ht_put(HT *h, const char *k, void *v)
     e->next = h->b[i];
     h->b[i] = e;
     h->cnt++;
+    if (h->cnt > h->nb * 2) {
+        size_t nn = h->nb * 4;
+        HEnt **nb = xcalloc(nn, sizeof(HEnt *));
+        for (size_t j = 0; j < h->nb; j++) {
+            HEnt *c = h->b[j];
+            while (c) {
+                HEnt *nx = c->next;
+                size_t t = hash_str(c->key) % nn;
+                c->next = nb[t];
+                nb[t] = c;
+                c = nx;
+            }
+        }
+        free(h->b);
+        h->b = nb;
+        h->nb = nn;
+    }
 }
 
+/* Removes a key. Returns 1 if it was there. */
 int ht_del(HT *h, const char *k)
 {
     if (!h->b) return 0;
@@ -282,6 +329,7 @@ int ht_del(HT *h, const char *k)
     return 0;
 }
 
+/* Frees every entry and bucket. */
 void ht_clear(HT *h)
 {
     if (!h->b) return;
@@ -305,6 +353,7 @@ void ht_clear(HT *h)
 
 static int color_mode = -1;
 
+/* Decides once whether messages get ANSI colors (stderr is a terminal and NO_COLOR is not set). */
 static int use_color(void)
 {
     if (color_mode < 0) {
@@ -321,6 +370,7 @@ typedef struct { char *name; char *data; } SrcCache;
 static SrcCache g_cache[8];
 static int g_ncache;
 
+/* Returns the text of a source line for error messages, reading and caching the file on first use. */
 static const char *src_line(const char *file, int line, size_t *len)
 {
     if (!file || file[0] == '<' || line < 1) return NULL;
@@ -337,7 +387,7 @@ static const char *src_line(const char *file, int line, size_t *len)
     }
     const char *p = data;
     for (int n = 1; n < line; n++) {
-        p = strchr(p, '\n');
+        p = cly_nl(p);
         if (!p) return NULL;
         p++;
     }
@@ -347,6 +397,7 @@ static const char *src_line(const char *file, int line, size_t *len)
     return p;
 }
 
+/* Prints one diagnostic: file:line, a colored kind (error, warning ...), the message, the source line and a caret. */
 static void vmsg(const char *kind, const char *fmt, va_list ap)
 {
     int col = use_color();
@@ -367,6 +418,7 @@ static void vmsg(const char *kind, const char *fmt, va_list ap)
     }
 }
 
+/* Reports an error and counts it. Assembly continues so more errors can be shown. */
 void err(const char *fmt, ...)
 {
     if (g_quiet) { g_errors++; return; }
@@ -381,6 +433,7 @@ void err(const char *fmt, ...)
     }
 }
 
+/* True if this exact warning at this position was already shown, so duplicates are printed once. */
 static int warn_seen(const char *msg)
 {
     static char **seen;
@@ -396,9 +449,10 @@ static int warn_seen(const char *msg)
     return 0;
 }
 
+/* Reports a warning unless warnings are off (-w) or hidden (-q). Counts it for -Werror. */
 void warn(const char *fmt, ...)
 {
-    if (g_nowarn || g_quiet) return;
+    if (g_nowarn || g_quiet || g_hidewarn) return;
     char msg[400];
     va_list ap;
     va_start(ap, fmt);
@@ -411,6 +465,7 @@ void warn(const char *fmt, ...)
     g_warnings++;
 }
 
+/* Reports an error that cannot be recovered from and exits. */
 void fatal(const char *fmt, ...)
 {
     va_list ap;
@@ -420,6 +475,7 @@ void fatal(const char *fmt, ...)
     exit(1);
 }
 
+/* Appends a line to a LineVec together with its file name and line number. */
 void lv_add(LineVec *l, const char *text, const char *file, int line)
 {
     if (l->n >= 8000000) {
@@ -436,6 +492,7 @@ void lv_add(LineVec *l, const char *text, const char *file, int line)
     l->n++;
 }
 
+/* Levenshtein distance between two short strings. Drives the did you mean hints. */
 int edit_distance(const char *a, const char *b)
 {
     size_t la = strlen(a), lb = strlen(b);
@@ -454,6 +511,7 @@ int edit_distance(const char *a, const char *b)
     return d[la][lb];
 }
 
+/* Returns a lower-case copy of a string. */
 char *lower_dup(const char *s)
 {
     size_t n = strlen(s);
@@ -466,6 +524,7 @@ int g_werror;
 static char **deps;
 static int ndeps, capdeps;
 
+/* Records a file the build read (for -M and -MD), once per path. */
 void dep_add(const char *path)
 {
     for (int i = 0; i < ndeps; i++) if (!strcmp(deps[i], path)) return;

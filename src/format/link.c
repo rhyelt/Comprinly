@@ -1,15 +1,18 @@
+/* The linker for a single object: section order, addresses, relocation patching, import tables, bare-metal images, flat binaries and hex/S-record output. */
 #include "cly.h"
 
 Layout g_lay;
 static ImpDll *imps;
 static int nimps;
 
+/* Rounds v up to a multiple of a. */
 static i64 round_up(i64 v, i64 a)
 {
     if (a <= 1) return v;
     return (v + a - 1) / a * a;
 }
 
+/* Orders sections: code and read-only first, then writable data, then bss, then non-loaded. */
 static int sec_group(const Sec *s)
 {
     if (!s->alloc) return 3;
@@ -18,6 +21,7 @@ static int sec_group(const Sec *s)
     return 0;
 }
 
+/* Final address of a section. */
 i64 sec_addr(Obj *o, int idx)
 {
     if (idx < 0 || idx >= o->nsecs) return 0;
@@ -25,6 +29,7 @@ i64 sec_addr(Obj *o, int idx)
     return s->has_vstart ? s->vstart : s->base;
 }
 
+/* Linker-defined symbols such as __cly_image_end and _end. */
 static int builtin_sym(Obj *o, const char *name, i64 *out)
 {
     (void)o;
@@ -38,6 +43,7 @@ static int builtin_sym(Obj *o, const char *name, i64 *out)
 
 i64 val_addr(Obj *o, const Val *v, int *ok);
 
+/* Final address of a symbol (resolving equ values). */
 i64 sym_addr(Obj *o, Sym *s)
 {
     if (s->isequ) {
@@ -53,6 +59,7 @@ i64 sym_addr(Obj *o, Sym *s)
     return 0;
 }
 
+/* Final value of an expression made of section-relative parts. */
 i64 val_addr(Obj *o, const Val *v, int *ok)
 {
     i64 r = v->n;
@@ -68,6 +75,7 @@ i64 val_addr(Obj *o, const Val *v, int *ok)
     return r;
 }
 
+/* Sorts sections into the output order. */
 static void order_secs(Obj *o)
 {
     free(g_lay.order);
@@ -112,6 +120,9 @@ static void order_secs(Obj *o)
     }
 }
 
+int g_compact;
+
+/* Assigns addresses to every section for a given base and page size. Computes where the file image ends. */
 int link_layout(Obj *o, i64 base, i64 pagesz, int mode)
 {
     order_secs(o);
@@ -138,7 +149,7 @@ int link_layout(Obj *o, i64 base, i64 pagesz, int mode)
             g_lay.has_rw = 1;
         }
         if (s->has_start) cur = s->start;
-        int a = s->align > 0 ? s->align : 1;
+        int a = g_compact ? (s->ualign > 0 ? s->ualign : 1) : (s->align > 0 ? s->align : 1);
         cur = round_up(cur, a);
         s->base = cur;
         cur += s->size;
@@ -153,6 +164,7 @@ int link_layout(Obj *o, i64 base, i64 pagesz, int mode)
     return 1;
 }
 
+/* Writes a resolved value into section data for one relocation. */
 static void put_reloc(Obj *o, Reloc *r, i64 val)
 {
     Sec *s = o->secs[r->sec];
@@ -172,6 +184,7 @@ static void put_reloc(Obj *o, Reloc *r, i64 val)
     bputle(&s->data, (size_t)r->off, (u64)val, r->size);
 }
 
+/* Resolves every relocation. Reports out of range values and undefined symbols. */
 int link_apply(Obj *o)
 {
     int bad = 0;
@@ -196,6 +209,7 @@ int link_apply(Obj *o)
     return bad ? 0 : 1;
 }
 
+/* Copies the bytes between two addresses into dst, zero filling gaps. */
 void link_range(Obj *o, Bytes *dst, i64 lo, i64 hi)
 {
     (void)o;
@@ -213,18 +227,21 @@ void link_range(Obj *o, Bytes *dst, i64 lo, i64 hi)
     }
 }
 
+/* Copies the whole loaded part of the image. */
 int link_image(Obj *o, Bytes *img)
 {
     link_range(o, img, g_lay.base, g_lay.file_end);
     return 1;
 }
 
+/* Address of the entry symbol, or -1 if none. */
 i64 link_entry(Obj *o)
 {
     if (!o->entry) return -1;
     return sym_addr(o, o->entry);
 }
 
+/* Adds a section created by the linker itself (import table, thunks). */
 static Sec *add_sec(Obj *o, const char *name, int exec, int write)
 {
     Sec *s = xcalloc(1, sizeof *s);
@@ -239,6 +256,7 @@ static Sec *add_sec(Obj *o, const char *name, int exec, int write)
     return s;
 }
 
+/* Adds a relocation created by the linker itself. */
 static void add_reloc(Obj *o, Reloc *r)
 {
     if (o->nrelocs == o->caprelocs) {
@@ -248,6 +266,7 @@ static void add_reloc(Obj *o, Reloc *r)
     o->relocs[o->nrelocs++] = *r;
 }
 
+/* Collects the imported functions the code refers to, groups them by DLL and creates the import address table and call thunks. */
 void link_prepare_imports(Obj *o)
 {
     nimps = 0;
@@ -331,12 +350,14 @@ void link_prepare_imports(Obj *o)
     }
 }
 
+/* Returns the collected imports for the PE writer. */
 const ImpDll *link_imports(int *n)
 {
     *n = nimps;
     return imps;
 }
 
+/* Builds a bootable image: boot sector, protected or long mode switch, and the program, padded to a whole number of sectors. */
 static int bare_image(Obj *o, Bytes *out)
 {
     Bytes img = {0};
@@ -368,7 +389,7 @@ static int bare_image(Obj *o, Bytes *out)
     int ln = 1;
     const char *p = src.s;
     while (p && *p) {
-        const char *nl = strchr(p, '\n');
+        const char *nl = cly_nl(p);
         size_t len = nl ? (size_t)(nl - p) : strlen(p);
         char *t = xstrndup(p, len);
         lv_add(&ao.lines, t, "<boot>", ln++);
@@ -399,12 +420,14 @@ static int bare_image(Obj *o, Bytes *out)
     return 1;
 }
 
+/* Bare metal output: a flat binary when the source has org, otherwise a bootable image. */
 int fmt_bare(Obj *o, Bytes *out)
 {
     if (o->has_org) return fmt_flat(o, out);
     return bare_image(o, out);
 }
 
+/* Flat binary at the org address, no headers. */
 int fmt_flat(Obj *o, Bytes *out)
 {
     i64 base = o->has_org ? o->org : 0;
@@ -413,6 +436,7 @@ int fmt_flat(Obj *o, Bytes *out)
     return link_image(o, out);
 }
 
+/* Intel HEX text for a binary. */
 void fmt_ihex(const Bytes *in, i64 base, i64 entry, Str *out)
 {
     u32 upper = 0xFFFFFFFFu;
@@ -442,6 +466,7 @@ void fmt_ihex(const Bytes *in, i64 base, i64 entry, Str *out)
     sadd(out, ":00000001FF\n");
 }
 
+/* Motorola S-record text for a binary. */
 void fmt_srec(const Bytes *in, i64 base, i64 entry, Str *out)
 {
     sadd(out, "S00600004844521B\n");
@@ -461,6 +486,7 @@ void fmt_srec(const Bytes *in, i64 base, i64 entry, Str *out)
     sfmt(out, "S7%02X%08X%02X\n", 5, e, (~sum) & 0xFF);
 }
 
+/* Picks the right writer for the kernel and output type and produces the final bytes. */
 int link_obj(Obj *o, int kernel, int type, Bytes *out)
 {
     int plainbin = type == T_BIN;

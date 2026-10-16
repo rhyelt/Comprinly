@@ -1,3 +1,4 @@
+/* Writer for Windows PE executables (.exe), 32 and 64-bit: DOS stub, headers, text, data and import sections. */
 #include "cly.h"
 
 #define PE_BASE 0x400000
@@ -15,6 +16,7 @@ typedef struct {
     u32 vsize, rva, rawsize, rawptr, chars;
 } PSec;
 
+/* Writes one PE section header. */
 static void put_sec(Bytes *b, const PSec *s)
 {
     badd(b, s->name, 8);
@@ -29,6 +31,7 @@ static void put_sec(Bytes *b, const PSec *s)
     put32(b, s->chars);
 }
 
+/* Lays out the image, builds the import table from the imports the code uses (kernel32 and others) and writes the file. */
 int fmt_pe(Obj *o, Bytes *out)
 {
     int w = o->is64 ? 8 : 4;

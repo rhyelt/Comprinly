@@ -1,5 +1,7 @@
+/* ARM64 integer instructions: add/sub, logic, moves, bitfields, shifts, conditional select, multiply and divide, branches, system and barriers. */
 #include "a64.h"
 
+/* Checks the operand count and reports a count error if it is outside lo..hi. */
 static int usage(Ctx *c, int lo, int hi)
 {
     if (lo == hi) err("%s: expected %d operand%s, found %d", c->mn, lo, lo == 1 ? "" : "s", c->n);
@@ -9,6 +11,7 @@ static int usage(Ctx *c, int lo, int hi)
 
 #define NEED(lo, hi) do { if (c->n < (lo) || c->n > (hi)) return usage(c, (lo), (hi)); } while (0)
 
+/* Operand i as any general register (including sp). */
 static int gpr_any(Ctx *c, int i, GReg *r)
 {
     if (!a64_p_gpr(c->tok[i], r)) {
@@ -18,6 +21,7 @@ static int gpr_any(Ctx *c, int i, GReg *r)
     return 1;
 }
 
+/* Operand i as a general register where 31 means the zero register (sp is not allowed). */
 static int gpr_zr(Ctx *c, int i, GReg *r)
 {
     if (!gpr_any(c, i, r)) return 0;
@@ -25,6 +29,7 @@ static int gpr_zr(Ctx *c, int i, GReg *r)
     return 1;
 }
 
+/* Checks that two registers are both 32 or both 64-bit. */
 static int sizes_match(Ctx *c, GReg a, GReg b)
 {
     if (a.w64 != b.w64) { err("%s: register sizes do not match", c->mn); return 0; }
@@ -38,6 +43,7 @@ static const ShName shnames[] = {
     { "uxtb", 2, 0 }, { "uxth", 2, 1 }, { "uxtw", 2, 2 }, { "uxtx", 2, 3 }, { "sxtb", 2, 4 }, { "sxth", 2, 5 }, { "sxtw", 2, 6 }, { "sxtx", 2, 7 }, { NULL, 0, 0 }
 };
 
+/* Parses shift or extend suffix (lsl, uxtw ...) and amount. */
 static int parse_sh(Ctx *c, const char *s, int *kind, int *code, i64 *amt, int *has_amt, int *unk)
 {
     char w[8];
@@ -62,6 +68,7 @@ static int parse_sh(Ctx *c, const char *s, int *kind, int *code, i64 *amt, int *
     return 1;
 }
 
+/* Shared encoder for add, sub, adds, subs: immediate, shifted register and extended register forms. */
 static int addsub_core(Ctx *c, int op, int S, GReg rd, GReg rn, int ofs)
 {
     int nrem = c->n - ofs;
@@ -156,6 +163,7 @@ static int addsub_core(Ctx *c, int op, int S, GReg rd, GReg rn, int ofs)
     return 1;
 }
 
+/* add, sub, adds, subs. */
 static int h_addsub(Ctx *c, const MnEnt *e)
 {
     NEED(3, 4);
@@ -164,6 +172,7 @@ static int h_addsub(Ctx *c, const MnEnt *e)
     return addsub_core(c, e->a, e->b, rd, rn, 2);
 }
 
+/* cmp and cmn. */
 static int h_cmp(Ctx *c, const MnEnt *e)
 {
     NEED(2, 3);
@@ -173,6 +182,7 @@ static int h_cmp(Ctx *c, const MnEnt *e)
     return addsub_core(c, e->a, 1, rd, rn, 1);
 }
 
+/* neg, negs. */
 static int h_neg(Ctx *c, const MnEnt *e)
 {
     NEED(2, 3);
@@ -182,6 +192,7 @@ static int h_neg(Ctx *c, const MnEnt *e)
     return addsub_core(c, 1, e->b, rd, zr, 1);
 }
 
+/* Checks that an immediate can be used as a bitmask and encodes it. */
 static int logic_imm_ok(Ctx *c, i64 v, int sf, int invert, u32 *enc)
 {
     u64 u = (u64)v;
@@ -197,6 +208,7 @@ static int logic_imm_ok(Ctx *c, i64 v, int sf, int invert, u32 *enc)
     return 1;
 }
 
+/* Shared encoder for and, orr, eor, ands, bic, orn, eon, bics. */
 static int logic_core(Ctx *c, int opc, int N, GReg rd, GReg rn, int ofs)
 {
     int nrem = c->n - ofs;
@@ -234,6 +246,7 @@ static int logic_core(Ctx *c, int opc, int N, GReg rd, GReg rn, int ofs)
     return 1;
 }
 
+/* and, orr, eor, ands and their inverted forms. */
 static int h_logic(Ctx *c, const MnEnt *e)
 {
     NEED(3, 4);
@@ -243,6 +256,7 @@ static int h_logic(Ctx *c, const MnEnt *e)
     return logic_core(c, e->a, e->b, rd, rn, 2);
 }
 
+/* tst. */
 static int h_tst(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -253,6 +267,7 @@ static int h_tst(Ctx *c, const MnEnt *e)
     return logic_core(c, 3, 0, rd, rn, 1);
 }
 
+/* mvn. */
 static int h_mvn(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -263,6 +278,7 @@ static int h_mvn(Ctx *c, const MnEnt *e)
     return logic_core(c, 1, 1, rd, zr, 1);
 }
 
+/* movz, movn, movk. */
 static int h_movwide(Ctx *c, const MnEnt *e)
 {
     NEED(2, 3);
@@ -314,6 +330,7 @@ static int h_movwide(Ctx *c, const MnEnt *e)
 
 int a64_simd_mov(Ctx *c);
 
+/* mov: register, immediate, sp and bitmask forms. */
 static int h_mov(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -356,6 +373,7 @@ static int h_mov(Ctx *c, const MnEnt *e)
     return a64_mov_imm(c, rd, v.unk ? 0 : v.n, v.unk);
 }
 
+/* ldr x, =value pseudo form. */
 static int h_ldr_eq(Ctx *c, GReg rd)
 {
     const char *t = c->tok[1];
@@ -369,11 +387,13 @@ static int h_ldr_eq(Ctx *c, GReg rd)
     return a64_mov_imm(c, rd, v.unk ? 0 : v.n, v.unk);
 }
 
+/* Public entry for the ldr =value form. */
 int a64_ldr_eq(Ctx *c, GReg rd)
 {
     return h_ldr_eq(c, rd);
 }
 
+/* adr and adrp. */
 static int h_adr(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -395,6 +415,7 @@ static int h_adr(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Shared bitfield encoder. */
 static int bf_core(Ctx *c, int opc, GReg rd, GReg rn, i64 immr, i64 imms)
 {
     int sf = rd.w64;
@@ -404,6 +425,7 @@ static int bf_core(Ctx *c, int opc, GReg rd, GReg rn, i64 immr, i64 imms)
     return 1;
 }
 
+/* bfm, sbfm, ubfm. */
 static int h_bfm(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -415,6 +437,7 @@ static int h_bfm(Ctx *c, const MnEnt *e)
     return bf_core(c, e->a, rd, rn, a, b);
 }
 
+/* Bitfield aliases (sbfx, ubfx, sbfiz, ubfiz, bfi, bfxil). */
 static int h_bfx(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -430,6 +453,7 @@ static int h_bfx(Ctx *c, const MnEnt *e)
     return bf_core(c, e->a, rd, rn, lsb, lsb + w - 1);
 }
 
+/* bfc. */
 static int h_bfc(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -446,6 +470,7 @@ static int h_bfc(Ctx *c, const MnEnt *e)
     return bf_core(c, 1, rd, zr, (sz - lsb) % sz, w - 1);
 }
 
+/* Extend aliases (sxtb, sxth, sxtw, uxtb, uxth). */
 static int h_ext(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -457,6 +482,7 @@ static int h_ext(Ctx *c, const MnEnt *e)
     return bf_core(c, e->c == 1 ? 2 : 0, rd, rn, 0, e->b);
 }
 
+/* lsl, lsr, asr, ror with a register or immediate amount. */
 static int h_shift(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -484,6 +510,7 @@ static int h_shift(Ctx *c, const MnEnt *e)
     }
 }
 
+/* extr and the ror immediate alias. */
 static int h_extr(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -499,6 +526,7 @@ static int h_extr(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* adc, adcs, sbc, sbcs. */
 static int h_adc(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -508,6 +536,7 @@ static int h_adc(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ngc, ngcs. */
 static int h_ngc(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -517,6 +546,7 @@ static int h_ngc(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* csel, csinc, csinv, csneg. */
 static int h_csel(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -528,6 +558,7 @@ static int h_csel(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* cset, csetm. */
 static int h_cset(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -540,6 +571,7 @@ static int h_cset(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* cinc, cinv, cneg. */
 static int h_cinc(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -552,6 +584,7 @@ static int h_cinc(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ccmp, ccmn. */
 static int h_ccmp(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -579,6 +612,7 @@ static int h_ccmp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* mul, mneg, smull, umull and friends. */
 static int h_mul3(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -599,6 +633,7 @@ static int h_mul3(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* madd, msub, smaddl and friends. */
 static int h_madd(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -614,6 +649,7 @@ static int h_madd(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* sdiv, udiv. */
 static int h_div(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -623,6 +659,7 @@ static int h_div(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* CRC32 instructions. */
 static int h_crc(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -635,6 +672,7 @@ static int h_crc(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* One source data processing (rbit, rev, clz, cls). */
 static int h_dp1(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -649,6 +687,7 @@ static int h_dp1(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* br, blr. */
 static int h_br(Ctx *c, const MnEnt *e)
 {
     NEED(1, 1);
@@ -659,6 +698,7 @@ static int h_br(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ret with an optional register. */
 static int h_ret(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -674,6 +714,7 @@ static int h_ret(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Instructions that are one fixed word. */
 static int h_fixed(Ctx *c, const MnEnt *e)
 {
     NEED(0, 0);
@@ -681,6 +722,7 @@ static int h_fixed(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* b and bl. */
 static int h_b(Ctx *c, const MnEnt *e)
 {
     NEED(1, 1);
@@ -689,6 +731,7 @@ static int h_b(Ctx *c, const MnEnt *e)
     return a64_enc_branch(c, e->a ? 0x94000000u : 0x14000000u, &v, RK_A64_B26, 26, e->a ? 1 : 0, 0);
 }
 
+/* cbz and cbnz. */
 static int h_cbz(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -710,6 +753,7 @@ static int h_cbz(Ctx *c, const MnEnt *e)
     return a64_enc_branch(c, base, &v, RK_A64_B19, 19, 0, 5);
 }
 
+/* tbz and tbnz. */
 static int h_tbz(Ctx *c, const MnEnt *e)
 {
     NEED(3, 3);
@@ -738,6 +782,7 @@ static int h_tbz(Ctx *c, const MnEnt *e)
     return a64_enc_branch(c, base, &v, RK_A64_B14, 14, 0, 5);
 }
 
+/* svc, hvc, smc, brk, hlt. */
 static int h_exc(Ctx *c, const MnEnt *e)
 {
     NEED(0, 1);
@@ -751,6 +796,7 @@ static int h_exc(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* nop, yield, wfe, wfi, sev, csdb, esb and other hints. */
 static int h_hint(Ctx *c, const MnEnt *e)
 {
     int csync = e->a == 17 || e->a == 18;
@@ -773,6 +819,7 @@ static const struct { const char *n; int v; } barrier_names[] = {
     { "ishld", 9 }, { "ishst", 10 }, { "ish", 11 }, { "ld", 13 }, { "st", 14 }, { "sy", 15 }, { NULL, 0 }
 };
 
+/* Parses a barrier option name (sy, ish, ld, st ...). */
 static int barrier_opt(Ctx *c, const char *s, int *out)
 {
     const char *t = a64_strip_hash(s);
@@ -789,6 +836,7 @@ static int barrier_opt(Ctx *c, const char *s, int *out)
     return 0;
 }
 
+/* dmb, dsb, isb. */
 static int h_barrier(Ctx *c, const MnEnt *e)
 {
     NEED(0, 1);
@@ -806,6 +854,7 @@ static const SysReg sysregs[] = {
     { NULL, 0, 0, 0, 0, 0 }
 };
 
+/* Encodes a system register name (nzcv, tpidr_el0, s3_3_c15_c2_0 ...). */
 static int sysreg_enc(Ctx *c, const char *s, u32 *out)
 {
     char b[48];
@@ -829,6 +878,7 @@ static int sysreg_enc(Ctx *c, const char *s, u32 *out)
     return 0;
 }
 
+/* mrs and msr. */
 static int h_mrs(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -865,6 +915,7 @@ static int h_mrs(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Reads the four numeric fields of a sys instruction. */
 static int sys_fields(Ctx *c, int i, int *op1, int *crn, int *crm, int *op2)
 {
     i64 v[4];
@@ -887,6 +938,7 @@ static int sys_fields(Ctx *c, int i, int *op1, int *crn, int *crm, int *op2)
     return 1;
 }
 
+/* sys and sysl. */
 static int h_sys(Ctx *c, const MnEnt *e)
 {
     int op1, crn, crm, op2;
@@ -935,6 +987,7 @@ static const SysAlias atnames[] = {
     { "s1e1rp", 0, 7, 9, 0, 1 }, { "s1e1wp", 0, 7, 9, 1, 1 }, { NULL, 0, 0, 0, 0, 0 }
 };
 
+/* dc, ic, at and tlbi aliases. */
 static int h_sysalias(Ctx *c, const MnEnt *e)
 {
     NEED(1, 2);

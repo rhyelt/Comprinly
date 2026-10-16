@@ -1,3 +1,4 @@
+/* NEON mnemonic table, part 2. E(name, handler, a, b, c) rows. */
     E("dup", h_dup, 0, 0, 0),
     E("ins", h_ins, 0, 0, 0),
     E("umov", h_umov, 0, 0, 0),

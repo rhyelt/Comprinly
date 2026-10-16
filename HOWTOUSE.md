@@ -8,6 +8,7 @@ You need a C compiler.
 
     make            build ./cly
     make static     small static build
+    make cly64      small static 64-bit Linux build (needs python3 and ziglang)
     make cly32      32-bit Linux build of cly itself (needs python3 and ziglang)
     make cly.exe    32-bit Windows build of cly (needs python3 and ziglang)
     make check      run the tests
@@ -119,7 +120,7 @@ Options:
     -cpu NAME     x86-64, arm64, risc-v, rv32, rv64, rv64gc, rv32imac ...
     -E            only run the preprocessor
     -w            hide warnings
-    -q            quiet
+    -q            hide everything but errors
     -v            version
 
 ## 5. Optimizer
@@ -133,6 +134,10 @@ What it does:
 - `add reg, 1` and `sub reg, 1` become `inc` and `dec` when the carry flag is not needed
 - removes `add` or `sub` of 0 when the flags are not needed, shifts and rotates by 0, `lea r, [r]`, and `push r` right before `pop r`
 - turns `mov r, -1` into the shorter `or r, -1` when the flags are not needed
+- turns a `mov r, N` that repeats a value another register already holds into a register copy, and drops a `mov` or `xor` that sets a register to the value it already has
+- turns `xor r64, r64` into `xor r32, r32`, and `add r, 128` into `sub r, -128` when the flags are not needed
+- turns `mov r64, label` into `mov r32, label` in Linux 64-bit executables (the address always fits)
+- removes a conditional jump to the next line, and turns a `jmp` to a `ret` into the `ret`
 - removes `mov a, a`, a repeated `mov b, a` after `mov a, b`, and a load right after a store to the same place
 - removes code that can never run (after `jmp` or `ret`, until the next label)
 - removes a `jmp` to the next line, and turns `jcc over; jmp x; over:` into one inverted jump
@@ -165,15 +170,13 @@ It does not move values between registers or rewrite your algorithm. You chose t
 
 - Sections are automatic. Put `db`, `resb` and code anywhere. Data, bss and code get sorted out.
 - `start:` is the entry point. You do not need `global`.
-- `syscall` uses Linux x86-64 numbers and registers (`rax`, then `rdi`, `rsi`, `rdx`, `r10`, `r8`, `r9`) on every system. On 64-bit Linux it is the real instruction. Everywhere else a small runtime translates the call. It is only added when you use `syscall`.
+- `syscall` sends the registers to the system you are running on exactly as they are: the number in `rax`, then `rdi`, `rsi`, `rdx`, `r10`, `r8`, `r9`. Nothing is translated and no support code is added. You use the numbers of the target system, and you read whatever comes back in `rax`. On 64-bit Linux the numbers are the Linux ones, on macOS they are the BSD ones (for example 0x2000004 for write), and on bare metal there is no system call interface at all, so write your own.
 - Quotes can be curly. Commas between operands can be missing.
 - Names ignore case when only one spelling exists, so `START:`, `Msg` and `MSG` all find the same thing. The entry point can be `start`, `_start` or `START`, with or without a colon.
 - `%include` ignores case in file names and accepts backslashes in paths, so Windows-style names work on Linux.
 - In 64-bit code, 32-bit habits keep working: `push eax`, `pop ebx`, `call eax`, `mov ebp, esp`, `sub esp, 16`, `[esp+4]`, `[ebp-8]`, `pushad`, `popad` and `pushfd` are treated as their 64-bit versions.
 - A line like `len equ $ - msg` counts every byte up to `$`. If your string ends in `, 0`, that zero is counted too, and Comprinly warns about it. Use `$ - msg - 1` for the text only.
 - In 32-bit code the 64-bit register names (`rax`, `rdi`) work as their 32-bit halves. `r8` to `r15` live in memory.
-
-Common calls like read, write, open, close and exit work everywhere. Anything the target system cannot do returns -38 (ENOSYS). The runtime sources in `rt/` show exactly what is mapped.
 
 ## 7. Bare metal
 
@@ -182,7 +185,7 @@ Common calls like read, write, open, close and exit work everywhere. Anything th
 
 You get a boot sector, a switch to protected mode (or to long mode with `-m64`), and then your code. In 64-bit mode the first 1 GB is identity mapped. Output goes to the screen (VGA text), serial COM1 and port 0xE9. When you exit, QEMU, Bochs and VirtualBox power off. On real hardware the CPU halts.
 
-There is no interrupt table. Only the basic syscalls work.
+There is no interrupt table and no system calls. Write to the screen (0xB8000), the serial port or port 0xE9 yourself.
 
 ## 8. Language notes
 
@@ -214,9 +217,7 @@ Common ones:
 - AMX is not supported. XOP, FMA4 and TBM work.
 - No Mach-O object output.
 - A handful of rarely used forms NASM accepts are rejected, mostly old x87 shorthands such as `fadd` with no operands.
-- The 64-bit runtimes for Windows, macOS and bare metal were tested in emulators only. Native Linux 32-bit and 64-bit programs were run for real.
 - The compiler itself runs as a 64-bit or 32-bit program, on Linux or Windows.
-- The bare metal runtime is small on purpose.
 
 ## 11. Examples
 
@@ -409,5 +410,5 @@ Comprinly watches `malloc`, `calloc`, `strdup`, `realloc`, anonymous `mmap` and 
 - A word alone on a line is a label, like in NASM. If that word is one letter away from a real instruction (`retaa` typed as `retta`), you get a warning, because it was probably a typo.
 - Dropped trailing zero in `$ - label`, see section 6.
 - A number that does not fit in 64 bits is an error.
-- Syscall checks: Comprinly follows the number you load into `rax`, `x8` or `a7` right before `syscall`, `svc` or `ecall` and warns if it is not a real Linux call number, or (for x86 on windows, mac or bare) if the built-in runtime does not support it and will return -ENOSYS. It also warns about `svc` with a non-zero number and `int 0x80` in 64-bit code. Names from `equ` work. It only looks inside one run of straight-line code, so jumps and labels reset what it knows.
+- Syscall checks: Comprinly follows the number you load into `rax`, `x8` or `a7` right before `syscall`, `svc` or `ecall` and warns if it is not a real Linux call number (only Linux numbers are checked, other systems get what you send). It also warns about `svc` with a non-zero number and `int 0x80` in 64-bit code. Names from `equ` work. It only looks inside one run of straight-line code, so jumps and labels reset what it knows.
 - Branches that were repaired are silent. Use `-l` to see the final code.

@@ -1,8 +1,10 @@
+/* Writer for Windows COFF object files (.obj), 32 and 64-bit. */
 #include "cly.h"
 
 static void put32(Bytes *b, u32 v) { badle(b, v, 4); }
 static void put16(Bytes *b, u16 v) { badle(b, v, 2); }
 
+/* Writes a symbol or section name: inline when 8 bytes or fewer, otherwise as an offset into the string table. */
 static void put_name(Bytes *st, Bytes *str, const char *name)
 {
     size_t n = strlen(name);
@@ -17,6 +19,7 @@ static void put_name(Bytes *st, Bytes *str, const char *name)
     }
 }
 
+/* Writes one COFF symbol table entry. */
 static void put_sym(Bytes *st, Bytes *str, const char *name, u32 value, int sect, int cls)
 {
     put_name(st, str, name);
@@ -27,6 +30,7 @@ static void put_sym(Bytes *st, Bytes *str, const char *name, u32 value, int sect
     bad1(st, 0);
 }
 
+/* Base 2 log of an alignment, as COFF stores it. */
 static int alog(i64 a)
 {
     int n = 0;
@@ -34,6 +38,7 @@ static int alog(i64 a)
     return n;
 }
 
+/* Builds the COFF file: header, section headers, raw data, relocations, symbol table and string table. */
 int fmt_coff(Obj *o, Bytes *out)
 {
     int ns = o->nsecs;

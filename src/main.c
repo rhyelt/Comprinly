@@ -1,7 +1,8 @@
+/* Command line driver: parses arguments, runs the preprocessor, library, optimizer, assembler and linker, and writes the output file. */
 #include "cly.h"
 #include <errno.h>
 
-static int g_dumprt, g_dumpopt;
+static int g_dumpopt;
 static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-bin|-elf|-exe|-macho|-obj|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
 
 static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
@@ -38,12 +39,13 @@ static const char *usage_text =
     "                the first line of the source does the same, otherwise it is guessed\n"
     "  -E            preprocess only\n"
     "  -w            hide warnings\n"
-    "  -q            quiet\n"
+    "  -q            hide everything but errors\n"
     "  --dump-opt    print the source after optimizing, to stderr\n"
     "  --dump-insns  print the instruction table\n"
     "  -v            version\n"
     "  -h            help\n";
 
+/* Maps a kernel name (and its common spellings) to K_BARE, K_WINDOWS, K_LINUX or K_MAC. Returns -1 if it is not a kernel. */
 static int parse_kernel(const char *s)
 {
     if (!strcasecmp(s, "bare") || !strcasecmp(s, "baremetal") || !strcasecmp(s, "bare-metal") || !strcasecmp(s, "none")) return K_BARE;
@@ -53,6 +55,7 @@ static int parse_kernel(const char *s)
     return -1;
 }
 
+/* Maps an output type word such as -elf, -exe or -hex to its T_* value. Accepts one or two leading dashes. Returns -1 if unknown. */
 static int parse_type(const char *s)
 {
     if (*s == '-') s++;
@@ -71,6 +74,7 @@ static int parse_type(const char *s)
     return -1;
 }
 
+/* Default file extension for a kernel and output type, used when -out is not given. */
 static const char *ext_for(int kernel, int type)
 {
     switch (type) {
@@ -92,6 +96,7 @@ static const char *ext_for(int kernel, int type)
     return "";
 }
 
+/* Name of the object format for a kernel, type and bit size (elf64, win32, macho64, bin ...). Fed to the preprocessor as __OUTPUT_FORMAT__. */
 static const char *fmt_name(int kernel, int type, int bits)
 {
     int b64 = bits == 64;
@@ -106,6 +111,7 @@ static const char *fmt_name(int kernel, int type, int bits)
     return "bin";
 }
 
+/* Copies the file name without its folder and without its extension. Used to build default output names. */
 static char *strip_ext(const char *path)
 {
     const char *base = path;
@@ -116,6 +122,7 @@ static char *strip_ext(const char *path)
     return r;
 }
 
+/* True if the source has an org line, which means the user wants a raw flat binary with a fixed load address. */
 static int has_org(const LineVec *l)
 {
     for (int i = 0; i < l->n; i++) {
@@ -129,19 +136,23 @@ static int has_org(const LineVec *l)
 static size_t g_last_size;
 static int g_nolibc;
 
+/* One full build of an image: copy the lines, add the C library, run the optimizer, assemble, link and write the file. Called again for the leak-free copy. */
 static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *oname, const char *file, int quiet, int optimize)
 {
+    /* Work on a copy so the original lines can be built again later (for the leak-free copy). */
     LineVec work;
     memset(&work, 0, sizeof work);
     for (int i = 0; i < ao->lines.n; i++) lv_add(&work, ao->lines.v[i].text, ao->lines.v[i].file, ao->lines.v[i].line);
     AsmOpts a2 = *ao;
     a2.lines = work;
+    /* Step 1: add the built-in C library blocks the program needs (Linux x86 only). */
     if (arch == ARCH_X86 && !g_nolibc) {
         int n0 = a2.lines.n;
         xlog("libc", "scanning for library calls (%d lines)", n0);
         libc_run(&a2.lines, kernel, type, detect_bits(&a2));
         xlog("libc", "%s, %d lines now", a2.lines.n != n0 ? "library code added" : "nothing to add", a2.lines.n);
     } else xlog("libc", "skipped");
+    /* Step 2: optimize the text (peephole rules for x86, small passes for ARM64 and RISC-V). */
     g_strip = optimize;
     if (optimize) {
         int n0 = a2.lines.n;
@@ -151,6 +162,7 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
         xlog("optimize", "%d lines in, %d lines out", n0, a2.lines.n);
     } else xlog("optimize", "off");
     if (g_dumpopt) for (int i = 0; i < a2.lines.n; i++) fprintf(stderr, "%s\n", a2.lines.v[i].text);
+    /* Step 3: assemble all lines into sections, symbols and relocations. */
     xlog("assemble", "starting (%d lines)", a2.lines.n);
     Obj obj;
     memset(&obj, 0, sizeof obj);
@@ -160,12 +172,14 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
         fputc('\n', stderr);
         return 1;
     }
+    /* Step 4: link into the requested file format. */
     Bytes out = {0};
     xlog("link", "building the %s image", fmt_name(kernel, type, detect_bits(&a2)));
     if (!link_obj(&obj, kernel, type, &out) || g_errors) {
         fprintf(stderr, "cly: link failed\n");
         return 1;
     }
+    /* Step 5: write the file, marking it executable for ELF and Mach-O. */
     int exec = (type == T_ELF || type == T_MACHO || (type == T_BIN && (kernel == K_LINUX || kernel == K_MAC)));
     errno = 0;
     if (write_file(oname, out.p, out.n, exec)) {
@@ -179,6 +193,7 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
     return 0;
 }
 
+/* Entry point. Reads options in any order, finds the kernel, source file and output type, picks the CPU, then calls build_image and the leak check. */
 int main(int argc, char **argv)
 {
     int kernel = -1, type = T_BIN, type_set = 0;
@@ -216,7 +231,6 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-m64")) { mbits = 64; continue; }
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
         if (!strcmp(a, "--dump-insns")) { dump = 1; continue; }
-        if (!strcmp(a, "--dump-rt")) { g_dumprt = 1; continue; }
         if (!strcmp(a, "--dump-opt")) { g_dumpopt = 1; continue; }
         if (!strcmp(a, "-out") || !strcmp(a, "-o") || !strcmp(a, "--out")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a file name\n", a); return 1; }
@@ -247,7 +261,7 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-Werror")) { g_werror = 1; continue; }
         if (!strcmp(a, "-M")) { depmode = 1; continue; }
         if (!strcmp(a, "-MD")) { depmode = 2; continue; }
-        if (!strcmp(a, "-q")) { quiet = 1; continue; }
+        if (!strcmp(a, "-q")) { quiet = 1; g_hidewarn = 1; continue; }
         if (!strcmp(a, "-l")) {
             list = 1;
             if (i + 1 < argc && argv[i + 1][0] != '-' && !strstr(argv[i + 1], ".cly") && parse_kernel(argv[i + 1]) < 0) listpath = argv[++i];
@@ -291,17 +305,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "cly: unexpected argument `%s'\n", pos[i]);
         return 1;
     }
-    if (kernel < 0 && file && !file_exists(file) && !dump && !g_dumprt) {
+    if (kernel < 0 && file && !file_exists(file) && !dump) {
         fprintf(stderr, "cly: unknown kernel `%s'; use bare, windows, linux or mac\n", file);
         for (int k = 0; k < 4; k++)
             if (edit_distance(file, kernel_names[k]) <= 2) { fprintf(stderr, "cly: did you mean `%s'?\n", kernel_names[k]); break; }
         return 1;
-    }
-    if (g_dumprt && kernel >= 0) {
-        Str rt = {0};
-        rt_build(kernel, type, 32, &rt);
-        fputs(rt.s, stdout);
-        return 0;
     }
     if (kernel < 0 && !file) {
         fputs(usage_text, stderr);
@@ -359,7 +367,7 @@ int main(int argc, char **argv)
             memset(&tmp, 0, sizeof tmp);
             const char *p = raw;
             while (*p) {
-                const char *nl = strchr(p, '\n');
+                const char *nl = cly_nl(p);
                 size_t len = nl ? (size_t)(nl - p) : strlen(p);
                 char *t = xstrndup(p, len);
                 lv_add(&tmp, t, file, tmp.n + 1);

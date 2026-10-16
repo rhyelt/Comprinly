@@ -1,6 +1,8 @@
+/* Small extra instruction groups (TSX, SVM, CET, user interrupts and other rare or newer ones) added after the main tables. */
 #include "cly.h"
 #include "insn.h"
 
+/* Adds the extra rows. */
 void ext_tab(void)
 {
     static const struct { const char *n, *e; int lv; } z[] = {

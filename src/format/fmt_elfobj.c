@@ -1,8 +1,10 @@
+/* Writer for ELF relocatable object files (.o) for x86, x86-64, ARM64 and RISC-V, matching NASM's section and symbol layout. */
 #include "cly.h"
 
 static void put32(Bytes *b, u32 v) { badle(b, v, 4); }
 static void put16(Bytes *b, u16 v) { badle(b, v, 2); }
 
+/* Adds a string to a string table and returns its offset. */
 static int add_str(Bytes *tab, const char *s)
 {
     int off = (int)tab->n;
@@ -14,6 +16,7 @@ static int W64;
 
 static void putwd(Bytes *b, u64 v) { badle(b, v, W64 ? 8 : 4); }
 
+/* Writes one section header. */
 static void shdr(Bytes *f, u32 name, u32 type, u64 flags, u64 off, u64 size, u32 link, u32 info, u64 align, u64 ent)
 {
     put32(f, name);
@@ -30,6 +33,7 @@ static void shdr(Bytes *f, u32 name, u32 type, u64 flags, u64 off, u64 size, u32
 
 static int g_other;
 
+/* Writes one symbol table entry (32 or 64-bit layout). */
 static void put_sym(Bytes *st, Bytes *str, const char *name, u64 value, u64 size, int info, int shn)
 {
     if (W64) {
@@ -49,6 +53,7 @@ static void put_sym(Bytes *st, Bytes *str, const char *name, u64 value, u64 size
     put16(st, (u16)shn);
 }
 
+/* Maps a relocation kind to its ARM64 ELF relocation number. */
 static int a64_elf_type(Reloc *r, int *ok)
 {
     *ok = 1;
@@ -74,6 +79,7 @@ static int a64_elf_type(Reloc *r, int *ok)
     return 0;
 }
 
+/* Maps a relocation kind to its RISC-V ELF relocation number. */
 static int rv_elf_type(Reloc *r, int *ok)
 {
     *ok = 1;
@@ -93,6 +99,7 @@ static int rv_elf_type(Reloc *r, int *ok)
     return 0;
 }
 
+/* Builds the object file: sections, symbol table with FILE symbol and section symbols, relocations and string tables. */
 int fmt_elfobj(Obj *o, Bytes *out)
 {
     int ns = o->nsecs;

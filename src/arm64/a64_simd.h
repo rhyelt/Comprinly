@@ -1,3 +1,4 @@
+/* NEON helpers shared by a64_simd*.c: vector register checks and the handler prototypes. PASS means this handler does not apply, try the scalar one. */
 #ifndef A64_SIMD_H
 #define A64_SIMD_H
 

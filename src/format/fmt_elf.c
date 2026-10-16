@@ -1,3 +1,4 @@
+/* Writer for ELF executables (x86, x86-64, ARM64, RISC-V). With the optimizer on, x86 files use a compact header layout. */
 #include "cly.h"
 
 #define ELF_BASE 0x08048000
@@ -6,6 +7,7 @@
 static void put32(Bytes *b, u32 v) { badle(b, v, 4); }
 static void put16(Bytes *b, u16 v) { badle(b, v, 2); }
 
+/* Adds a string to a string table and returns its offset. */
 static int add_str(Bytes *tab, const char *s)
 {
     int off = (int)tab->n;
@@ -18,6 +20,7 @@ static void put64(Bytes *b, u64 v) { badle(b, v, 8); }
 #define ELF64_BASE 0x400000
 #define ELF64_HDR 232
 
+/* ELF machine number for the CPU. */
 static int elf_machine(Obj *o)
 {
     if (o->arch == ARCH_A64) return 183;
@@ -25,6 +28,7 @@ static int elf_machine(Obj *o)
     return o->is64 ? 62 : 3;
 }
 
+/* ELF flags field (RISC-V compressed and float ABI bits). */
 static u32 elf_flags(Obj *o)
 {
     if (o->arch != ARCH_RV64 && o->arch != ARCH_RV32) return 0;
@@ -35,9 +39,16 @@ static u32 elf_flags(Obj *o)
     return f;
 }
 
+/* 64-bit ELF: header, program headers for the code and data segments, section headers and the section name table. */
 static int fmt_elf64(Obj *o, Bytes *out)
 {
-    link_layout(o, ELF64_BASE + ELF64_HDR, 0x1000, 3);
+    int hdr = ELF64_HDR;
+    g_compact = g_strip && o->arch == ARCH_X86;
+    link_layout(o, ELF64_BASE + hdr, 0x1000, 3);
+    if (g_compact && !g_lay.has_rw) {
+        hdr = 64 + 56 * 2;
+        link_layout(o, ELF64_BASE + hdr, 0x1000, 3);
+    }
     if (!link_apply(o)) return 0;
     if (!o->entry) {
         fprintf(stderr, "cly: error: `start' is not defined (add a `start:' label as the entry point)\n");
@@ -77,7 +88,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
         put64(&f, (u64)fsz); put64(&f, (u64)(g_lay.end - g_lay.rw_start)); put64(&f, 0x1000);
     }
     put32(&f, 0x6474E551); put32(&f, 6); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 16);
-    while (f.n < ELF64_HDR) bad1(&f, 0);
+    while ((int)f.n < hdr) bad1(&f, 0);
     badd(&f, img.p, img.n);
     if (rw) {
         while ((i64)f.n < g_lay.rw_lma - ELF64_BASE) bad1(&f, 0);
@@ -166,10 +177,17 @@ static int fmt_elf64(Obj *o, Bytes *out)
     return 1;
 }
 
+/* 32-bit ELF, or hands off to fmt_elf64 for 64-bit files. */
 int fmt_elf(Obj *o, Bytes *out)
 {
     if (o->is64) return fmt_elf64(o, out);
-    link_layout(o, ELF_BASE + ELF_HDR, 0x1000, 3);
+    int hdr = ELF_HDR;
+    g_compact = g_strip && o->arch == ARCH_X86;
+    link_layout(o, ELF_BASE + hdr, 0x1000, 3);
+    if (g_compact && !g_lay.has_rw) {
+        hdr = 52 + 32 * 2;
+        link_layout(o, ELF_BASE + hdr, 0x1000, 3);
+    }
     if (!link_apply(o)) return 0;
     if (!o->entry) {
         fprintf(stderr, "cly: error: `start' is not defined (add a `start:' label as the entry point)\n");
@@ -209,7 +227,7 @@ int fmt_elf(Obj *o, Bytes *out)
         put32(&f, (u32)fsz); put32(&f, (u32)(g_lay.end - g_lay.rw_start)); put32(&f, 6); put32(&f, 0x1000);
     }
     put32(&f, 0x6474E551); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 6); put32(&f, 16);
-    while (f.n < ELF_HDR) bad1(&f, 0);
+    while ((int)f.n < hdr) bad1(&f, 0);
     size_t base_off = f.n;
     badd(&f, img.p, img.n);
     (void)base_off;

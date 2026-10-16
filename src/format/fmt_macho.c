@@ -1,3 +1,4 @@
+/* Writer for Mach-O executables (macOS, 32 and 64-bit): PAGEZERO, TEXT and DATA segments, entry point and load commands. */
 #include "cly.h"
 
 #define MB 0x1000
@@ -7,6 +8,7 @@ static void put32(Bytes *b, u32 v) { badle(b, v, 4); }
 
 static i64 rup(i64 v, i64 a) { return (v + a - 1) / a * a; }
 
+/* Writes a 16-byte zero padded segment or section name. */
 static void segname(Bytes *b, const char *n)
 {
     char buf[16];
@@ -15,6 +17,7 @@ static void segname(Bytes *b, const char *n)
     badd(b, buf, 16);
 }
 
+/* Writes a 32-bit Mach-O section header. */
 static void section(Bytes *b, const char *sect, const char *seg, u32 addr, u32 size, u32 off, u32 align, u32 flags)
 {
     segname(b, sect);
@@ -35,6 +38,7 @@ static void section(Bytes *b, const char *sect, const char *seg, u32 addr, u32 s
 
 static void put64(Bytes *b, u64 v) { badle(b, v, 8); }
 
+/* Writes a 64-bit Mach-O section header. */
 static void section64(Bytes *b, const char *sect, const char *seg, u64 addr, u64 size, u32 off, u32 align, u32 flags)
 {
     segname(b, sect);
@@ -51,6 +55,7 @@ static void section64(Bytes *b, const char *sect, const char *seg, u64 addr, u64
     put32(b, 0);
 }
 
+/* 64-bit Mach-O executable. Segments are page aligned; a data segment is added only when the program has writable data. */
 static int fmt_macho64(Obj *o, Bytes *out)
 {
     link_layout(o, MB64 + MHDR64, 0x1000, 1);
@@ -104,6 +109,7 @@ static int fmt_macho64(Obj *o, Bytes *out)
     return 1;
 }
 
+/* 32-bit Mach-O executable, or hands off to the 64-bit writer. */
 int fmt_macho(Obj *o, Bytes *out)
 {
     if (o->is64) return fmt_macho64(o, out);

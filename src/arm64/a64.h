@@ -1,3 +1,4 @@
+/* ARM64 back end: register and context types shared by the a64_*.c files. A MnEnt row maps a mnemonic to its handler function and two small parameters (a, b). */
 #ifndef A64_H
 #define A64_H
 

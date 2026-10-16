@@ -1,5 +1,7 @@
+/* ARM64 SIMD (NEON): vector helpers, three-same, two-register, across-lane, permute and table instructions, and the dispatcher that routes vector forms. */
 #include "a64_simd.h"
 
+/* Operand i as a vector register. */
 int sv_vreg(Ctx *c, int i, VReg *v)
 {
     if (!a64_p_vec(c->tok[i], v)) {
@@ -9,6 +11,7 @@ int sv_vreg(Ctx *c, int i, VReg *v)
     return 1;
 }
 
+/* Operand i as a general register. */
 int sv_gpr(Ctx *c, int i, GReg *g)
 {
     if (!a64_p_gpr(c->tok[i], g)) {
@@ -18,11 +21,13 @@ int sv_gpr(Ctx *c, int i, GReg *g)
     return 1;
 }
 
+/* Element size code (0 to 3) for 8, 16, 32 or 64 bits. */
 int sv_esz(int es)
 {
     return es == 8 ? 0 : es == 16 ? 1 : es == 32 ? 2 : es == 64 ? 3 : 4;
 }
 
+/* Arrangement text such as 4s or 16b for messages. */
 const char *sv_arrname(int es, int lanes)
 {
     static char b[8][12];
@@ -32,6 +37,7 @@ const char *sv_arrname(int es, int lanes)
     return p;
 }
 
+/* Checks that a register has a full arrangement and returns the Q bit. */
 int sv_arr(Ctx *c, const VReg *v, int i, int *q)
 {
     if (v->scalar || !v->has_arr || v->lane >= 0) {
@@ -48,6 +54,7 @@ int sv_arr(Ctx *c, const VReg *v, int i, int *q)
     return 1;
 }
 
+/* Checks that two registers have the same arrangement. */
 int sv_same(Ctx *c, const VReg *a, const VReg *b, int i, int j)
 {
     if (a->es != b->es || a->lanes != b->lanes) {
@@ -57,6 +64,7 @@ int sv_same(Ctx *c, const VReg *a, const VReg *b, int i, int j)
     return 1;
 }
 
+/* Checks the operand count. */
 int sv_count(Ctx *c, int lo, int hi)
 {
     if (c->n < lo || c->n > hi) {
@@ -67,6 +75,7 @@ int sv_count(Ctx *c, int lo, int hi)
     return 1;
 }
 
+/* True if any operand is a vector register. */
 int sv_has_vec(Ctx *c)
 {
     VReg v;
@@ -74,6 +83,7 @@ int sv_has_vec(Ctx *c)
     return 0;
 }
 
+/* True if all operands are scalar SIMD registers. */
 int sv_all_scalar(Ctx *c)
 {
     VReg v;
@@ -82,6 +92,7 @@ int sv_all_scalar(Ctx *c)
     return 1;
 }
 
+/* Operand i as a constant. */
 int sv_imm(Ctx *c, int i, i64 *v)
 {
     int unk;
@@ -98,6 +109,7 @@ int sv_imm(Ctx *c, int i, i64 *v)
 #define SZ_ALL 15
 #define SZ_HS 6
 
+/* True if an element size is in the allowed mask. */
 static int sz_ok(int mask, int es)
 {
     int s = sv_esz(es);
@@ -147,12 +159,14 @@ static const T3 t3[] = {
     { NULL, 0, 0, 0, 0, 0 }
 };
 
+/* Finds a three-same table entry. */
 static const T3 *t3_find(const char *mn)
 {
     for (const T3 *t = t3; t->n; t++) if (!strcmp(t->n, mn)) return t;
     return NULL;
 }
 
+/* True if the three-same instruction has a scalar form. */
 static int scalar3_ok(const T3 *t)
 {
     static const char *const ok[] = { "sqadd", "uqadd", "sqsub", "uqsub", "cmgt", "cmhi", "cmge", "cmhs", "sshl", "ushl", "sqshl", "uqshl", "srshl", "urshl", "sqrshl", "uqrshl",
@@ -161,6 +175,7 @@ static int scalar3_ok(const T3 *t)
     return 0;
 }
 
+/* True if the scalar form exists only for 64-bit elements. */
 static int scalar3_d_only(const T3 *t)
 {
     static const char *const d[] = { "cmgt", "cmhi", "cmge", "cmhs", "sshl", "ushl", "srshl", "urshl", "add", "sub", "cmtst", "cmeq", NULL };
@@ -168,6 +183,7 @@ static int scalar3_d_only(const T3 *t)
     return 0;
 }
 
+/* Three register same-arrangement instructions (add, sub, mul, cmeq, ...). */
 int h_three(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -230,6 +246,7 @@ int h_three(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Bitwise vector instructions (and, orr, eor, bic, bsl ...). */
 int h_logic3(Ctx *c, const MnEnt *e)
 {
     int size = e->a, u = e->b;
@@ -282,6 +299,7 @@ static const T2 t2[] = {
     { NULL, 0, 0, 0, 0 }
 };
 
+/* Finds a two-register table entry. */
 static const T2 *t2_find(const char *mn)
 {
     for (const T2 *t = t2; t->n; t++) if (!strcmp(t->n, mn)) return t;
@@ -296,6 +314,7 @@ static const TZ tz[] = {
     { NULL, 0, 0, 0, 0 }
 };
 
+/* True if text is the constant #0. */
 static int zero_ok(const char *s)
 {
     s = a64_strip_hash(s);
@@ -305,6 +324,7 @@ static int zero_ok(const char *s)
     return !*end && end != s && d == 0;
 }
 
+/* The compare-with-zero forms (cmeq v, v, #0 ...). */
 static int zero_form(Ctx *c, const TZ *z)
 {
     VReg d, n;
@@ -348,6 +368,7 @@ static const struct { const char *n; int u; int opc; int kind; int a; } sc2[] = 
     { NULL, 0, 0, 0, 0 }
 };
 
+/* Two register instructions (abs, neg, not, cnt, rev, cmeq zero ...). */
 int h_two(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -511,6 +532,7 @@ static const TA ta[] = {
     { NULL, 0, 0, 0 }
 };
 
+/* Across lane reductions (addv, smaxv, uminv ...). */
 int h_across(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -542,6 +564,7 @@ int h_across(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* uzp, zip, trn. */
 int h_permute(Ctx *c, const MnEnt *e)
 {
     int opc = e->a;
@@ -556,6 +579,7 @@ int h_permute(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Vector ext. */
 int h_ext(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -573,6 +597,7 @@ int h_ext(Ctx *c, const MnEnt *e)
 }
 
 
+/* Parses a register list {v0.16b, v1.16b} with optional lane. */
 static int parse_list(Ctx *c, int idx, VList *L, int allow_elem)
 {
     char buf[200];
@@ -636,11 +661,13 @@ static int parse_list(Ctx *c, int idx, VList *L, int allow_elem)
     return 1;
 }
 
+/* Public wrapper for parse_list. */
 int sv_parse_list(Ctx *c, int idx, void *L, int allow_elem)
 {
     return parse_list(c, idx, (VList *)L, allow_elem);
 }
 
+/* tbl and tbx. */
 int h_tbl(Ctx *c, const MnEnt *e)
 {
     int op = e->a;
@@ -668,6 +695,7 @@ static const TD td[] = {
     { NULL, 0, 0, 0 }
 };
 
+/* Long, wide and narrow arithmetic (saddl, uabal, addhn ...). */
 int h_diff(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -743,6 +771,7 @@ int h_diff(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Routes an instruction with vector operands to its handler. */
 int a64_simd_dispatch(Ctx *c)
 {
     const MnEnt *e = a64_vlookup(c->mn);
@@ -752,6 +781,7 @@ int a64_simd_dispatch(Ctx *c)
     return r;
 }
 
+/* mov with vector operands (mov v0.16b, v1.16b and element moves). */
 int a64_simd_mov(Ctx *c)
 {
     const MnEnt *e = a64_vlookup("mov");

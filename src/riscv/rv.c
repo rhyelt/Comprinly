@@ -1,3 +1,4 @@
+/* RISC-V assembler (RV32 and RV64 with the M, A, F, D, C, Zicsr and common Z extensions). Instructions come from a pattern table; pseudo instructions (li, la, call, mv, branches) are expanded here. Compressed instructions are chosen automatically when the C extension is on. */
 #include "cly.h"
 
 typedef struct {
@@ -24,21 +25,25 @@ typedef struct {
     int only;
 } RvEnt;
 
+/* Offset of the instruction being built. */
 static i64 rv_cur(RC *c)
 {
     return c->ic->start_off + (i64)c->out->code.n;
 }
 
+/* Appends a 32-bit instruction word. */
 static void w32(RC *c, u32 w)
 {
     badle(&c->out->code, w, 4);
 }
 
+/* Appends a 16-bit compressed instruction. */
 static void w16(RC *c, u32 w)
 {
     badle(&c->out->code, w, 2);
 }
 
+/* Adds a relocation to the instruction output. */
 static void rv_reloc(RC *c, int kind, const Val *v, i64 off)
 {
     InsnOut *o = c->out;
@@ -54,11 +59,13 @@ static void rv_reloc(RC *c, int kind, const Val *v, i64 off)
     r->v = *v;
 }
 
+/* True if a symbol is in the current section (branch distance can be computed now). */
 static int same_sec(RC *c, const Val *v)
 {
     return !v->unk && v->pos == c->ic->cur_sec && v->neg < 0 && !v->ext && !v->hasreg;
 }
 
+/* Value for the current position as a symbol relative offset. */
 static void here_val(RC *c, Val *v, i64 off)
 {
     val_const(v, off);
@@ -75,6 +82,7 @@ static const char *const fnames[32] = {
     "fs2", "fs3", "fs4", "fs5", "fs6", "fs7", "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
 };
 
+/* Parses a register name with a prefix letter and number (x5, f10). */
 static int num_reg(const char *s, char pfx)
 {
     if (s[0] != pfx || !isdigit((unsigned char)s[1])) return -1;
@@ -86,6 +94,7 @@ static int num_reg(const char *s, char pfx)
     return v;
 }
 
+/* Integer register number from any name (x0..x31, zero, ra, sp, a0, t0, s0 ...). -1 if not a register. */
 static int rv_xreg(const char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -102,6 +111,7 @@ static int rv_xreg(const char *s)
     return -1;
 }
 
+/* Floating point register number (f0..f31, ft0, fa0, fs0 ...). -1 if not a register. */
 static int rv_freg(const char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -117,6 +127,7 @@ static int rv_freg(const char *s)
     return -1;
 }
 
+/* Removes trailing blanks in place. */
 static void trim(char *s)
 {
     size_t n = strlen(s);
@@ -126,6 +137,7 @@ static void trim(char *s)
     if (i) memmove(s, s + i, strlen(s + i) + 1);
 }
 
+/* Splits the operands at top-level commas. */
 static int tokenize(const char *rest, RC *c)
 {
     char buf[512];
@@ -160,17 +172,20 @@ static int tokenize(const char *rest, RC *c)
     return 1;
 }
 
+/* Reports the expected operand form for an instruction. */
 static int usage(RC *c, const char *form)
 {
     err("%s: expected `%s %s'", c->mn, c->mn, form);
     return 0;
 }
 
+/* True if a value may change between passes (unknown or symbol based). */
 static int is_mutable(const Val *v)
 {
     return v->unk || v->pos >= 0 || v->neg >= 0 || v->ext || v->hasreg;
 }
 
+/* Evaluates an operand expression and notes if it is not final yet. */
 static int ev(RC *c, const char *s, Val *v)
 {
     if (!expr_eval_str(s, v, 0)) return 0;
@@ -178,6 +193,7 @@ static int ev(RC *c, const char *s, Val *v)
     return 1;
 }
 
+/* Evaluates an expression that must be constant. */
 static int const_of(RC *c, const char *s, i64 *out, int *unk)
 {
     Val v;
@@ -193,6 +209,7 @@ static int const_of(RC *c, const char *s, i64 *out, int *unk)
     return 1;
 }
 
+/* Operand i as an integer register. */
 static int get_x(RC *c, int i, int *r)
 {
     int v = rv_xreg(c->tok[i]);
@@ -201,6 +218,7 @@ static int get_x(RC *c, int i, int *r)
     return 1;
 }
 
+/* Operand i as a floating point register. */
 static int get_f(RC *c, int i, int *r)
 {
     int v = rv_freg(c->tok[i]);
@@ -211,6 +229,7 @@ static int get_f(RC *c, int i, int *r)
 
 enum { RM_NONE, RM_HI, RM_LO, RM_PCHI, RM_PCLO };
 
+/* Recognizes %hi(sym), %lo(sym), %pcrel_hi(sym) and similar operators. */
 static int reloc_op(const char *s, int *kind, char *inner, size_t isz)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -243,23 +262,27 @@ static int reloc_op(const char *s, int *kind, char *inner, size_t isz)
     return 0;
 }
 
+/* Builds an I-type word. */
 static u32 enc_i(u32 base, int rd, int rs1, i64 imm)
 {
     return base | ((u32)rd << 7) | ((u32)rs1 << 15) | (((u32)imm & 0xfff) << 20);
 }
 
+/* Builds a B-type word (branch offset bits scattered). */
 static u32 enc_b(u32 base, int rs1, int rs2, i64 off)
 {
     u32 o = (u32)off;
     return base | (((o >> 11) & 1) << 7) | (((o >> 1) & 15) << 8) | ((u32)rs1 << 15) | ((u32)rs2 << 20) | (((o >> 5) & 0x3f) << 25) | (((o >> 12) & 1) << 31);
 }
 
+/* Builds a J-type word. */
 static u32 enc_j(u32 base, int rd, i64 off)
 {
     u32 o = (u32)off;
     return base | ((u32)rd << 7) | (((o >> 12) & 0xff) << 12) | (((o >> 11) & 1) << 20) | (((o >> 1) & 0x3ff) << 21) | (((o >> 20) & 1) << 31);
 }
 
+/* True if v fits a signed field of the given width. */
 static int fits_s(i64 v, int bits)
 {
     i64 lim = (i64)1 << (bits - 1);
@@ -268,18 +291,21 @@ static int fits_s(i64 v, int bits)
 
 static int cr3(int r) { return r >= 8 && r <= 15; }
 
+/* Scatters a jump offset into the compressed c.j format. */
 static u32 cj_bits(i64 off)
 {
     u32 o = (u32)off;
     return (((o >> 11) & 1) << 12) | (((o >> 4) & 1) << 11) | (((o >> 8) & 3) << 9) | (((o >> 10) & 1) << 8) | (((o >> 6) & 1) << 7) | (((o >> 7) & 1) << 6) | (((o >> 1) & 7) << 3) | (((o >> 5) & 1) << 2);
 }
 
+/* Scatters a branch offset into the compressed c.beqz format. */
 static u32 cb_bits(i64 off, int rs)
 {
     u32 o = (u32)off;
     return (((o >> 8) & 1) << 12) | (((o >> 3) & 3) << 10) | ((u32)(rs - 8) << 7) | (((o >> 6) & 3) << 5) | (((o >> 1) & 3) << 3) | (((o >> 5) & 1) << 2);
 }
 
+/* Tries to turn a 32-bit instruction into its 16-bit compressed form. Returns 0 if there is none. */
 static int compress(RC *c, u32 w, u32 *h)
 {
     int rv64 = c->rv64;
@@ -489,12 +515,14 @@ static int compress(RC *c, u32 w, u32 *h)
     return 0;
 }
 
+/* compress, but only when compressed code is enabled. */
 static int rv_try_c(RC *c, u32 w, u32 *h)
 {
     if (!c->cmp) return 0;
     return compress(c, w, h);
 }
 
+/* Emits an instruction, compressed when allowed and when the size is not fixed. */
 static void emit(RC *c, u32 w)
 {
     u32 h;
@@ -502,11 +530,13 @@ static void emit(RC *c, u32 w)
     w32(c, w);
 }
 
+/* Emits a full 32-bit instruction regardless of compression. */
 static void emit4(RC *c, u32 w)
 {
     w32(c, w);
 }
 
+/* Emits an instruction of a sequence, compressed if possible. */
 static void emit_seq(RC *c, u32 w)
 {
     u32 h;
@@ -514,6 +544,7 @@ static void emit_seq(RC *c, u32 w)
     else w32(c, w);
 }
 
+/* Pads the output to the size chosen in an earlier pass so layout stays stable. */
 static void finish(RC *c)
 {
     int n = (int)c->out->code.n;
@@ -545,6 +576,7 @@ static const struct { const char *n; int v; } csrs[] = {
     { NULL, 0 }
 };
 
+/* CSR number from a name (mstatus, cycle ...) or a constant. */
 static int csr_num(RC *c, const char *s, int *out)
 {
     for (int i = 0; csrs[i].n; i++) if (!strcasecmp(s, csrs[i].n)) { *out = csrs[i].v; return 1; }
@@ -582,6 +614,7 @@ static int csr_num(RC *c, const char *s, int *out)
 
 static const char *const rmnames[] = { "rne", "rtz", "rdn", "rup", "rmm", "", "", "dyn" };
 
+/* Rounding mode from its name (rne, rtz, rdn, rup, rmm, dyn). */
 static int rm_of(const char *s)
 {
     for (int i = 0; i < 8; i++) if (rmnames[i][0] && !strcasecmp(s, rmnames[i])) return i;
@@ -709,6 +742,7 @@ static const RvEnt rv_tab[] = {
     { NULL, 0, NULL, 0, 0 }
 };
 
+/* Looks up an instruction in the pattern table, handling .aq and .rl suffixes. */
 static const RvEnt *rv_find(const char *mn, int *aq, int *rl)
 {
     for (int pass = 0; pass < 2; pass++) {
@@ -745,6 +779,7 @@ static const char *const pseudos[] = {
 
 static int calias_known(const char *n);
 
+/* True if the mnemonic is a RISC-V instruction or pseudo instruction. */
 int rv_known(const char *mn, int rvext)
 {
     (void)rvext;
@@ -758,6 +793,7 @@ int rv_known(const char *mn, int rvext)
     return rv_find(buf, &aq, &rl) != NULL;
 }
 
+/* Parses offset(base) operands with optional %lo relocation. */
 static int parse_mem(RC *c, const char *s, int *base, Val *off, int *rk, int *plain)
 {
     char buf[256];
@@ -830,6 +866,7 @@ static int parse_mem(RC *c, const char *s, int *base, Val *off, int *rk, int *pl
     return ev(c, buf, off);
 }
 
+/* Reads a 20-bit upper immediate or %hi/%pcrel_hi operator. */
 static int imm20_of(RC *c, const char *s, i64 *v, int *rk, Val *sym)
 {
     char inner[200];
@@ -856,6 +893,7 @@ static int imm20_of(RC *c, const char *s, i64 *v, int *rk, Val *sym)
     return 1;
 }
 
+/* Reads a signed 12-bit immediate or %lo operator. */
 static int simm12_of(RC *c, const char *s, i64 *v, int *rk, Val *sym, int store)
 {
     (void)store;
@@ -889,12 +927,14 @@ static int simm12_of(RC *c, const char *s, i64 *v, int *rk, Val *sym, int store)
     return 1;
 }
 
+/* Adds the low-part relocation for an I or S type instruction. */
 static void put_lo_reloc(RC *c, int rk, const Val *sym, int store, i64 at)
 {
     if (rk == RM_LO) rv_reloc(c, store ? RK_RV_LO12S : RK_RV_LO12I, sym, at);
     else if (rk == RM_PCLO) rv_reloc(c, store ? RK_RV_PCLO12S : RK_RV_PCLO12I, sym, at);
 }
 
+/* Encodes one table pattern: walks the pattern letters and parses the matching operands. */
 static int do_pattern(RC *c, const RvEnt *e)
 {
     const char *pat = e->pat;
@@ -1086,6 +1126,7 @@ enum { S_LUI, S_ADDI, S_ADDIW, S_SLLI, S_SLLIUW, S_BSETI, S_BCLRI, S_ADD0, S_SRL
 
 static int li_gen(i64 val, int rv64, int ext, Step *st);
 
+/* Recursive helper that splits a constant into lui/addi/slli steps. */
 static int li_rec(i64 val, int rv64, int ext, Step *st)
 {
     if (val >= -2147483648LL && val <= 2147483647LL) {
@@ -1114,6 +1155,7 @@ static int li_rec(i64 val, int rv64, int ext, Step *st)
     return n;
 }
 
+/* Plans the shortest instruction steps to load a constant. */
 static int li_gen(i64 val, int rv64, int ext, Step *st)
 {
     int n = li_rec(val, rv64, ext, st);
@@ -1154,6 +1196,7 @@ static int li_gen(i64 val, int rv64, int ext, Step *st)
     return n;
 }
 
+/* Emits the steps for loading a constant. */
 static void emit_li(RC *c, int rd, i64 val)
 {
     if (!c->rv64) val = (i64)(int32_t)val;
@@ -1179,6 +1222,7 @@ static void emit_li(RC *c, int rd, i64 val)
     }
 }
 
+/* li pseudo instruction. */
 static int h_li(RC *c)
 {
     if (c->n != 2) return usage(c, "rd, immediate");
@@ -1196,6 +1240,7 @@ static int h_li(RC *c)
     return 1;
 }
 
+/* Emits an auipc plus follow-up instruction pair with matching relocations. */
 static void pcrel_pair(RC *c, int rd_hi, int rd_lo, int base_lo, u32 lo_op_base, const Val *target, int store, int kind_only)
 {
     (void)kind_only;
@@ -1209,6 +1254,7 @@ static void pcrel_pair(RC *c, int rd_hi, int rd_lo, int base_lo, u32 lo_op_base,
     else w32(c, lo_op_base | ((u32)rd_lo << 7) | ((u32)base_lo << 15));
 }
 
+/* la and lla pseudo instructions. */
 static int h_la(RC *c)
 {
     if (c->n != 2) return usage(c, "rd, symbol");
@@ -1224,6 +1270,7 @@ static int h_la(RC *c)
     return 1;
 }
 
+/* Load or store with a symbol address (lw rd, sym). */
 static int h_ldst_sym(RC *c, const RvEnt *e, int isstore)
 {
     int rt = -1;
@@ -1242,6 +1289,7 @@ static int h_ldst_sym(RC *c, const RvEnt *e, int isstore)
     return 1;
 }
 
+/* Maps beq, bne, blt, bge, bltu, bgeu and the swapped pseudo forms to fields. */
 static int branch_names(const char *mn, int *f3, int *swap)
 {
     static const struct { const char *n; int f3, swap; } t[] = {
@@ -1252,6 +1300,7 @@ static int branch_names(const char *mn, int *f3, int *swap)
     return 0;
 }
 
+/* Emits a conditional branch; uses an inverted branch plus jump when the target is out of range. */
 static int emit_branch(RC *c, int f3, int rs1, int rs2, const Val *v)
 {
     i64 pc = rv_cur(c);
@@ -1282,6 +1331,7 @@ static int emit_branch(RC *c, int f3, int rs1, int rs2, const Val *v)
     return 1;
 }
 
+/* Emits jal with range check or relocation. */
 static int emit_jal(RC *c, int rd, const Val *v)
 {
     i64 pc = rv_cur(c);
@@ -1313,6 +1363,7 @@ static int emit_jal(RC *c, int rd, const Val *v)
     return 1;
 }
 
+/* Emits call/tail as auipc+jalr, or a single jal when the target is near. */
 static int emit_call(RC *c, int link, const Val *v)
 {
     i64 pc = rv_cur(c);
@@ -1341,6 +1392,7 @@ static int emit_call(RC *c, int link, const Val *v)
     return 1;
 }
 
+/* fence with optional predecessor and successor sets. */
 static int h_fence(RC *c)
 {
     if (c->n == 0) { w32(c, 0x0ff0000fu); return 1; }
@@ -1369,6 +1421,7 @@ static int h_fence(RC *c)
     return 1;
 }
 
+/* csrr, csrw, csrs, csrc and the immediate forms. */
 static int do_csr_pseudo(RC *c)
 {
     const char *m = c->mn;
@@ -1422,6 +1475,7 @@ static int do_csr_pseudo(RC *c)
     return -1;
 }
 
+/* All simple pseudo instructions: nop, mv, not, neg, seqz, snez, j, jr, ret, beqz, bgt and so on. */
 static int do_pseudo(RC *c, int *handled)
 {
     const char *m = c->mn;
@@ -1646,6 +1700,7 @@ static const CAl calias[] = {
     { NULL, NULL, NULL, 0, 0, 0 }
 };
 
+/* True if the name is a compressed instruction alias. */
 static int calias_known(const char *n)
 {
     for (const CAl *k = calias; k->n; k++) if (!strcmp(k->n, n)) return 1;
@@ -1654,6 +1709,7 @@ static int calias_known(const char *n)
     return 0;
 }
 
+/* Explicit compressed instructions (c.addi, c.lw, c.j ...). */
 static int c_alias(RC *c)
 {
     const CAl *a = NULL;
@@ -1730,6 +1786,7 @@ static int c_alias(RC *c)
     return 1;
 }
 
+/* Turns add/and/or/xor/slt with an immediate into the addi style form. */
 static void promote_imm(RC *c)
 {
     static const struct { const char *r, *i; int neg; } P[] = {
@@ -1753,6 +1810,7 @@ static void promote_imm(RC *c)
     }
 }
 
+/* Entry point. Parses the mnemonic and operands and encodes the instruction or pseudo instruction. */
 int rv_insn(const char *mn, const char *rest, IC *ic, InsnOut *out)
 {
     RC c;

@@ -15,9 +15,9 @@ The source is in `src/`. `src/core` holds the preprocessor, expressions and the 
 
 Some files are generated. Edit the template or script, not the output:
 
-- `rt/gen.py` writes `src/runtime/rt_data.c`
 - `rt/gen_libc.py` writes `src/extras/libc_data.c` from `rt/libc.tpl` and `rt/libc_fmt.tpl`
 - `tools/gen_insns.py` and `tools/gen_insns64.py` write the x86 tables
+- `tools/lz.py` is the packer the generators share. The generated files hold compressed data, so rerun the generator (`make gen`, `make rt`) instead of editing them
 
 ## Ground rules
 

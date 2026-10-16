@@ -1,3777 +1,1482 @@
+/* Generated file. Do not edit; run make gen or make rt. */
 #include "cly.h"
 #include "insn.h"
 
-void gen_tab(void)
-{
-    tab_lv(14);
-    T("vaesenc", "vx,vx*,vx16", "xv:V:0:1:2:0:x dc /r rl:rvm");
-    T("vaesenclast", "vx,vx*,vx16", "xv:V:0:1:2:0:x dd /r rl:rvm");
-    T("vaesdec", "vx,vx*,vx16", "xv:V:0:1:2:0:x de /r rl:rvm");
-    T("vaesdeclast", "vx,vx*,vx16", "xv:V:0:1:2:0:x df /r rl:rvm");
-    T("vaesimc", "vx,vx16", "xv:V:0:1:2:0:x db /r rl:rm");
-    T("vaeskeygenassist", "vx,vx16,imm8", "xv:V:0:1:3:0:x df /r ib rl:rmi");
-    T("vaesenc", "vy,vy*,vy32", "xv:V:1:1:2:0:x dc /r rl:rvm");
-    T("vaesenclast", "vy,vy*,vy32", "xv:V:1:1:2:0:x dd /r rl:rvm");
-    T("vaesdec", "vy,vy*,vy32", "xv:V:1:1:2:0:x de /r rl:rvm");
-    T("vaesdeclast", "vy,vy*,vy32", "xv:V:1:1:2:0:x df /r rl:rvm");
-    T("vaddpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 58 /r rl:rvm");
-    T("vaddpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 58 /r rl:rvm");
-    T("vaddps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 58 /r rl:rvm");
-    T("vaddps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 58 /r rl:rvm");
-    T("vaddsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 58 /r rl:rvm");
-    T("vaddss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 58 /r rl:rvm");
-    T("vaddsubpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x d0 /r rl:rvm");
-    T("vaddsubpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x d0 /r rl:rvm");
-    T("vaddsubps", "vx,vx*,vx16", "xv:V:0:3:1:0:x d0 /r rl:rvm");
-    T("vaddsubps", "vy,vy*,vy32", "xv:V:1:3:1:0:x d0 /r rl:rvm");
-    T("vandpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 54 /r rl:rvm");
-    T("vandpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 54 /r rl:rvm");
-    T("vandps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 54 /r rl:rvm");
-    T("vandps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 54 /r rl:rvm");
-    T("vandnpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 55 /r rl:rvm");
-    T("vandnpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 55 /r rl:rvm");
-    T("vandnps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 55 /r rl:rvm");
-    T("vandnps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 55 /r rl:rvm");
-    T("vblendpd", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 0d /r ib rl:rvmi");
-    T("vblendpd", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 0d /r ib rl:rvmi");
-    T("vblendps", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 0c /r ib rl:rvmi");
-    T("vblendps", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 0c /r ib rl:rvmi");
-    T("vblendvpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 4b /r is4 rl:rvms");
-    T("vblendvpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 4b /r is4 rl:rvms");
-    T("vblendvps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 4a /r is4 rl:rvms");
-    T("vblendvps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 4a /r is4 rl:rvms");
-    T("vbroadcastss", "vx,m32", "xv:V:0:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastss", "vy,m32", "xv:V:1:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastsd", "vy,m64", "xv:V:1:1:2:0:x 19 /r rl:rm");
-    T("vbroadcastf128", "vy,m128", "xv:V:1:1:2:0:x 1a /r rl:rm");
-    T("vcmpeq_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeq_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p00 rl:rvm");
-    T("vcmpeqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p00 rl:rvm");
-    T("vcmplt_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p01 rl:rvm");
-    T("vcmplt_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p01 rl:rvm");
-    T("vcmple_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p02 rl:rvm");
-    T("vcmple_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p02 rl:rvm");
-    T("vcmplepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p02 rl:rvm");
-    T("vcmplepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpunord_qpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunord_qpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpneq_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneq_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpnlt_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnlt_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnle_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnle_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnlepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnlepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpord_qpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpord_qpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpeq_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpeq_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpnge_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpnge_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngt_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngt_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpfalse_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalsepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalsepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpneq_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpneq_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpge_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpge_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgt_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgt_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0e rl:rvm");
-    T("vcmptrue_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptrue_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptruepd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptruepd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p0f rl:rvm");
-    T("vcmplt_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p11 rl:rvm");
-    T("vcmplt_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p11 rl:rvm");
-    T("vcmple_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p12 rl:rvm");
-    T("vcmple_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p12 rl:rvm");
-    T("vcmpunord_spd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpunord_spd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpneq_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpneq_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpnlt_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnle_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpnle_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpord_spd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpord_spd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpeq_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpeq_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpnge_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpnge_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpngt_uqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpngt_uqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpfalse_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpfalse_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpneq_ospd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpneq_ospd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpge_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpge_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpgt_oqpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1e rl:rvm");
-    T("vcmpgt_oqpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1e rl:rvm");
-    T("vcmptrue_uspd", "vx,vx*,vx16", "xv:V:0:1:1:0:x c2 /r p1f rl:rvm");
-    T("vcmptrue_uspd", "vy,vy*,vy32", "xv:V:1:1:1:0:x c2 /r p1f rl:rvm");
-    T("vcmppd", "vx,vx*,vx16,imm8", "xv:V:0:1:1:0:x c2 /r ib rl:rvmi");
-    T("vcmppd", "vy,vy*,vy32,imm8", "xv:V:1:1:1:0:x c2 /r ib rl:rvmi");
-    T("vcmpeq_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeq_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p00 rl:rvm");
-    T("vcmpeqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p00 rl:rvm");
-    T("vcmplt_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p01 rl:rvm");
-    T("vcmplt_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p01 rl:rvm");
-    T("vcmple_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p02 rl:rvm");
-    T("vcmple_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpleps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpleps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpunord_qps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunord_qps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpneq_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneq_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpnlt_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnlt_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnle_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnle_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnleps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnleps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpord_qps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpord_qps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpeq_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpeq_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpnge_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpnge_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngeps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngeps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngt_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngt_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpfalse_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalseps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalseps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpneq_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpneq_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpge_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpge_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgeps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgeps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgt_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgt_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0e rl:rvm");
-    T("vcmptrue_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptrue_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptrueps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptrueps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p0f rl:rvm");
-    T("vcmplt_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p11 rl:rvm");
-    T("vcmplt_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p11 rl:rvm");
-    T("vcmple_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p12 rl:rvm");
-    T("vcmple_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p12 rl:rvm");
-    T("vcmpunord_sps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpunord_sps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpneq_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpneq_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpnlt_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnle_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpnle_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpord_sps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpord_sps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpeq_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpeq_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpnge_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpnge_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpngt_uqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpngt_uqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpfalse_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpfalse_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpneq_osps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpneq_osps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpge_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpge_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpgt_oqps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1e rl:rvm");
-    T("vcmpgt_oqps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1e rl:rvm");
-    T("vcmptrue_usps", "vx,vx*,vx16", "xv:V:0:0:1:0:x c2 /r p1f rl:rvm");
-    T("vcmptrue_usps", "vy,vy*,vy32", "xv:V:1:0:1:0:x c2 /r p1f rl:rvm");
-    T("vcmpps", "vx,vx*,vx16,imm8", "xv:V:0:0:1:0:x c2 /r ib rl:rvmi");
-    T("vcmpps", "vy,vy*,vy32,imm8", "xv:V:1:0:1:0:x c2 /r ib rl:rvmi");
-    T("vcmpeq_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p00 rl:rvm");
-    T("vcmplt_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p01 rl:rvm");
-    T("vcmple_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p02 rl:rvm");
-    T("vcmplesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpunord_qsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpneq_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpnlt_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnle_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnlesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpord_qsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpeq_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpnge_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngt_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpfalse_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalsesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpneq_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpge_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgt_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0e rl:rvm");
-    T("vcmptrue_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptruesd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p0f rl:rvm");
-    T("vcmplt_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p11 rl:rvm");
-    T("vcmple_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p12 rl:rvm");
-    T("vcmpunord_ssd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpneq_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpnlt_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnle_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpord_ssd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpeq_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpnge_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpngt_uqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpfalse_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpneq_ossd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpge_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpgt_oqsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1e rl:rvm");
-    T("vcmptrue_ussd", "vx,vx*,vx8", "xv:V:0:3:1:0:x c2 /r p1f rl:rvm");
-    T("vcmpsd", "vx,vx*,vx8,imm8", "xv:V:0:3:1:0:x c2 /r ib rl:rvmi");
-    T("vcmpeq_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p10 rl:rvm");
-    T("vcmpeqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p00 rl:rvm");
-    T("vcmplt_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p01 rl:rvm");
-    T("vcmpltss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p01 rl:rvm");
-    T("vcmple_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpless", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p02 rl:rvm");
-    T("vcmpunord_qss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpunordss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p03 rl:rvm");
-    T("vcmpneq_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpneqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p04 rl:rvm");
-    T("vcmpnlt_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnltss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p05 rl:rvm");
-    T("vcmpnle_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpnless", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p06 rl:rvm");
-    T("vcmpord_qss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpordss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p07 rl:rvm");
-    T("vcmpeq_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p08 rl:rvm");
-    T("vcmpnge_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngess", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p09 rl:rvm");
-    T("vcmpngt_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpngtss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0a rl:rvm");
-    T("vcmpfalse_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpfalsess", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0b rl:rvm");
-    T("vcmpneq_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0c rl:rvm");
-    T("vcmpge_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgess", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0d rl:rvm");
-    T("vcmpgt_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0e rl:rvm");
-    T("vcmpgtss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0e rl:rvm");
-    T("vcmptrue_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0f rl:rvm");
-    T("vcmptruess", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p0f rl:rvm");
-    T("vcmplt_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p11 rl:rvm");
-    T("vcmple_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p12 rl:rvm");
-    T("vcmpunord_sss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p13 rl:rvm");
-    T("vcmpneq_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p14 rl:rvm");
-    T("vcmpnlt_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p15 rl:rvm");
-    T("vcmpnle_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p16 rl:rvm");
-    T("vcmpord_sss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p17 rl:rvm");
-    T("vcmpeq_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p18 rl:rvm");
-    T("vcmpnge_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p19 rl:rvm");
-    T("vcmpngt_uqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1a rl:rvm");
-    T("vcmpfalse_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1b rl:rvm");
-    T("vcmpneq_osss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1c rl:rvm");
-    T("vcmpge_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1d rl:rvm");
-    T("vcmpgt_oqss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1e rl:rvm");
-    T("vcmptrue_usss", "vx,vx*,vx8", "xv:V:0:2:1:0:x c2 /r p1f rl:rvm");
-    T("vcmpss", "vx,vx*,vx8,imm8", "xv:V:0:2:1:0:x c2 /r ib rl:rvmi");
-    T("vcomisd", "vx,vx8", "xv:V:0:1:1:0:x 2f /r rl:rm");
-    T("vcomiss", "vx,vx4", "xv:V:0:0:1:0:x 2f /r rl:rm");
-    T("vcvtdq2pd", "vx,vx8", "xv:V:0:2:1:0:x e6 /r rl:rm");
-    T("vcvtdq2pd", "vy,vx16", "xv:V:1:2:1:0:x e6 /r rl:rm");
-    T("vcvtdq2ps", "vx,vx16", "xv:V:0:0:1:0:x 5b /r rl:rm");
-    T("vcvtdq2ps", "vy,vy32", "xv:V:1:0:1:0:x 5b /r rl:rm");
-    T("vcvtpd2dq", "vx,vx", "xv:V:0:3:1:0:x e6 /r rl:rm");
-    T("vcvtpd2dq", "vx,m128", "xv:V:0:3:1:0:x e6 /r rl:rm sf");
-    T("vcvtpd2dq", "vx,vy", "xv:V:1:3:1:0:x e6 /r rl:rm");
-    T("vcvtpd2dq", "vx,m256", "xv:V:1:3:1:0:x e6 /r rl:rm sf");
-    T("vcvtpd2ps", "vx,vx", "xv:V:0:1:1:0:x 5a /r rl:rm");
-    T("vcvtpd2ps", "vx,m128", "xv:V:0:1:1:0:x 5a /r rl:rm sf");
-    T("vcvtpd2ps", "vx,vy", "xv:V:1:1:1:0:x 5a /r rl:rm");
-    T("vcvtpd2ps", "vx,m256", "xv:V:1:1:1:0:x 5a /r rl:rm sf");
-    T("vcvtps2dq", "vx,vx16", "xv:V:0:1:1:0:x 5b /r rl:rm");
-    T("vcvtps2dq", "vy,vy32", "xv:V:1:1:1:0:x 5b /r rl:rm");
-    T("vcvtps2pd", "vx,vx8", "xv:V:0:0:1:0:x 5a /r rl:rm");
-    T("vcvtps2pd", "vy,vx16", "xv:V:1:0:1:0:x 5a /r rl:rm");
-    T("vcvtsd2si", "r32,vx8", "xv:V:0:3:1:0:x 2d /r rl:rm");
-    T("vcvtsd2ss", "vx,vx*,vx8", "xv:V:0:3:1:0:x 5a /r rl:rvm");
-    T("vcvtsi2sd", "vx,vx*,rm32", "xv:V:0:3:1:0:x 2a /r rl:rvm sf");
-    T("vcvtsi2sd", "vx,vx*,m32", "xv:V:0:3:1:0:x 2a /r rl:rvm sf");
-    T("vcvtsi2ss", "vx,vx*,rm32", "xv:V:0:2:1:0:x 2a /r rl:rvm sf");
-    T("vcvtsi2ss", "vx,vx*,m32", "xv:V:0:2:1:0:x 2a /r rl:rvm sf");
-    T("vcvtss2sd", "vx,vx*,vx4", "xv:V:0:2:1:0:x 5a /r rl:rvm");
-    T("vcvtss2si", "r32,vx4", "xv:V:0:2:1:0:x 2d /r rl:rm");
-    T("vcvttpd2dq", "vx,vx", "xv:V:0:1:1:0:x e6 /r rl:rm");
-    T("vcvttpd2dq", "vx,m128", "xv:V:0:1:1:0:x e6 /r rl:rm sf");
-    T("vcvttpd2dq", "vx,vy", "xv:V:1:1:1:0:x e6 /r rl:rm");
-    T("vcvttpd2dq", "vx,m256", "xv:V:1:1:1:0:x e6 /r rl:rm sf");
-    T("vcvttps2dq", "vx,vx16", "xv:V:0:2:1:0:x 5b /r rl:rm");
-    T("vcvttps2dq", "vy,vy32", "xv:V:1:2:1:0:x 5b /r rl:rm");
-    T("vcvttsd2si", "r32,vx8", "xv:V:0:3:1:0:x 2c /r rl:rm");
-    T("vcvttss2si", "r32,vx4", "xv:V:0:2:1:0:x 2c /r rl:rm");
-    T("vdivpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 5e /r rl:rvm");
-    T("vdivpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 5e /r rl:rvm");
-    T("vdivps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 5e /r rl:rvm");
-    T("vdivps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 5e /r rl:rvm");
-    T("vdivsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 5e /r rl:rvm");
-    T("vdivss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 5e /r rl:rvm");
-    T("vdppd", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 41 /r ib rl:rvmi");
-    T("vdpps", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 40 /r ib rl:rvmi");
-    T("vdpps", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 40 /r ib rl:rvmi");
-    T("vextractf128", "vx16,vy,imm8", "xv:V:1:1:3:0:x 19 /r ib rl:mri");
-    T("vextractps", "rm32,vx,imm8", "xv:V:0:1:3:0:x 17 /r ib rl:mri");
-    T("vhaddpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 7c /r rl:rvm");
-    T("vhaddpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 7c /r rl:rvm");
-    T("vhaddps", "vx,vx*,vx16", "xv:V:0:3:1:0:x 7c /r rl:rvm");
-    T("vhaddps", "vy,vy*,vy32", "xv:V:1:3:1:0:x 7c /r rl:rvm");
-    T("vhsubpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 7d /r rl:rvm");
-    T("vhsubpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 7d /r rl:rvm");
-    T("vhsubps", "vx,vx*,vx16", "xv:V:0:3:1:0:x 7d /r rl:rvm");
-    T("vhsubps", "vy,vy*,vy32", "xv:V:1:3:1:0:x 7d /r rl:rvm");
-    T("vinsertf128", "vy,vy*,vx16,imm8", "xv:V:1:1:3:0:x 18 /r ib rl:rvmi");
-    T("vinsertps", "vx,vx*,vx4,imm8", "xv:V:0:1:3:0:x 21 /r ib rl:rvmi");
-    T("vlddqu", "vx,m128", "xv:V:0:3:1:0:x f0 /r rl:rm");
-    T("vldqqu", "vy,m256", "xv:V:1:3:1:0:x f0 /r rl:rm");
-    T("vlddqu", "vy,m256", "xv:V:1:3:1:0:x f0 /r rl:rm");
-    T("vldmxcsr", "m32", "xv:V:0:0:1:0:x ae /2 rl:m");
-    T("vmaskmovdqu", "vx,vx", "xv:V:0:1:1:0:x f7 /r rl:rm");
-    T("vmaskmovps", "vx,vx,m128", "xv:V:0:1:2:0:x 2c /r rl:rvm");
-    T("vmaskmovps", "vy,vy,m256", "xv:V:1:1:2:0:x 2c /r rl:rvm");
-    T("vmaskmovps", "m128,vx,vx", "xv:V:0:1:2:0:x 2e /r rl:mvr sf");
-    T("vmaskmovps", "m256,vy,vy", "xv:V:1:1:2:0:x 2e /r rl:mvr sf");
-    T("vmaskmovpd", "vx,vx,m128", "xv:V:0:1:2:0:x 2d /r rl:rvm");
-    T("vmaskmovpd", "vy,vy,m256", "xv:V:1:1:2:0:x 2d /r rl:rvm");
-    T("vmaskmovpd", "m128,vx,vx", "xv:V:0:1:2:0:x 2f /r rl:mvr");
-    T("vmaskmovpd", "m256,vy,vy", "xv:V:1:1:2:0:x 2f /r rl:mvr");
-    T("vmaxpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 5f /r rl:rvm");
-    T("vmaxpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 5f /r rl:rvm");
-    T("vmaxps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 5f /r rl:rvm");
-    T("vmaxps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 5f /r rl:rvm");
-    T("vmaxsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 5f /r rl:rvm");
-    T("vmaxss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 5f /r rl:rvm");
-    T("vminpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 5d /r rl:rvm");
-    T("vminpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 5d /r rl:rvm");
-    T("vminps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 5d /r rl:rvm");
-    T("vminps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 5d /r rl:rvm");
-    T("vminsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 5d /r rl:rvm");
-    T("vminss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 5d /r rl:rvm");
-    T("vmovapd", "vx,vx16", "xv:V:0:1:1:0:x 28 /r rl:rm");
-    T("vmovapd", "vx16,vx", "xv:V:0:1:1:0:x 29 /r rl:mr");
-    T("vmovapd", "vy,vy32", "xv:V:1:1:1:0:x 28 /r rl:rm");
-    T("vmovapd", "vy32,vy", "xv:V:1:1:1:0:x 29 /r rl:mr");
-    T("vmovaps", "vx,vx16", "xv:V:0:0:1:0:x 28 /r rl:rm");
-    T("vmovaps", "vx16,vx", "xv:V:0:0:1:0:x 29 /r rl:mr");
-    T("vmovaps", "vy,vy32", "xv:V:1:0:1:0:x 28 /r rl:rm");
-    T("vmovaps", "vy32,vy", "xv:V:1:0:1:0:x 29 /r rl:mr");
-    T("vmovd", "vx,rm32", "xv:V:0:1:1:0:x 6e /r rl:rm");
-    T("vmovd", "rm32,vx", "xv:V:0:1:1:0:x 7e /r rl:mr");
-    T("vmovq", "vx,vx8", "xv:V:0:2:1:0:x 7e /r rl:rm sf");
-    T("vmovq", "vx8,vx", "xv:V:0:1:1:0:x d6 /r rl:mr sf");
-    T("vmovddup", "vx,vx8", "xv:V:0:3:1:0:x 12 /r rl:rm");
-    T("vmovddup", "vy,vy32", "xv:V:1:3:1:0:x 12 /r rl:rm");
-    T("vmovdqa", "vx,vx16", "xv:V:0:1:1:0:x 6f /r rl:rm");
-    T("vmovdqa", "vx16,vx", "xv:V:0:1:1:0:x 7f /r rl:mr");
-    T("vmovqqa", "vy,vy32", "xv:V:1:1:1:0:x 6f /r rl:rm");
-    T("vmovqqa", "vy32,vy", "xv:V:1:1:1:0:x 7f /r rl:mr");
-    T("vmovdqa", "vy,vy32", "xv:V:1:1:1:0:x 6f /r rl:rm");
-    T("vmovdqa", "vy32,vy", "xv:V:1:1:1:0:x 7f /r rl:mr");
-    T("vmovdqu", "vx,vx16", "xv:V:0:2:1:0:x 6f /r rl:rm");
-    T("vmovdqu", "vx16,vx", "xv:V:0:2:1:0:x 7f /r rl:mr");
-    T("vmovqqu", "vy,vy32", "xv:V:1:2:1:0:x 6f /r rl:rm");
-    T("vmovqqu", "vy32,vy", "xv:V:1:2:1:0:x 7f /r rl:mr");
-    T("vmovdqu", "vy,vy32", "xv:V:1:2:1:0:x 6f /r rl:rm");
-    T("vmovdqu", "vy32,vy", "xv:V:1:2:1:0:x 7f /r rl:mr");
-    T("vmovhlps", "vx,vx*,vx", "xv:V:0:0:1:0:x 12 /r rl:rvm");
-    T("vmovhpd", "vx,vx*,m64", "xv:V:0:1:1:0:x 16 /r rl:rvm");
-    T("vmovhpd", "m64,vx", "xv:V:0:1:1:0:x 17 /r rl:mr");
-    T("vmovhps", "vx,vx*,m64", "xv:V:0:0:1:0:x 16 /r rl:rvm");
-    T("vmovhps", "m64,vx", "xv:V:0:0:1:0:x 17 /r rl:mr");
-    T("vmovlhps", "vx,vx*,vx", "xv:V:0:0:1:0:x 16 /r rl:rvm");
-    T("vmovlpd", "vx,vx*,m64", "xv:V:0:1:1:0:x 12 /r rl:rvm");
-    T("vmovlpd", "m64,vx", "xv:V:0:1:1:0:x 13 /r rl:mr");
-    T("vmovlps", "vx,vx*,m64", "xv:V:0:0:1:0:x 12 /r rl:rvm");
-    T("vmovlps", "m64,vx", "xv:V:0:0:1:0:x 13 /r rl:mr");
-    T("vmovmskpd", "r32,vx", "xv:V:0:1:1:0:x 50 /r rl:rm");
-    T("vmovmskpd", "r32,vy", "xv:V:1:1:1:0:x 50 /r rl:rm");
-    T("vmovmskps", "r32,vx", "xv:V:0:0:1:0:x 50 /r rl:rm");
-    T("vmovmskps", "r32,vy", "xv:V:1:0:1:0:x 50 /r rl:rm");
-    T("vmovntdq", "m128,vx", "xv:V:0:1:1:0:x e7 /r rl:mr");
-    T("vmovntqq", "m256,vy", "xv:V:1:1:1:0:x e7 /r rl:mr");
-    T("vmovntdq", "m256,vy", "xv:V:1:1:1:0:x e7 /r rl:mr");
-    T("vmovntdqa", "vx,m128", "xv:V:0:1:2:0:x 2a /r rl:rm");
-    T("vmovntpd", "m128,vx", "xv:V:0:1:1:0:x 2b /r rl:mr");
-    T("vmovntpd", "m256,vy", "xv:V:1:1:1:0:x 2b /r rl:mr");
-    T("vmovntps", "m128,vx", "xv:V:0:0:1:0:x 2b /r rl:mr");
-    T("vmovntps", "m256,vy", "xv:V:1:0:1:0:x 2b /r rl:mr");
-    T("vmovsd", "vx,vx*,vx", "xv:V:0:3:1:0:x 10 /r rl:rvm");
-    T("vmovsd", "vx,m64", "xv:V:0:3:1:0:x 10 /r rl:rm");
-    T("vmovsd", "vx,vx*,vx", "xv:V:0:3:1:0:x 11 /r rl:mvr");
-    T("vmovsd", "m64,vx", "xv:V:0:3:1:0:x 11 /r rl:mr");
-    T("vmovshdup", "vx,vx16", "xv:V:0:2:1:0:x 16 /r rl:rm");
-    T("vmovshdup", "vy,vy32", "xv:V:1:2:1:0:x 16 /r rl:rm");
-    T("vmovsldup", "vx,vx16", "xv:V:0:2:1:0:x 12 /r rl:rm");
-    T("vmovsldup", "vy,vy32", "xv:V:1:2:1:0:x 12 /r rl:rm");
-    T("vmovss", "vx,vx*,vx", "xv:V:0:2:1:0:x 10 /r rl:rvm");
-    T("vmovss", "vx,m32", "xv:V:0:2:1:0:x 10 /r rl:rm");
-    T("vmovss", "vx,vx*,vx", "xv:V:0:2:1:0:x 11 /r rl:mvr");
-    T("vmovss", "m32,vx", "xv:V:0:2:1:0:x 11 /r rl:mr");
-    T("vmovupd", "vx,vx16", "xv:V:0:1:1:0:x 10 /r rl:rm");
-    T("vmovupd", "vx16,vx", "xv:V:0:1:1:0:x 11 /r rl:mr");
-    T("vmovupd", "vy,vy32", "xv:V:1:1:1:0:x 10 /r rl:rm");
-    T("vmovupd", "vy32,vy", "xv:V:1:1:1:0:x 11 /r rl:mr");
-    T("vmovups", "vx,vx16", "xv:V:0:0:1:0:x 10 /r rl:rm");
-    T("vmovups", "vx16,vx", "xv:V:0:0:1:0:x 11 /r rl:mr");
-    T("vmovups", "vy,vy32", "xv:V:1:0:1:0:x 10 /r rl:rm");
-    T("vmovups", "vy32,vy", "xv:V:1:0:1:0:x 11 /r rl:mr");
-    T("vmpsadbw", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 42 /r ib rl:rvmi");
-    T("vmulpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 59 /r rl:rvm");
-    T("vmulpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 59 /r rl:rvm");
-    T("vmulps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 59 /r rl:rvm");
-    T("vmulps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 59 /r rl:rvm");
-    T("vmulsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 59 /r rl:rvm");
-    T("vmulss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 59 /r rl:rvm");
-    T("vorpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 56 /r rl:rvm");
-    T("vorpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 56 /r rl:rvm");
-    T("vorps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 56 /r rl:rvm");
-    T("vorps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 56 /r rl:rvm");
-    T("vpabsb", "vx,vx16", "xv:V:0:1:2:0:x 1c /r rl:rm");
-    T("vpabsw", "vx,vx16", "xv:V:0:1:2:0:x 1d /r rl:rm");
-    T("vpabsd", "vx,vx16", "xv:V:0:1:2:0:x 1e /r rl:rm");
-    T("vpacksswb", "vx,vx*,vx16", "xv:V:0:1:1:0:x 63 /r rl:rvm");
-    T("vpackssdw", "vx,vx*,vx16", "xv:V:0:1:1:0:x 6b /r rl:rvm");
-    T("vpackuswb", "vx,vx*,vx16", "xv:V:0:1:1:0:x 67 /r rl:rvm");
-    T("vpackusdw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 2b /r rl:rvm");
-    T("vpaddb", "vx,vx*,vx16", "xv:V:0:1:1:0:x fc /r rl:rvm");
-    T("vpaddw", "vx,vx*,vx16", "xv:V:0:1:1:0:x fd /r rl:rvm");
-    T("vpaddd", "vx,vx*,vx16", "xv:V:0:1:1:0:x fe /r rl:rvm");
-    T("vpaddq", "vx,vx*,vx16", "xv:V:0:1:1:0:x d4 /r rl:rvm");
-    T("vpaddsb", "vx,vx*,vx16", "xv:V:0:1:1:0:x ec /r rl:rvm");
-    T("vpaddsw", "vx,vx*,vx16", "xv:V:0:1:1:0:x ed /r rl:rvm");
-    T("vpaddusb", "vx,vx*,vx16", "xv:V:0:1:1:0:x dc /r rl:rvm");
-    T("vpaddusw", "vx,vx*,vx16", "xv:V:0:1:1:0:x dd /r rl:rvm");
-    T("vpalignr", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 0f /r ib rl:rvmi");
-    T("vpand", "vx,vx*,vx16", "xv:V:0:1:1:0:x db /r rl:rvm");
-    T("vpandn", "vx,vx*,vx16", "xv:V:0:1:1:0:x df /r rl:rvm");
-    T("vpavgb", "vx,vx*,vx16", "xv:V:0:1:1:0:x e0 /r rl:rvm");
-    T("vpavgw", "vx,vx*,vx16", "xv:V:0:1:1:0:x e3 /r rl:rvm");
-    T("vpblendvb", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 4c /r is4 rl:rvms");
-    T("vpblendw", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 0e /r ib rl:rvmi");
-    T("vpcmpestri", "vx,vx16,imm8", "xv:V:0:1:3:0:x 61 /r ib rl:rmi");
-    T("vpcmpestrm", "vx,vx16,imm8", "xv:V:0:1:3:0:x 60 /r ib rl:rmi");
-    T("vpcmpistri", "vx,vx16,imm8", "xv:V:0:1:3:0:x 63 /r ib rl:rmi");
-    T("vpcmpistrm", "vx,vx16,imm8", "xv:V:0:1:3:0:x 62 /r ib rl:rmi");
-    T("vpcmpeqb", "vx,vx*,vx16", "xv:V:0:1:1:0:x 74 /r rl:rvm");
-    T("vpcmpeqw", "vx,vx*,vx16", "xv:V:0:1:1:0:x 75 /r rl:rvm");
-    T("vpcmpeqd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 76 /r rl:rvm");
-    T("vpcmpeqq", "vx,vx*,vx16", "xv:V:0:1:2:0:x 29 /r rl:rvm");
-    T("vpcmpgtb", "vx,vx*,vx16", "xv:V:0:1:1:0:x 64 /r rl:rvm");
-    T("vpcmpgtw", "vx,vx*,vx16", "xv:V:0:1:1:0:x 65 /r rl:rvm");
-    T("vpcmpgtd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 66 /r rl:rvm");
-    T("vpcmpgtq", "vx,vx*,vx16", "xv:V:0:1:2:0:x 37 /r rl:rvm");
-    T("vpermilpd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 0d /r rl:rvm");
-    T("vpermilpd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 0d /r rl:rvm");
-    T("vpermilpd", "vx,vx16,imm8", "xv:V:0:1:3:0:x 05 /r ib rl:rmi");
-    T("vpermilpd", "vy,vy32,imm8", "xv:V:1:1:3:0:x 05 /r ib rl:rmi");
-    T("vpermilps", "vx,vx*,vx16", "xv:V:0:1:2:0:x 0c /r rl:rvm");
-    T("vpermilps", "vy,vy*,vy32", "xv:V:1:1:2:0:x 0c /r rl:rvm");
-    T("vpermilps", "vx,vx16,imm8", "xv:V:0:1:3:0:x 04 /r ib rl:rmi");
-    T("vpermilps", "vy,vy32,imm8", "xv:V:1:1:3:0:x 04 /r ib rl:rmi");
-    T("vperm2f128", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 06 /r ib rl:rvmi");
-    T("vpextrb", "r32,vx,imm8", "xv:V:0:1:3:0:x 14 /r ib rl:mri");
-    T("vpextrb", "m8,vx,imm8", "xv:V:0:1:3:0:x 14 /r ib rl:mri");
-    T("vpextrw", "r32,vx,imm8", "xv:V:0:1:1:0:x c5 /r ib rl:rmi");
-    T("vpextrw", "r32,vx,imm8", "xv:V:0:1:3:0:x 15 /r ib rl:mri");
-    T("vpextrw", "m16,vx,imm8", "xv:V:0:1:3:0:x 15 /r ib rl:mri");
-    T("vpextrd", "rm32,vx,imm8", "xv:V:0:1:3:0:x 16 /r ib rl:mri");
-    T("vphaddw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 01 /r rl:rvm");
-    T("vphaddd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 02 /r rl:rvm");
-    T("vphaddsw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 03 /r rl:rvm");
-    T("vphminposuw", "vx,vx16", "xv:V:0:1:2:0:x 41 /r rl:rm");
-    T("vphsubw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 05 /r rl:rvm");
-    T("vphsubd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 06 /r rl:rvm");
-    T("vphsubsw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 07 /r rl:rvm");
-    T("vpinsrb", "vx,vx*,m8,imm8", "xv:V:0:1:3:0:x 20 /r ib rl:rvmi");
-    T("vpinsrb", "vx,vx*,rm8,imm8", "xv:V:0:1:3:0:x 20 /r ib rl:rvmi");
-    T("vpinsrb", "vx,vx*,r32,imm8", "xv:V:0:1:3:0:x 20 /r ib rl:rvmi");
-    T("vpinsrw", "vx,vx*,m16,imm8", "xv:V:0:1:1:0:x c4 /r ib rl:rvmi");
-    T("vpinsrw", "vx,vx*,rm16,imm8", "xv:V:0:1:1:0:x c4 /r ib rl:rvmi");
-    T("vpinsrw", "vx,vx*,r32,imm8", "xv:V:0:1:1:0:x c4 /r ib rl:rvmi");
-    T("vpinsrd", "vx,vx*,m32,imm8", "xv:V:0:1:3:0:x 22 /r ib rl:rvmi");
-    T("vpinsrd", "vx,vx*,rm32,imm8", "xv:V:0:1:3:0:x 22 /r ib rl:rvmi");
-    T("vpmaddwd", "vx,vx*,vx16", "xv:V:0:1:1:0:x f5 /r rl:rvm");
-    T("vpmaddubsw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 04 /r rl:rvm");
-    T("vpmaxsb", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3c /r rl:rvm");
-    T("vpmaxsw", "vx,vx*,vx16", "xv:V:0:1:1:0:x ee /r rl:rvm");
-    T("vpmaxsd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3d /r rl:rvm");
-    T("vpmaxub", "vx,vx*,vx16", "xv:V:0:1:1:0:x de /r rl:rvm");
-    T("vpmaxuw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3e /r rl:rvm");
-    T("vpmaxud", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3f /r rl:rvm");
-    T("vpminsb", "vx,vx*,vx16", "xv:V:0:1:2:0:x 38 /r rl:rvm");
-    T("vpminsw", "vx,vx*,vx16", "xv:V:0:1:1:0:x ea /r rl:rvm");
-    T("vpminsd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 39 /r rl:rvm");
-    T("vpminub", "vx,vx*,vx16", "xv:V:0:1:1:0:x da /r rl:rvm");
-    T("vpminuw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3a /r rl:rvm");
-    T("vpminud", "vx,vx*,vx16", "xv:V:0:1:2:0:x 3b /r rl:rvm");
-    T("vpmovmskb", "r32,vx", "xv:V:0:1:1:0:x d7 /r rl:rm");
-    T("vpmovsxbw", "vx,vx8", "xv:V:0:1:2:0:x 20 /r rl:rm");
-    T("vpmovsxbd", "vx,vx4", "xv:V:0:1:2:0:x 21 /r rl:rm");
-    T("vpmovsxbq", "vx,vx2", "xv:V:0:1:2:0:x 22 /r rl:rm");
-    T("vpmovsxwd", "vx,vx8", "xv:V:0:1:2:0:x 23 /r rl:rm");
-    T("vpmovsxwq", "vx,vx4", "xv:V:0:1:2:0:x 24 /r rl:rm");
-    T("vpmovsxdq", "vx,vx8", "xv:V:0:1:2:0:x 25 /r rl:rm");
-    T("vpmovzxbw", "vx,vx8", "xv:V:0:1:2:0:x 30 /r rl:rm");
-    T("vpmovzxbd", "vx,vx4", "xv:V:0:1:2:0:x 31 /r rl:rm");
-    T("vpmovzxbq", "vx,vx2", "xv:V:0:1:2:0:x 32 /r rl:rm");
-    T("vpmovzxwd", "vx,vx8", "xv:V:0:1:2:0:x 33 /r rl:rm");
-    T("vpmovzxwq", "vx,vx4", "xv:V:0:1:2:0:x 34 /r rl:rm");
-    T("vpmovzxdq", "vx,vx8", "xv:V:0:1:2:0:x 35 /r rl:rm");
-    T("vpmulhuw", "vx,vx*,vx16", "xv:V:0:1:1:0:x e4 /r rl:rvm");
-    T("vpmulhrsw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 0b /r rl:rvm");
-    T("vpmulhw", "vx,vx*,vx16", "xv:V:0:1:1:0:x e5 /r rl:rvm");
-    T("vpmullw", "vx,vx*,vx16", "xv:V:0:1:1:0:x d5 /r rl:rvm");
-    T("vpmulld", "vx,vx*,vx16", "xv:V:0:1:2:0:x 40 /r rl:rvm");
-    T("vpmuludq", "vx,vx*,vx16", "xv:V:0:1:1:0:x f4 /r rl:rvm");
-    T("vpmuldq", "vx,vx*,vx16", "xv:V:0:1:2:0:x 28 /r rl:rvm");
-    T("vpor", "vx,vx*,vx16", "xv:V:0:1:1:0:x eb /r rl:rvm");
-    T("vpsadbw", "vx,vx*,vx16", "xv:V:0:1:1:0:x f6 /r rl:rvm");
-    T("vpshufb", "vx,vx*,vx16", "xv:V:0:1:2:0:x 00 /r rl:rvm");
-    T("vpshufd", "vx,vx16,imm8", "xv:V:0:1:1:0:x 70 /r ib rl:rmi");
-    T("vpshufhw", "vx,vx16,imm8", "xv:V:0:2:1:0:x 70 /r ib rl:rmi");
-    T("vpshuflw", "vx,vx16,imm8", "xv:V:0:3:1:0:x 70 /r ib rl:rmi");
-    T("vpsignb", "vx,vx*,vx16", "xv:V:0:1:2:0:x 08 /r rl:rvm");
-    T("vpsignw", "vx,vx*,vx16", "xv:V:0:1:2:0:x 09 /r rl:rvm");
-    T("vpsignd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 0a /r rl:rvm");
-    T("vpslldq", "vx,vx*,imm8", "xv:V:0:1:1:0:x 73 /7 ib rl:vmi");
-    T("vpsrldq", "vx,vx*,imm8", "xv:V:0:1:1:0:x 73 /3 ib rl:vmi");
-    T("vpsllw", "vx,vx*,vx16", "xv:V:0:1:1:0:x f1 /r rl:rvm");
-    T("vpsllw", "vx,vx*,imm8", "xv:V:0:1:1:0:x 71 /6 ib rl:vmi");
-    T("vpslld", "vx,vx*,vx16", "xv:V:0:1:1:0:x f2 /r rl:rvm");
-    T("vpslld", "vx,vx*,imm8", "xv:V:0:1:1:0:x 72 /6 ib rl:vmi");
-    T("vpsllq", "vx,vx*,vx16", "xv:V:0:1:1:0:x f3 /r rl:rvm");
-    T("vpsllq", "vx,vx*,imm8", "xv:V:0:1:1:0:x 73 /6 ib rl:vmi");
-    T("vpsraw", "vx,vx*,vx16", "xv:V:0:1:1:0:x e1 /r rl:rvm");
-    T("vpsraw", "vx,vx*,imm8", "xv:V:0:1:1:0:x 71 /4 ib rl:vmi");
-    T("vpsrad", "vx,vx*,vx16", "xv:V:0:1:1:0:x e2 /r rl:rvm");
-    T("vpsrad", "vx,vx*,imm8", "xv:V:0:1:1:0:x 72 /4 ib rl:vmi");
-    T("vpsrlw", "vx,vx*,vx16", "xv:V:0:1:1:0:x d1 /r rl:rvm");
-    T("vpsrlw", "vx,vx*,imm8", "xv:V:0:1:1:0:x 71 /2 ib rl:vmi");
-    T("vpsrld", "vx,vx*,vx16", "xv:V:0:1:1:0:x d2 /r rl:rvm");
-    T("vpsrld", "vx,vx*,imm8", "xv:V:0:1:1:0:x 72 /2 ib rl:vmi");
-    T("vpsrlq", "vx,vx*,vx16", "xv:V:0:1:1:0:x d3 /r rl:rvm");
-    T("vpsrlq", "vx,vx*,imm8", "xv:V:0:1:1:0:x 73 /2 ib rl:vmi");
-    T("vptest", "vx,vx16", "xv:V:0:1:2:0:x 17 /r rl:rm");
-    T("vptest", "vy,vy32", "xv:V:1:1:2:0:x 17 /r rl:rm");
-    T("vpsubb", "vx,vx*,vx16", "xv:V:0:1:1:0:x f8 /r rl:rvm");
-    T("vpsubw", "vx,vx*,vx16", "xv:V:0:1:1:0:x f9 /r rl:rvm");
-    T("vpsubd", "vx,vx*,vx16", "xv:V:0:1:1:0:x fa /r rl:rvm");
-    T("vpsubq", "vx,vx*,vx16", "xv:V:0:1:1:0:x fb /r rl:rvm");
-    T("vpsubsb", "vx,vx*,vx16", "xv:V:0:1:1:0:x e8 /r rl:rvm");
-    T("vpsubsw", "vx,vx*,vx16", "xv:V:0:1:1:0:x e9 /r rl:rvm");
-    T("vpsubusb", "vx,vx*,vx16", "xv:V:0:1:1:0:x d8 /r rl:rvm");
-    T("vpsubusw", "vx,vx*,vx16", "xv:V:0:1:1:0:x d9 /r rl:rvm");
-    T("vpunpckhbw", "vx,vx*,vx16", "xv:V:0:1:1:0:x 68 /r rl:rvm");
-    T("vpunpckhwd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 69 /r rl:rvm");
-    T("vpunpckhdq", "vx,vx*,vx16", "xv:V:0:1:1:0:x 6a /r rl:rvm");
-    T("vpunpckhqdq", "vx,vx*,vx16", "xv:V:0:1:1:0:x 6d /r rl:rvm");
-    T("vpunpcklbw", "vx,vx*,vx16", "xv:V:0:1:1:0:x 60 /r rl:rvm");
-    T("vpunpcklwd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 61 /r rl:rvm");
-    T("vpunpckldq", "vx,vx*,vx16", "xv:V:0:1:1:0:x 62 /r rl:rvm");
-    T("vpunpcklqdq", "vx,vx*,vx16", "xv:V:0:1:1:0:x 6c /r rl:rvm");
-    T("vpxor", "vx,vx*,vx16", "xv:V:0:1:1:0:x ef /r rl:rvm");
-    T("vrcpps", "vx,vx16", "xv:V:0:0:1:0:x 53 /r rl:rm");
-    T("vrcpps", "vy,vy32", "xv:V:1:0:1:0:x 53 /r rl:rm");
-    T("vrcpss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 53 /r rl:rvm");
-    T("vrsqrtps", "vx,vx16", "xv:V:0:0:1:0:x 52 /r rl:rm");
-    T("vrsqrtps", "vy,vy32", "xv:V:1:0:1:0:x 52 /r rl:rm");
-    T("vrsqrtss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 52 /r rl:rvm");
-    T("vroundpd", "vx,vx16,imm8", "xv:V:0:1:3:0:x 09 /r ib rl:rmi");
-    T("vroundpd", "vy,vy32,imm8", "xv:V:1:1:3:0:x 09 /r ib rl:rmi");
-    T("vroundps", "vx,vx16,imm8", "xv:V:0:1:3:0:x 08 /r ib rl:rmi");
-    T("vroundps", "vy,vy32,imm8", "xv:V:1:1:3:0:x 08 /r ib rl:rmi");
-    T("vroundsd", "vx,vx*,vx8,imm8", "xv:V:0:1:3:0:x 0b /r ib rl:rvmi");
-    T("vroundss", "vx,vx*,vx4,imm8", "xv:V:0:1:3:0:x 0a /r ib rl:rvmi");
-    T("vshufpd", "vx,vx*,vx16,imm8", "xv:V:0:1:1:0:x c6 /r ib rl:rvmi");
-    T("vshufpd", "vy,vy*,vy32,imm8", "xv:V:1:1:1:0:x c6 /r ib rl:rvmi");
-    T("vshufps", "vx,vx*,vx16,imm8", "xv:V:0:0:1:0:x c6 /r ib rl:rvmi");
-    T("vshufps", "vy,vy*,vy32,imm8", "xv:V:1:0:1:0:x c6 /r ib rl:rvmi");
-    T("vsqrtpd", "vx,vx16", "xv:V:0:1:1:0:x 51 /r rl:rm");
-    T("vsqrtpd", "vy,vy32", "xv:V:1:1:1:0:x 51 /r rl:rm");
-    T("vsqrtps", "vx,vx16", "xv:V:0:0:1:0:x 51 /r rl:rm");
-    T("vsqrtps", "vy,vy32", "xv:V:1:0:1:0:x 51 /r rl:rm");
-    T("vsqrtsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 51 /r rl:rvm");
-    T("vsqrtss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 51 /r rl:rvm");
-    T("vstmxcsr", "m32", "xv:V:0:0:1:0:x ae /3 rl:m");
-    T("vsubpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 5c /r rl:rvm");
-    T("vsubpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 5c /r rl:rvm");
-    T("vsubps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 5c /r rl:rvm");
-    T("vsubps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 5c /r rl:rvm");
-    T("vsubsd", "vx,vx*,vx8", "xv:V:0:3:1:0:x 5c /r rl:rvm");
-    T("vsubss", "vx,vx*,vx4", "xv:V:0:2:1:0:x 5c /r rl:rvm");
-    T("vtestps", "vx,vx16", "xv:V:0:1:2:0:x 0e /r rl:rm");
-    T("vtestps", "vy,vy32", "xv:V:1:1:2:0:x 0e /r rl:rm");
-    T("vtestpd", "vx,vx16", "xv:V:0:1:2:0:x 0f /r rl:rm");
-    T("vtestpd", "vy,vy32", "xv:V:1:1:2:0:x 0f /r rl:rm");
-    T("vucomisd", "vx,vx8", "xv:V:0:1:1:0:x 2e /r rl:rm");
-    T("vucomiss", "vx,vx4", "xv:V:0:0:1:0:x 2e /r rl:rm");
-    T("vunpckhpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 15 /r rl:rvm");
-    T("vunpckhpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 15 /r rl:rvm");
-    T("vunpckhps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 15 /r rl:rvm");
-    T("vunpckhps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 15 /r rl:rvm");
-    T("vunpcklpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 14 /r rl:rvm");
-    T("vunpcklpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 14 /r rl:rvm");
-    T("vunpcklps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 14 /r rl:rvm");
-    T("vunpcklps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 14 /r rl:rvm");
-    T("vxorpd", "vx,vx*,vx16", "xv:V:0:1:1:0:x 57 /r rl:rvm");
-    T("vxorpd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 57 /r rl:rvm");
-    T("vxorps", "vx,vx*,vx16", "xv:V:0:0:1:0:x 57 /r rl:rvm");
-    T("vxorps", "vy,vy*,vy32", "xv:V:1:0:1:0:x 57 /r rl:rvm");
-    T("vzeroall", "", "xv:V:1:0:1:0:x 77 rl:-");
-    T("vzeroupper", "", "xv:V:0:0:1:0:x 77 rl:-");
-    T("vpclmullqlqdq", "vx,vx*,vx16", "xv:V:0:1:3:0:x 44 /r p00 rl:rvm");
-    T("vpclmulhqlqdq", "vx,vx*,vx16", "xv:V:0:1:3:0:x 44 /r p01 rl:rvm");
-    T("vpclmullqhqdq", "vx,vx*,vx16", "xv:V:0:1:3:0:x 44 /r p10 rl:rvm");
-    T("vpclmulhqhqdq", "vx,vx*,vx16", "xv:V:0:1:3:0:x 44 /r p11 rl:rvm");
-    T("vpclmulqdq", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 44 /r ib rl:rvmi");
-    T("vpclmullqlqdq", "vy,vy*,vy32", "xv:V:1:1:3:0:fv 44 /r p00 rl:rvm");
-    T("vpclmulhqlqdq", "vy,vy*,vy32", "xv:V:1:1:3:0:fv 44 /r p01 rl:rvm");
-    T("vpclmullqhqdq", "vy,vy*,vy32", "xv:V:1:1:3:0:fv 44 /r p10 rl:rvm");
-    T("vpclmulhqhqdq", "vy,vy*,vy32", "xv:V:1:1:3:0:fv 44 /r p11 rl:rvm");
-    T("vpclmulqdq", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:fv 44 /r ib rl:rvmi");
-    T("vfmadd132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 98 /r rl:rvm");
-    T("vfmadd132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 98 /r rl:rvm");
-    T("vfmadd132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 98 /r rl:rvm");
-    T("vfmadd132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 98 /r rl:rvm");
-    T("vfmadd312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 98 /r rl:rvm");
-    T("vfmadd312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 98 /r rl:rvm");
-    T("vfmadd312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 98 /r rl:rvm");
-    T("vfmadd312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 98 /r rl:rvm");
-    T("vfmadd213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a8 /r rl:rvm");
-    T("vfmadd213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a8 /r rl:rvm");
-    T("vfmadd213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a8 /r rl:rvm");
-    T("vfmadd213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a8 /r rl:rvm");
-    T("vfmadd123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a8 /r rl:rvm");
-    T("vfmadd123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a8 /r rl:rvm");
-    T("vfmadd123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a8 /r rl:rvm");
-    T("vfmadd123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a8 /r rl:rvm");
-    T("vfmadd231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b8 /r rl:rvm");
-    T("vfmadd231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b8 /r rl:rvm");
-    T("vfmadd231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b8 /r rl:rvm");
-    T("vfmadd231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b8 /r rl:rvm");
-    T("vfmadd321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b8 /r rl:rvm");
-    T("vfmadd321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b8 /r rl:rvm");
-    T("vfmadd321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b8 /r rl:rvm");
-    T("vfmadd321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b8 /r rl:rvm");
-    T("vfmaddsub132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 96 /r rl:rvm");
-    T("vfmaddsub132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 96 /r rl:rvm");
-    T("vfmaddsub132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 96 /r rl:rvm");
-    T("vfmaddsub132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 96 /r rl:rvm");
-    T("vfmaddsub312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 96 /r rl:rvm");
-    T("vfmaddsub312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 96 /r rl:rvm");
-    T("vfmaddsub312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 96 /r rl:rvm");
-    T("vfmaddsub312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 96 /r rl:rvm");
-    T("vfmaddsub213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a6 /r rl:rvm");
-    T("vfmaddsub213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a6 /r rl:rvm");
-    T("vfmaddsub213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a6 /r rl:rvm");
-    T("vfmaddsub213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a6 /r rl:rvm");
-    T("vfmaddsub123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a6 /r rl:rvm");
-    T("vfmaddsub123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a6 /r rl:rvm");
-    T("vfmaddsub123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a6 /r rl:rvm");
-    T("vfmaddsub123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a6 /r rl:rvm");
-    T("vfmaddsub231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b6 /r rl:rvm");
-    T("vfmaddsub231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b6 /r rl:rvm");
-    T("vfmaddsub231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b6 /r rl:rvm");
-    T("vfmaddsub231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b6 /r rl:rvm");
-    T("vfmaddsub321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b6 /r rl:rvm");
-    T("vfmaddsub321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b6 /r rl:rvm");
-    T("vfmaddsub321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b6 /r rl:rvm");
-    T("vfmaddsub321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b6 /r rl:rvm");
-    T("vfmsub132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9a /r rl:rvm");
-    T("vfmsub132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9a /r rl:rvm");
-    T("vfmsub132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9a /r rl:rvm");
-    T("vfmsub132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9a /r rl:rvm");
-    T("vfmsub312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9a /r rl:rvm");
-    T("vfmsub312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9a /r rl:rvm");
-    T("vfmsub312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9a /r rl:rvm");
-    T("vfmsub312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9a /r rl:rvm");
-    T("vfmsub213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x aa /r rl:rvm");
-    T("vfmsub213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x aa /r rl:rvm");
-    T("vfmsub213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x aa /r rl:rvm");
-    T("vfmsub213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x aa /r rl:rvm");
-    T("vfmsub123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x aa /r rl:rvm");
-    T("vfmsub123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x aa /r rl:rvm");
-    T("vfmsub123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x aa /r rl:rvm");
-    T("vfmsub123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x aa /r rl:rvm");
-    T("vfmsub231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ba /r rl:rvm");
-    T("vfmsub231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ba /r rl:rvm");
-    T("vfmsub231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ba /r rl:rvm");
-    T("vfmsub231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ba /r rl:rvm");
-    T("vfmsub321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ba /r rl:rvm");
-    T("vfmsub321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ba /r rl:rvm");
-    T("vfmsub321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ba /r rl:rvm");
-    T("vfmsub321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ba /r rl:rvm");
-    T("vfmsubadd132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 97 /r rl:rvm");
-    T("vfmsubadd132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 97 /r rl:rvm");
-    T("vfmsubadd132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 97 /r rl:rvm");
-    T("vfmsubadd132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 97 /r rl:rvm");
-    T("vfmsubadd312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 97 /r rl:rvm");
-    T("vfmsubadd312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 97 /r rl:rvm");
-    T("vfmsubadd312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 97 /r rl:rvm");
-    T("vfmsubadd312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 97 /r rl:rvm");
-    T("vfmsubadd213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a7 /r rl:rvm");
-    T("vfmsubadd213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a7 /r rl:rvm");
-    T("vfmsubadd213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a7 /r rl:rvm");
-    T("vfmsubadd213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a7 /r rl:rvm");
-    T("vfmsubadd123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x a7 /r rl:rvm");
-    T("vfmsubadd123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x a7 /r rl:rvm");
-    T("vfmsubadd123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x a7 /r rl:rvm");
-    T("vfmsubadd123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x a7 /r rl:rvm");
-    T("vfmsubadd231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b7 /r rl:rvm");
-    T("vfmsubadd231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b7 /r rl:rvm");
-    T("vfmsubadd231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b7 /r rl:rvm");
-    T("vfmsubadd231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b7 /r rl:rvm");
-    T("vfmsubadd321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x b7 /r rl:rvm");
-    T("vfmsubadd321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x b7 /r rl:rvm");
-    T("vfmsubadd321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x b7 /r rl:rvm");
-    T("vfmsubadd321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x b7 /r rl:rvm");
-    T("vfnmadd132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9c /r rl:rvm");
-    T("vfnmadd132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9c /r rl:rvm");
-    T("vfnmadd132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9c /r rl:rvm");
-    T("vfnmadd132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9c /r rl:rvm");
-    T("vfnmadd312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9c /r rl:rvm");
-    T("vfnmadd312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9c /r rl:rvm");
-    T("vfnmadd312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9c /r rl:rvm");
-    T("vfnmadd312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9c /r rl:rvm");
-    T("vfnmadd213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ac /r rl:rvm");
-    T("vfnmadd213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ac /r rl:rvm");
-    T("vfnmadd213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ac /r rl:rvm");
-    T("vfnmadd213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ac /r rl:rvm");
-    T("vfnmadd123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ac /r rl:rvm");
-    T("vfnmadd123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ac /r rl:rvm");
-    T("vfnmadd123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ac /r rl:rvm");
-    T("vfnmadd123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ac /r rl:rvm");
-    T("vfnmadd231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x bc /r rl:rvm");
-    T("vfnmadd231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x bc /r rl:rvm");
-    T("vfnmadd231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x bc /r rl:rvm");
-    T("vfnmadd231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x bc /r rl:rvm");
-    T("vfnmadd321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x bc /r rl:rvm");
-    T("vfnmadd321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x bc /r rl:rvm");
-    T("vfnmadd321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x bc /r rl:rvm");
-    T("vfnmadd321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x bc /r rl:rvm");
-    T("vfnmsub132ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9e /r rl:rvm");
-    T("vfnmsub132ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9e /r rl:rvm");
-    T("vfnmsub132pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9e /r rl:rvm");
-    T("vfnmsub132pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9e /r rl:rvm");
-    T("vfnmsub312ps", "vx,vx,vx16", "xv:V:0:1:2:0:x 9e /r rl:rvm");
-    T("vfnmsub312ps", "vy,vy,vy32", "xv:V:1:1:2:0:x 9e /r rl:rvm");
-    T("vfnmsub312pd", "vx,vx,vx16", "xv:V:0:1:2:1:x 9e /r rl:rvm");
-    T("vfnmsub312pd", "vy,vy,vy32", "xv:V:1:1:2:1:x 9e /r rl:rvm");
-    T("vfnmsub213ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ae /r rl:rvm");
-    T("vfnmsub213ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ae /r rl:rvm");
-    T("vfnmsub213pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ae /r rl:rvm");
-    T("vfnmsub213pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ae /r rl:rvm");
-    T("vfnmsub123ps", "vx,vx,vx16", "xv:V:0:1:2:0:x ae /r rl:rvm");
-    T("vfnmsub123ps", "vy,vy,vy32", "xv:V:1:1:2:0:x ae /r rl:rvm");
-    T("vfnmsub123pd", "vx,vx,vx16", "xv:V:0:1:2:1:x ae /r rl:rvm");
-    T("vfnmsub123pd", "vy,vy,vy32", "xv:V:1:1:2:1:x ae /r rl:rvm");
-    T("vfnmsub231ps", "vx,vx,vx16", "xv:V:0:1:2:0:x be /r rl:rvm");
-    T("vfnmsub231ps", "vy,vy,vy32", "xv:V:1:1:2:0:x be /r rl:rvm");
-    T("vfnmsub231pd", "vx,vx,vx16", "xv:V:0:1:2:1:x be /r rl:rvm");
-    T("vfnmsub231pd", "vy,vy,vy32", "xv:V:1:1:2:1:x be /r rl:rvm");
-    T("vfnmsub321ps", "vx,vx,vx16", "xv:V:0:1:2:0:x be /r rl:rvm");
-    T("vfnmsub321ps", "vy,vy,vy32", "xv:V:1:1:2:0:x be /r rl:rvm");
-    T("vfnmsub321pd", "vx,vx,vx16", "xv:V:0:1:2:1:x be /r rl:rvm");
-    T("vfnmsub321pd", "vy,vy,vy32", "xv:V:1:1:2:1:x be /r rl:rvm");
-    T("vfmadd132ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 99 /r rl:rvm");
-    T("vfmadd132sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 99 /r rl:rvm");
-    T("vfmadd312ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 99 /r rl:rvm");
-    T("vfmadd312sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 99 /r rl:rvm");
-    T("vfmadd213ss", "vx,vx,vx4", "xv:V:0:1:2:0:x a9 /r rl:rvm");
-    T("vfmadd213sd", "vx,vx,vx8", "xv:V:0:1:2:1:x a9 /r rl:rvm");
-    T("vfmadd123ss", "vx,vx,vx4", "xv:V:0:1:2:0:x a9 /r rl:rvm");
-    T("vfmadd123sd", "vx,vx,vx8", "xv:V:0:1:2:1:x a9 /r rl:rvm");
-    T("vfmadd231ss", "vx,vx,vx4", "xv:V:0:1:2:0:x b9 /r rl:rvm");
-    T("vfmadd231sd", "vx,vx,vx8", "xv:V:0:1:2:1:x b9 /r rl:rvm");
-    T("vfmadd321ss", "vx,vx,vx4", "xv:V:0:1:2:0:x b9 /r rl:rvm");
-    T("vfmadd321sd", "vx,vx,vx8", "xv:V:0:1:2:1:x b9 /r rl:rvm");
-    T("vfmsub132ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9b /r rl:rvm");
-    T("vfmsub132sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9b /r rl:rvm");
-    T("vfmsub312ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9b /r rl:rvm");
-    T("vfmsub312sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9b /r rl:rvm");
-    T("vfmsub213ss", "vx,vx,vx4", "xv:V:0:1:2:0:x ab /r rl:rvm");
-    T("vfmsub213sd", "vx,vx,vx8", "xv:V:0:1:2:1:x ab /r rl:rvm");
-    T("vfmsub123ss", "vx,vx,vx4", "xv:V:0:1:2:0:x ab /r rl:rvm");
-    T("vfmsub123sd", "vx,vx,vx8", "xv:V:0:1:2:1:x ab /r rl:rvm");
-    T("vfmsub231ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bb /r rl:rvm");
-    T("vfmsub231sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bb /r rl:rvm");
-    T("vfmsub321ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bb /r rl:rvm");
-    T("vfmsub321sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bb /r rl:rvm");
-    T("vfnmadd132ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9d /r rl:rvm");
-    T("vfnmadd132sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9d /r rl:rvm");
-    T("vfnmadd312ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9d /r rl:rvm");
-    T("vfnmadd312sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9d /r rl:rvm");
-    T("vfnmadd213ss", "vx,vx,vx4", "xv:V:0:1:2:0:x ad /r rl:rvm");
-    T("vfnmadd213sd", "vx,vx,vx8", "xv:V:0:1:2:1:x ad /r rl:rvm");
-    T("vfnmadd123ss", "vx,vx,vx4", "xv:V:0:1:2:0:x ad /r rl:rvm");
-    T("vfnmadd123sd", "vx,vx,vx8", "xv:V:0:1:2:1:x ad /r rl:rvm");
-    T("vfnmadd231ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bd /r rl:rvm");
-    T("vfnmadd231sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bd /r rl:rvm");
-    T("vfnmadd321ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bd /r rl:rvm");
-    T("vfnmadd321sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bd /r rl:rvm");
-    T("vfnmsub132ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9f /r rl:rvm");
-    T("vfnmsub132sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9f /r rl:rvm");
-    T("vfnmsub312ss", "vx,vx,vx4", "xv:V:0:1:2:0:x 9f /r rl:rvm");
-    T("vfnmsub312sd", "vx,vx,vx8", "xv:V:0:1:2:1:x 9f /r rl:rvm");
-    T("vfnmsub213ss", "vx,vx,vx4", "xv:V:0:1:2:0:x af /r rl:rvm");
-    T("vfnmsub213sd", "vx,vx,vx8", "xv:V:0:1:2:1:x af /r rl:rvm");
-    T("vfnmsub123ss", "vx,vx,vx4", "xv:V:0:1:2:0:x af /r rl:rvm");
-    T("vfnmsub123sd", "vx,vx,vx8", "xv:V:0:1:2:1:x af /r rl:rvm");
-    T("vfnmsub231ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bf /r rl:rvm");
-    T("vfnmsub231sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bf /r rl:rvm");
-    T("vfnmsub321ss", "vx,vx,vx4", "xv:V:0:1:2:0:x bf /r rl:rvm");
-    T("vfnmsub321sd", "vx,vx,vx8", "xv:V:0:1:2:1:x bf /r rl:rvm");
-    T("vcvtph2ps", "vy,vx16", "xv:V:1:1:2:0:x 13 /r rl:rm");
-    T("vcvtph2ps", "vx,vx8", "xv:V:0:1:2:0:x 13 /r rl:rm");
-    T("vcvtps2ph", "vx16,vy,imm8", "xv:V:1:1:3:0:x 1d /r ib rl:mri");
-    T("vcvtps2ph", "vx8,vx,imm8", "xv:V:0:1:3:0:x 1d /r ib rl:mri");
-    T("vfmaddpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 69 /r is4 rl:rvms");
-    T("vfmaddpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 69 /r is4 rl:rvms");
-    T("vfmaddpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 69 /r is4 rl:rvsm");
-    T("vfmaddpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 69 /r is4 rl:rvsm");
-    T("vfmaddps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 68 /r is4 rl:rvms");
-    T("vfmaddps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 68 /r is4 rl:rvms");
-    T("vfmaddps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 68 /r is4 rl:rvsm");
-    T("vfmaddps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 68 /r is4 rl:rvsm");
-    T("vfmaddsd", "vx,vx*,vx8,vx", "xv:V:0:1:3:0:x 6b /r is4 rl:rvms");
-    T("vfmaddsd", "vx,vx*,vx,vx8", "xv:V:0:1:3:1:x 6b /r is4 rl:rvsm");
-    T("vfmaddss", "vx,vx*,vx4,vx", "xv:V:0:1:3:0:x 6a /r is4 rl:rvms");
-    T("vfmaddss", "vx,vx*,vx,vx4", "xv:V:0:1:3:1:x 6a /r is4 rl:rvsm");
-    T("vfmaddsubpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 5d /r is4 rl:rvms");
-    T("vfmaddsubpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 5d /r is4 rl:rvms");
-    T("vfmaddsubpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 5d /r is4 rl:rvsm");
-    T("vfmaddsubpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 5d /r is4 rl:rvsm");
-    T("vfmaddsubps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 5c /r is4 rl:rvms");
-    T("vfmaddsubps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 5c /r is4 rl:rvms");
-    T("vfmaddsubps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 5c /r is4 rl:rvsm");
-    T("vfmaddsubps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 5c /r is4 rl:rvsm");
-    T("vfmsubaddpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 5f /r is4 rl:rvms");
-    T("vfmsubaddpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 5f /r is4 rl:rvms");
-    T("vfmsubaddpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 5f /r is4 rl:rvsm");
-    T("vfmsubaddpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 5f /r is4 rl:rvsm");
-    T("vfmsubaddps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 5e /r is4 rl:rvms");
-    T("vfmsubaddps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 5e /r is4 rl:rvms");
-    T("vfmsubaddps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 5e /r is4 rl:rvsm");
-    T("vfmsubaddps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 5e /r is4 rl:rvsm");
-    T("vfmsubpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 6d /r is4 rl:rvms");
-    T("vfmsubpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 6d /r is4 rl:rvms");
-    T("vfmsubpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 6d /r is4 rl:rvsm");
-    T("vfmsubpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 6d /r is4 rl:rvsm");
-    T("vfmsubps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 6c /r is4 rl:rvms");
-    T("vfmsubps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 6c /r is4 rl:rvms");
-    T("vfmsubps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 6c /r is4 rl:rvsm");
-    T("vfmsubps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 6c /r is4 rl:rvsm");
-    T("vfmsubsd", "vx,vx*,vx8,vx", "xv:V:0:1:3:0:x 6f /r is4 rl:rvms");
-    T("vfmsubsd", "vx,vx*,vx,vx8", "xv:V:0:1:3:1:x 6f /r is4 rl:rvsm");
-    T("vfmsubss", "vx,vx*,vx4,vx", "xv:V:0:1:3:0:x 6e /r is4 rl:rvms");
-    T("vfmsubss", "vx,vx*,vx,vx4", "xv:V:0:1:3:1:x 6e /r is4 rl:rvsm");
-    T("vfnmaddpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 79 /r is4 rl:rvms");
-    T("vfnmaddpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 79 /r is4 rl:rvms");
-    T("vfnmaddpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 79 /r is4 rl:rvsm");
-    T("vfnmaddpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 79 /r is4 rl:rvsm");
-    T("vfnmaddps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 78 /r is4 rl:rvms");
-    T("vfnmaddps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 78 /r is4 rl:rvms");
-    T("vfnmaddps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 78 /r is4 rl:rvsm");
-    T("vfnmaddps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 78 /r is4 rl:rvsm");
-    T("vfnmaddsd", "vx,vx*,vx8,vx", "xv:V:0:1:3:0:x 7b /r is4 rl:rvms");
-    T("vfnmaddsd", "vx,vx*,vx,vx8", "xv:V:0:1:3:1:x 7b /r is4 rl:rvsm");
-    T("vfnmaddss", "vx,vx*,vx4,vx", "xv:V:0:1:3:0:x 7a /r is4 rl:rvms");
-    T("vfnmaddss", "vx,vx*,vx,vx4", "xv:V:0:1:3:1:x 7a /r is4 rl:rvsm");
-    T("vfnmsubpd", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 7d /r is4 rl:rvms");
-    T("vfnmsubpd", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 7d /r is4 rl:rvms");
-    T("vfnmsubpd", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 7d /r is4 rl:rvsm");
-    T("vfnmsubpd", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 7d /r is4 rl:rvsm");
-    T("vfnmsubps", "vx,vx*,vx16,vx", "xv:V:0:1:3:0:x 7c /r is4 rl:rvms");
-    T("vfnmsubps", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 7c /r is4 rl:rvms");
-    T("vfnmsubps", "vx,vx*,vx,vx16", "xv:V:0:1:3:1:x 7c /r is4 rl:rvsm");
-    T("vfnmsubps", "vy,vy*,vy,vy32", "xv:V:1:1:3:1:x 7c /r is4 rl:rvsm");
-    T("vfnmsubsd", "vx,vx*,vx8,vx", "xv:V:0:1:3:0:x 7f /r is4 rl:rvms");
-    T("vfnmsubsd", "vx,vx*,vx,vx8", "xv:V:0:1:3:1:x 7f /r is4 rl:rvsm");
-    T("vfnmsubss", "vx,vx*,vx4,vx", "xv:V:0:1:3:0:x 7e /r is4 rl:rvms");
-    T("vfnmsubss", "vx,vx*,vx,vx4", "xv:V:0:1:3:1:x 7e /r is4 rl:rvsm");
-    T("vmpsadbw", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 42 /r ib rl:rvmi");
-    T("vpabsb", "vy,vy32", "xv:V:1:1:2:0:x 1c /r rl:rm");
-    T("vpabsw", "vy,vy32", "xv:V:1:1:2:0:x 1d /r rl:rm");
-    T("vpabsd", "vy,vy32", "xv:V:1:1:2:0:x 1e /r rl:rm");
-    T("vpacksswb", "vy,vy*,vy32", "xv:V:1:1:1:0:x 63 /r rl:rvm");
-    T("vpackssdw", "vy,vy*,vy32", "xv:V:1:1:1:0:x 6b /r rl:rvm");
-    T("vpackusdw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 2b /r rl:rvm");
-    T("vpackuswb", "vy,vy*,vy32", "xv:V:1:1:1:0:x 67 /r rl:rvm");
-    T("vpaddb", "vy,vy*,vy32", "xv:V:1:1:1:0:x fc /r rl:rvm");
-    T("vpaddw", "vy,vy*,vy32", "xv:V:1:1:1:0:x fd /r rl:rvm");
-    T("vpaddd", "vy,vy*,vy32", "xv:V:1:1:1:0:x fe /r rl:rvm");
-    T("vpaddq", "vy,vy*,vy32", "xv:V:1:1:1:0:x d4 /r rl:rvm");
-    T("vpaddsb", "vy,vy*,vy32", "xv:V:1:1:1:0:x ec /r rl:rvm");
-    T("vpaddsw", "vy,vy*,vy32", "xv:V:1:1:1:0:x ed /r rl:rvm");
-    T("vpaddusb", "vy,vy*,vy32", "xv:V:1:1:1:0:x dc /r rl:rvm");
-    T("vpaddusw", "vy,vy*,vy32", "xv:V:1:1:1:0:x dd /r rl:rvm");
-    T("vpalignr", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 0f /r ib rl:rvmi");
-    T("vpand", "vy,vy*,vy32", "xv:V:1:1:1:0:x db /r rl:rvm");
-    T("vpandn", "vy,vy*,vy32", "xv:V:1:1:1:0:x df /r rl:rvm");
-    T("vpavgb", "vy,vy*,vy32", "xv:V:1:1:1:0:x e0 /r rl:rvm");
-    T("vpavgw", "vy,vy*,vy32", "xv:V:1:1:1:0:x e3 /r rl:rvm");
-    T("vpblendvb", "vy,vy*,vy32,vy", "xv:V:1:1:3:0:x 4c /r is4 rl:rvms");
-    T("vpblendw", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 0e /r ib rl:rvmi");
-    T("vpcmpeqb", "vy,vy*,vy32", "xv:V:1:1:1:0:x 74 /r rl:rvm");
-    T("vpcmpeqw", "vy,vy*,vy32", "xv:V:1:1:1:0:x 75 /r rl:rvm");
-    T("vpcmpeqd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 76 /r rl:rvm");
-    T("vpcmpeqq", "vy,vy*,vy32", "xv:V:1:1:2:0:x 29 /r rl:rvm");
-    T("vpcmpgtb", "vy,vy*,vy32", "xv:V:1:1:1:0:x 64 /r rl:rvm");
-    T("vpcmpgtw", "vy,vy*,vy32", "xv:V:1:1:1:0:x 65 /r rl:rvm");
-    T("vpcmpgtd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 66 /r rl:rvm");
-    T("vpcmpgtq", "vy,vy*,vy32", "xv:V:1:1:2:0:x 37 /r rl:rvm");
-    T("vphaddw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 01 /r rl:rvm");
-    T("vphaddd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 02 /r rl:rvm");
-    T("vphaddsw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 03 /r rl:rvm");
-    T("vphsubw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 05 /r rl:rvm");
-    T("vphsubd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 06 /r rl:rvm");
-    T("vphsubsw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 07 /r rl:rvm");
-    T("vpmaddubsw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 04 /r rl:rvm");
-    T("vpmaddwd", "vy,vy*,vy32", "xv:V:1:1:1:0:x f5 /r rl:rvm");
-    T("vpmaxsb", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3c /r rl:rvm");
-    T("vpmaxsw", "vy,vy*,vy32", "xv:V:1:1:1:0:x ee /r rl:rvm");
-    T("vpmaxsd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3d /r rl:rvm");
-    T("vpmaxub", "vy,vy*,vy32", "xv:V:1:1:1:0:x de /r rl:rvm");
-    T("vpmaxuw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3e /r rl:rvm");
-    T("vpmaxud", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3f /r rl:rvm");
-    T("vpminsb", "vy,vy*,vy32", "xv:V:1:1:2:0:x 38 /r rl:rvm");
-    T("vpminsw", "vy,vy*,vy32", "xv:V:1:1:1:0:x ea /r rl:rvm");
-    T("vpminsd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 39 /r rl:rvm");
-    T("vpminub", "vy,vy*,vy32", "xv:V:1:1:1:0:x da /r rl:rvm");
-    T("vpminuw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3a /r rl:rvm");
-    T("vpminud", "vy,vy*,vy32", "xv:V:1:1:2:0:x 3b /r rl:rvm");
-    T("vpmovmskb", "r32,vy", "xv:V:1:1:1:0:x d7 /r rl:rm");
-    T("vpmovsxbw", "vy,vx16", "xv:V:1:1:2:0:x 20 /r rl:rm");
-    T("vpmovsxbd", "vy,m64", "xv:V:1:1:2:0:x 21 /r rl:rm");
-    T("vpmovsxbd", "vy,vx", "xv:V:1:1:2:0:x 21 /r rl:rm");
-    T("vpmovsxbq", "vy,m32", "xv:V:1:1:2:0:x 22 /r rl:rm");
-    T("vpmovsxbq", "vy,vx", "xv:V:1:1:2:0:x 22 /r rl:rm");
-    T("vpmovsxwd", "vy,vx16", "xv:V:1:1:2:0:x 23 /r rl:rm");
-    T("vpmovsxwq", "vy,m64", "xv:V:1:1:2:0:x 24 /r rl:rm");
-    T("vpmovsxwq", "vy,vx", "xv:V:1:1:2:0:x 24 /r rl:rm");
-    T("vpmovsxdq", "vy,vx16", "xv:V:1:1:2:0:x 25 /r rl:rm");
-    T("vpmovzxbw", "vy,vx16", "xv:V:1:1:2:0:x 30 /r rl:rm");
-    T("vpmovzxbd", "vy,m64", "xv:V:1:1:2:0:x 31 /r rl:rm");
-    T("vpmovzxbd", "vy,vx", "xv:V:1:1:2:0:x 31 /r rl:rm");
-    T("vpmovzxbq", "vy,m32", "xv:V:1:1:2:0:x 32 /r rl:rm");
-    T("vpmovzxbq", "vy,vx", "xv:V:1:1:2:0:x 32 /r rl:rm");
-    T("vpmovzxwd", "vy,vx16", "xv:V:1:1:2:0:x 33 /r rl:rm");
-    T("vpmovzxwq", "vy,m64", "xv:V:1:1:2:0:x 34 /r rl:rm");
-    T("vpmovzxwq", "vy,vx", "xv:V:1:1:2:0:x 34 /r rl:rm");
-    T("vpmovzxdq", "vy,vx16", "xv:V:1:1:2:0:x 35 /r rl:rm");
-    T("vpmuldq", "vy,vy*,vy32", "xv:V:1:1:2:0:x 28 /r rl:rvm");
-    T("vpmulhrsw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 0b /r rl:rvm");
-    T("vpmulhuw", "vy,vy*,vy32", "xv:V:1:1:1:0:x e4 /r rl:rvm");
-    T("vpmulhw", "vy,vy*,vy32", "xv:V:1:1:1:0:x e5 /r rl:rvm");
-    T("vpmullw", "vy,vy*,vy32", "xv:V:1:1:1:0:x d5 /r rl:rvm");
-    T("vpmulld", "vy,vy*,vy32", "xv:V:1:1:2:0:x 40 /r rl:rvm");
-    T("vpmuludq", "vy,vy*,vy32", "xv:V:1:1:1:0:x f4 /r rl:rvm");
-    T("vpor", "vy,vy*,vy32", "xv:V:1:1:1:0:x eb /r rl:rvm");
-    T("vpsadbw", "vy,vy*,vy32", "xv:V:1:1:1:0:x f6 /r rl:rvm");
-    T("vpshufb", "vy,vy*,vy32", "xv:V:1:1:2:0:x 00 /r rl:rvm");
-    T("vpshufd", "vy,vy32,imm8", "xv:V:1:1:1:0:x 70 /r ib rl:rmi");
-    T("vpshufhw", "vy,vy32,imm8", "xv:V:1:2:1:0:x 70 /r ib rl:rmi");
-    T("vpshuflw", "vy,vy32,imm8", "xv:V:1:3:1:0:x 70 /r ib rl:rmi");
-    T("vpsignb", "vy,vy*,vy32", "xv:V:1:1:2:0:x 08 /r rl:rvm");
-    T("vpsignw", "vy,vy*,vy32", "xv:V:1:1:2:0:x 09 /r rl:rvm");
-    T("vpsignd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 0a /r rl:rvm");
-    T("vpslldq", "vy,vy*,imm8", "xv:V:1:1:1:0:x 73 /7 ib rl:vmi");
-    T("vpsllw", "vy,vy*,vx16", "xv:V:1:1:1:0:x f1 /r rl:rvm");
-    T("vpsllw", "vy,vy*,imm8", "xv:V:1:1:1:0:x 71 /6 ib rl:vmi");
-    T("vpslld", "vy,vy*,vx16", "xv:V:1:1:1:0:x f2 /r rl:rvm");
-    T("vpslld", "vy,vy*,imm8", "xv:V:1:1:1:0:x 72 /6 ib rl:vmi");
-    T("vpsllq", "vy,vy*,vx16", "xv:V:1:1:1:0:x f3 /r rl:rvm");
-    T("vpsllq", "vy,vy*,imm8", "xv:V:1:1:1:0:x 73 /6 ib rl:vmi");
-    T("vpsraw", "vy,vy*,vx16", "xv:V:1:1:1:0:x e1 /r rl:rvm");
-    T("vpsraw", "vy,vy*,imm8", "xv:V:1:1:1:0:x 71 /4 ib rl:vmi");
-    T("vpsrad", "vy,vy*,vx16", "xv:V:1:1:1:0:x e2 /r rl:rvm");
-    T("vpsrad", "vy,vy*,imm8", "xv:V:1:1:1:0:x 72 /4 ib rl:vmi");
-    T("vpsrldq", "vy,vy*,imm8", "xv:V:1:1:1:0:x 73 /3 ib rl:vmi");
-    T("vpsrlw", "vy,vy*,vx16", "xv:V:1:1:1:0:x d1 /r rl:rvm");
-    T("vpsrlw", "vy,vy*,imm8", "xv:V:1:1:1:0:x 71 /2 ib rl:vmi");
-    T("vpsrld", "vy,vy*,vx16", "xv:V:1:1:1:0:x d2 /r rl:rvm");
-    T("vpsrld", "vy,vy*,imm8", "xv:V:1:1:1:0:x 72 /2 ib rl:vmi");
-    T("vpsrlq", "vy,vy*,vx16", "xv:V:1:1:1:0:x d3 /r rl:rvm");
-    T("vpsrlq", "vy,vy*,imm8", "xv:V:1:1:1:0:x 73 /2 ib rl:vmi");
-    T("vpsubb", "vy,vy*,vy32", "xv:V:1:1:1:0:x f8 /r rl:rvm");
-    T("vpsubw", "vy,vy*,vy32", "xv:V:1:1:1:0:x f9 /r rl:rvm");
-    T("vpsubd", "vy,vy*,vy32", "xv:V:1:1:1:0:x fa /r rl:rvm");
-    T("vpsubq", "vy,vy*,vy32", "xv:V:1:1:1:0:x fb /r rl:rvm");
-    T("vpsubsb", "vy,vy*,vy32", "xv:V:1:1:1:0:x e8 /r rl:rvm");
-    T("vpsubsw", "vy,vy*,vy32", "xv:V:1:1:1:0:x e9 /r rl:rvm");
-    T("vpsubusb", "vy,vy*,vy32", "xv:V:1:1:1:0:x d8 /r rl:rvm");
-    T("vpsubusw", "vy,vy*,vy32", "xv:V:1:1:1:0:x d9 /r rl:rvm");
-    T("vpunpckhbw", "vy,vy*,vy32", "xv:V:1:1:1:0:x 68 /r rl:rvm");
-    T("vpunpckhwd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 69 /r rl:rvm");
-    T("vpunpckhdq", "vy,vy*,vy32", "xv:V:1:1:1:0:x 6a /r rl:rvm");
-    T("vpunpckhqdq", "vy,vy*,vy32", "xv:V:1:1:1:0:x 6d /r rl:rvm");
-    T("vpunpcklbw", "vy,vy*,vy32", "xv:V:1:1:1:0:x 60 /r rl:rvm");
-    T("vpunpcklwd", "vy,vy*,vy32", "xv:V:1:1:1:0:x 61 /r rl:rvm");
-    T("vpunpckldq", "vy,vy*,vy32", "xv:V:1:1:1:0:x 62 /r rl:rvm");
-    T("vpunpcklqdq", "vy,vy*,vy32", "xv:V:1:1:1:0:x 6c /r rl:rvm");
-    T("vpxor", "vy,vy*,vy32", "xv:V:1:1:1:0:x ef /r rl:rvm");
-    T("vmovntdqa", "vy,m256", "xv:V:1:1:2:0:x 2a /r rl:rm");
-    T("vbroadcastss", "vx,vx", "xv:V:0:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastss", "vy,vx", "xv:V:1:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastsd", "vy,vx", "xv:V:1:1:2:0:x 19 /r rl:rm");
-    T("vbroadcasti128", "vy,m128", "xv:V:1:1:2:0:x 5a /r rl:rm");
-    T("vpblendd", "vx,vx*,vx16,imm8", "xv:V:0:1:3:0:x 02 /r ib rl:rvmi");
-    T("vpblendd", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 02 /r ib rl:rvmi");
-    T("vpbroadcastb", "vx,m8", "xv:V:0:1:2:0:x 78 /r rl:rm");
-    T("vpbroadcastb", "vx,vx", "xv:V:0:1:2:0:x 78 /r rl:rm");
-    T("vpbroadcastb", "vy,m8", "xv:V:1:1:2:0:x 78 /r rl:rm");
-    T("vpbroadcastb", "vy,vx", "xv:V:1:1:2:0:x 78 /r rl:rm");
-    T("vpbroadcastw", "vx,m16", "xv:V:0:1:2:0:x 79 /r rl:rm");
-    T("vpbroadcastw", "vx,vx", "xv:V:0:1:2:0:x 79 /r rl:rm");
-    T("vpbroadcastw", "vy,m16", "xv:V:1:1:2:0:x 79 /r rl:rm");
-    T("vpbroadcastw", "vy,vx", "xv:V:1:1:2:0:x 79 /r rl:rm");
-    T("vpbroadcastd", "vx,m32", "xv:V:0:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vx,vx", "xv:V:0:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vy,m32", "xv:V:1:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vy,vx", "xv:V:1:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastq", "vx,m64", "xv:V:0:1:2:0:x 59 /r rl:rm");
-    T("vpbroadcastq", "vx,vx", "xv:V:0:1:2:0:x 59 /r rl:rm");
-    T("vpbroadcastq", "vy,m64", "xv:V:1:1:2:0:x 59 /r rl:rm");
-    T("vpbroadcastq", "vy,vx", "xv:V:1:1:2:0:x 59 /r rl:rm");
-    T("vpermd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 36 /r rl:rvm");
-    T("vpermpd", "vy,vy32,imm8", "xv:V:1:1:3:1:x 01 /r ib rl:rmi");
-    T("vpermps", "vy,vy*,vy32", "xv:V:1:1:2:0:x 16 /r rl:rvm");
-    T("vpermq", "vy,vy32,imm8", "xv:V:1:1:3:1:x 00 /r ib rl:rmi");
-    T("vperm2i128", "vy,vy*,vy32,imm8", "xv:V:1:1:3:0:x 46 /r ib rl:rvmi");
-    T("vextracti128", "vx16,vy,imm8", "xv:V:1:1:3:0:x 39 /r ib rl:mri");
-    T("vinserti128", "vy,vy*,vx16,imm8", "xv:V:1:1:3:0:x 38 /r ib rl:rvmi");
-    T("vpmaskmovd", "vx,vx*,m128", "xv:V:0:1:2:0:x 8c /r rl:rvm");
-    T("vpmaskmovd", "vy,vy*,m256", "xv:V:1:1:2:0:x 8c /r rl:rvm");
-    T("vpmaskmovq", "vx,vx*,m128", "xv:V:0:1:2:1:x 8c /r rl:rvm");
-    T("vpmaskmovq", "vy,vy*,m256", "xv:V:1:1:2:1:x 8c /r rl:rvm");
-    T("vpmaskmovd", "m128,vx*,vx", "xv:V:0:1:2:0:x 8e /r rl:mvr");
-    T("vpmaskmovd", "m256,vy*,vy", "xv:V:1:1:2:0:x 8e /r rl:mvr");
-    T("vpmaskmovq", "m128,vx*,vx", "xv:V:0:1:2:1:x 8e /r rl:mvr");
-    T("vpmaskmovq", "m256,vy*,vy", "xv:V:1:1:2:1:x 8e /r rl:mvr");
-    T("vpsllvd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 47 /r rl:rvm");
-    T("vpsllvq", "vx,vx*,vx16", "xv:V:0:1:2:1:x 47 /r rl:rvm");
-    T("vpsllvd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 47 /r rl:rvm");
-    T("vpsllvq", "vy,vy*,vy32", "xv:V:1:1:2:1:x 47 /r rl:rvm");
-    T("vpsravd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 46 /r rl:rvm");
-    T("vpsravd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 46 /r rl:rvm");
-    T("vpsrlvd", "vx,vx*,vx16", "xv:V:0:1:2:0:x 45 /r rl:rvm");
-    T("vpsrlvq", "vx,vx*,vx16", "xv:V:0:1:2:1:x 45 /r rl:rvm");
-    T("vpsrlvd", "vy,vy*,vy32", "xv:V:1:1:2:0:x 45 /r rl:rvm");
-    T("vpsrlvq", "vy,vy*,vy32", "xv:V:1:1:2:1:x 45 /r rl:rvm");
-    T("vgatherdpd", "vx,vsx64,vx", "xv:V:0:1:2:1:x 92 /r rl:rmv");
-    T("vgatherqpd", "vx,vsx64,vx", "xv:V:0:1:2:1:x 93 /r rl:rmv");
-    T("vgatherdpd", "vy,vsx64,vy", "xv:V:1:1:2:1:x 92 /r rl:rmv");
-    T("vgatherqpd", "vy,vsy64,vy", "xv:V:1:1:2:1:x 93 /r rl:rmv");
-    T("vgatherdps", "vx,vsx32,vx", "xv:V:0:1:2:0:x 92 /r rl:rmv");
-    T("vgatherqps", "vx,vsx32,vx", "xv:V:0:1:2:0:x 93 /r rl:rmv");
-    T("vgatherdps", "vy,vsy32,vy", "xv:V:1:1:2:0:x 92 /r rl:rmv");
-    T("vgatherqps", "vx,vsy32,vx", "xv:V:1:1:2:0:x 93 /r rl:rmv");
-    T("vpgatherdd", "vx,vsx32,vx", "xv:V:0:1:2:0:x 90 /r rl:rmv");
-    T("vpgatherqd", "vx,vsx32,vx", "xv:V:0:1:2:0:x 91 /r rl:rmv");
-    T("vpgatherdd", "vy,vsy32,vy", "xv:V:1:1:2:0:x 90 /r rl:rmv");
-    T("vpgatherqd", "vx,vsy32,vx", "xv:V:1:1:2:0:x 91 /r rl:rmv");
-    T("vpgatherdq", "vx,vsx64,vx", "xv:V:0:1:2:1:x 90 /r rl:rmv");
-    T("vpgatherqq", "vx,vsx64,vx", "xv:V:0:1:2:1:x 91 /r rl:rmv");
-    T("vpgatherdq", "vy,vsx64,vy", "xv:V:1:1:2:1:x 90 /r rl:rmv");
-    T("vpgatherqq", "vy,vsy64,vy", "xv:V:1:1:2:1:x 91 /r rl:rmv");
-    T("andn", "r32,r32,rm32", "xv:V:0:0:2:0:x f2 /r rl:rvm");
-    T("bextr", "r32,rm32,r32", "xv:V:0:0:2:0:x f7 /r rl:rmv");
-    T("blsi", "r32,rm32", "xv:V:0:0:2:0:x f3 /3 rl:vm");
-    T("blsmsk", "r32,rm32", "xv:V:0:0:2:0:x f3 /2 rl:vm");
-    T("blsr", "r32,rm32", "xv:V:0:0:2:0:x f3 /1 rl:vm");
-    T("bzhi", "r32,rm32,r32", "xv:V:0:0:2:0:x f5 /r rl:rmv");
-    T("mulx", "r32,r32,rm32", "xv:V:0:3:2:0:x f6 /r rl:rvm");
-    T("pdep", "r32,r32,rm32", "xv:V:0:3:2:0:x f5 /r rl:rvm");
-    T("pext", "r32,r32,rm32", "xv:V:0:2:2:0:x f5 /r rl:rvm");
-    T("rorx", "r32,rm32,imm8", "xv:V:0:3:3:0:x f0 /r ib rl:rmi");
-    T("sarx", "r32,rm32,r32", "xv:V:0:2:2:0:x f7 /r rl:rmv");
-    T("shlx", "r32,rm32,r32", "xv:V:0:1:2:0:x f7 /r rl:rmv");
-    T("shrx", "r32,rm32,r32", "xv:V:0:3:2:0:x f7 /r rl:rmv");
-    T("kaddb", "vk,vk,vk", "xv:V:1:1:1:0:x 4a /r rl:rvm");
-    T("kaddd", "vk,vk,vk", "xv:V:1:1:1:1:x 4a /r rl:rvm");
-    T("kaddq", "vk,vk,vk", "xv:V:1:0:1:1:x 4a /r rl:rvm");
-    T("kaddw", "vk,vk,vk", "xv:V:1:0:1:0:x 4a /r rl:rvm");
-    T("kandb", "vk,vk,vk", "xv:V:1:1:1:0:x 41 /r rl:rvm");
-    T("kandd", "vk,vk,vk", "xv:V:1:1:1:1:x 41 /r rl:rvm");
-    T("kandnb", "vk,vk,vk", "xv:V:1:1:1:0:x 42 /r rl:rvm");
-    T("kandnd", "vk,vk,vk", "xv:V:1:1:1:1:x 42 /r rl:rvm");
-    T("kandnq", "vk,vk,vk", "xv:V:1:0:1:1:x 42 /r rl:rvm");
-    T("kandnw", "vk,vk,vk", "xv:V:1:0:1:0:x 42 /r rl:rvm");
-    T("kandq", "vk,vk,vk", "xv:V:1:0:1:1:x 41 /r rl:rvm");
-    T("kandw", "vk,vk,vk", "xv:V:1:0:1:0:x 41 /r rl:rvm");
-    T("kmovb", "vk,vk1", "xv:V:0:1:1:0:x 90 /r rl:rm");
-    T("kmovb", "m8,vk", "xv:V:0:1:1:0:x 91 /r rl:mr");
-    T("kmovb", "vk,r32", "xv:V:0:1:1:0:x 92 /r rl:rm");
-    T("kmovb", "vk,r8", "xv:V:0:1:1:0:x 92 /r rl:rm");
-    T("kmovb", "r32,vk", "xv:V:0:1:1:0:x 93 /r rl:rm");
-    T("kmovd", "vk,vk4", "xv:V:0:1:1:1:x 90 /r rl:rm");
-    T("kmovd", "m32,vk", "xv:V:0:1:1:1:x 91 /r rl:mr");
-    T("kmovd", "vk,r32", "xv:V:0:3:1:0:x 92 /r rl:rm");
-    T("kmovd", "r32,vk", "xv:V:0:3:1:0:x 93 /r rl:rm");
-    T("kmovq", "vk,vk8", "xv:V:0:0:1:1:x 90 /r rl:rm");
-    T("kmovq", "m64,vk", "xv:V:0:0:1:1:x 91 /r rl:mr");
-    T("kmovw", "vk,vk2", "xv:V:0:0:1:0:x 90 /r rl:rm");
-    T("kmovw", "m16,vk", "xv:V:0:0:1:0:x 91 /r rl:mr");
-    T("kmovw", "vk,r32", "xv:V:0:0:1:0:x 92 /r rl:rm");
-    T("kmovw", "vk,r16", "xv:V:0:0:1:0:x 92 /r rl:rm");
-    T("kmovw", "r32,vk", "xv:V:0:0:1:0:x 93 /r rl:rm");
-    T("knotb", "vk,vk", "xv:V:0:1:1:0:x 44 /r rl:rm");
-    T("knotd", "vk,vk", "xv:V:0:1:1:1:x 44 /r rl:rm");
-    T("knotq", "vk,vk", "xv:V:0:0:1:1:x 44 /r rl:rm");
-    T("knotw", "vk,vk", "xv:V:0:0:1:0:x 44 /r rl:rm");
-    T("korb", "vk,vk,vk", "xv:V:1:1:1:0:x 45 /r rl:rvm");
-    T("kord", "vk,vk,vk", "xv:V:1:1:1:1:x 45 /r rl:rvm");
-    T("korq", "vk,vk,vk", "xv:V:1:0:1:1:x 45 /r rl:rvm");
-    T("korw", "vk,vk,vk", "xv:V:1:0:1:0:x 45 /r rl:rvm");
-    T("kortestb", "vk,vk", "xv:V:0:1:1:0:x 98 /r rl:rm");
-    T("kortestd", "vk,vk", "xv:V:0:1:1:1:x 98 /r rl:rm");
-    T("kortestq", "vk,vk", "xv:V:0:0:1:1:x 98 /r rl:rm");
-    T("kortestw", "vk,vk", "xv:V:0:0:1:0:x 98 /r rl:rm");
-    T("kshiftlb", "vk,vk,imm8", "xv:V:0:1:3:0:x 32 /r ib rl:rmi");
-    T("kshiftld", "vk,vk,imm8", "xv:V:0:1:3:0:x 33 /r ib rl:rmi");
-    T("kshiftlq", "vk,vk,imm8", "xv:V:0:1:3:1:x 33 /r ib rl:rmi");
-    T("kshiftlw", "vk,vk,imm8", "xv:V:0:1:3:1:x 32 /r ib rl:rmi");
-    T("kshiftrb", "vk,vk,imm8", "xv:V:0:1:3:0:x 30 /r ib rl:rmi");
-    T("kshiftrd", "vk,vk,imm8", "xv:V:0:1:3:0:x 31 /r ib rl:rmi");
-    T("kshiftrq", "vk,vk,imm8", "xv:V:0:1:3:1:x 31 /r ib rl:rmi");
-    T("kshiftrw", "vk,vk,imm8", "xv:V:0:1:3:1:x 30 /r ib rl:rmi");
-    T("ktestb", "vk,vk", "xv:V:0:1:1:0:x 99 /r rl:rm");
-    T("ktestd", "vk,vk", "xv:V:0:1:1:1:x 99 /r rl:rm");
-    T("ktestq", "vk,vk", "xv:V:0:0:1:1:x 99 /r rl:rm");
-    T("ktestw", "vk,vk", "xv:V:0:0:1:0:x 99 /r rl:rm");
-    T("kunpckbw", "vk,vk,vk", "xv:V:1:1:1:0:x 4b /r rl:rvm");
-    T("kunpckdq", "vk,vk,vk", "xv:V:1:0:1:1:x 4b /r rl:rvm");
-    T("kunpckwd", "vk,vk,vk", "xv:V:1:0:1:0:x 4b /r rl:rvm");
-    T("kxnorb", "vk,vk,vk", "xv:V:1:1:1:0:x 46 /r rl:rvm");
-    T("kxnord", "vk,vk,vk", "xv:V:1:1:1:1:x 46 /r rl:rvm");
-    T("kxnorq", "vk,vk,vk", "xv:V:1:0:1:1:x 46 /r rl:rvm");
-    T("kxnorw", "vk,vk,vk", "xv:V:1:0:1:0:x 46 /r rl:rvm");
-    T("kxorb", "vk,vk,vk", "xv:V:1:1:1:0:x 47 /r rl:rvm");
-    T("kxord", "vk,vk,vk", "xv:V:1:1:1:1:x 47 /r rl:rvm");
-    T("kxorq", "vk,vk,vk", "xv:V:1:0:1:1:x 47 /r rl:rvm");
-    T("kxorw", "vk,vk,vk", "xv:V:1:0:1:0:x 47 /r rl:rvm");
-    T("vgf2p8affineinvqb", "vx,vx*,vx16,imm8", "xv:V:0:1:3:1:x cf /r ib rl:rvmi");
-    T("vgf2p8affineinvqb", "vy,vy*,vy32,imm8", "xv:V:1:1:3:1:x cf /r ib rl:rvmi");
-    T("vgf2p8affineqb", "vx,vx*,vx16,imm8", "xv:V:0:1:3:1:x ce /r ib rl:rvmi");
-    T("vgf2p8affineqb", "vy,vy*,vy32,imm8", "xv:V:1:1:3:1:x ce /r ib rl:rvmi");
-    T("vgf2p8mulb", "vx,vx*,vx16", "xv:V:0:1:2:0:x cf /r rl:rvm");
-    T("vgf2p8mulb", "vy,vy*,vy32", "xv:V:1:1:2:0:x cf /r rl:rvm");
-    tab_lv(15);
-    T("vaesenc", "vx,vx*,vx16", "xv:E:0:1:2:0:fv dc /r rl:rvm");
-    T("vaesenc", "vy,vy*,vy32", "xv:E:1:1:2:0:fv dc /r rl:rvm");
-    T("vaesenclast", "vx,vx*,vx16", "xv:E:0:1:2:0:fv dd /r rl:rvm");
-    T("vaesenclast", "vy,vy*,vy32", "xv:E:1:1:2:0:fv dd /r rl:rvm");
-    T("vaesdec", "vx,vx*,vx16", "xv:E:0:1:2:0:fv de /r rl:rvm");
-    T("vaesdec", "vy,vy*,vy32", "xv:E:1:1:2:0:fv de /r rl:rvm");
-    T("vaesdeclast", "vx,vx*,vx16", "xv:E:0:1:2:0:fv df /r rl:rvm");
-    T("vaesdeclast", "vy,vy*,vy32", "xv:E:1:1:2:0:fv df /r rl:rvm");
-    T("vaesenc", "vz,vz*,vz64", "xv:E:2:1:2:0:fv dc /r rl:rvm");
-    T("vaesenclast", "vz,vz*,vz64", "xv:E:2:1:2:0:fv dd /r rl:rvm");
-    T("vaesdec", "vz,vz*,vz64", "xv:E:2:1:2:0:fv de /r rl:rvm");
-    T("vaesdeclast", "vz,vz*,vz64", "xv:E:2:1:2:0:fv df /r rl:rvm");
-    T("vpclmullqlqdq", "vx,vx*,vx16", "xv:E:0:1:3:0:fv 44 /r p00 rl:rvm");
-    T("vpclmulhqlqdq", "vx,vx*,vx16", "xv:E:0:1:3:0:fv 44 /r p01 rl:rvm");
-    T("vpclmullqhqdq", "vx,vx*,vx16", "xv:E:0:1:3:0:fv 44 /r p10 rl:rvm");
-    T("vpclmulhqhqdq", "vx,vx*,vx16", "xv:E:0:1:3:0:fv 44 /r p11 rl:rvm");
-    T("vpclmulqdq", "vx,vx*,vx16,imm8", "xv:E:0:1:3:0:fv 44 /r ib rl:rvmi");
-    T("vpclmullqlqdq", "vy,vy*,vy32", "xv:E:1:1:3:0:fv 44 /r p00 rl:rvm");
-    T("vpclmulhqlqdq", "vy,vy*,vy32", "xv:E:1:1:3:0:fv 44 /r p01 rl:rvm");
-    T("vpclmullqhqdq", "vy,vy*,vy32", "xv:E:1:1:3:0:fv 44 /r p10 rl:rvm");
-    T("vpclmulhqhqdq", "vy,vy*,vy32", "xv:E:1:1:3:0:fv 44 /r p11 rl:rvm");
-    T("vpclmulqdq", "vy,vy*,vy32,imm8", "xv:E:1:1:3:0:fv 44 /r ib rl:rvmi");
-    T("vpclmullqlqdq", "vz,vz*,vz64", "xv:E:2:1:3:0:fv 44 /r p00 rl:rvm");
-    T("vpclmulhqlqdq", "vz,vz*,vz64", "xv:E:2:1:3:0:fv 44 /r p01 rl:rvm");
-    T("vpclmullqhqdq", "vz,vz*,vz64", "xv:E:2:1:3:0:fv 44 /r p10 rl:rvm");
-    T("vpclmulhqhqdq", "vz,vz*,vz64", "xv:E:2:1:3:0:fv 44 /r p11 rl:rvm");
-    T("vpclmulqdq", "vz,vz*,vz64,imm8", "xv:E:2:1:3:0:fv 44 /r ib rl:rvmi");
-    T("vaddpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 58 /r rl:rvm");
-    T("vaddpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 58 /r rl:rvm");
-    T("vaddpd", "vz|mask|z,vz*,vz64|b64|er", "xv:E:2:1:1:1:fv 58 /r rl:rvm");
-    T("vaddps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 58 /r rl:rvm");
-    T("vaddps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 58 /r rl:rvm");
-    T("vaddps", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:0:1:0:fv 58 /r rl:rvm");
-    T("vaddsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:1:1:t1s 58 /r rl:rvm");
-    T("vaddss", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:1:0:t1s 58 /r rl:rvm");
-    T("valignd", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:1:3:0:fv 03 /r ib rl:rvmi");
-    T("valignd", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 03 /r ib rl:rvmi");
-    T("valignd", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:1:3:0:fv 03 /r ib rl:rvmi");
-    T("valignq", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv 03 /r ib rl:rvmi");
-    T("valignq", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 03 /r ib rl:rvmi");
-    T("valignq", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv 03 /r ib rl:rvmi");
-    T("vandnpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 55 /r rl:rvm");
-    T("vandnpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 55 /r rl:rvm");
-    T("vandnpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 55 /r rl:rvm");
-    T("vandnps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 55 /r rl:rvm");
-    T("vandnps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 55 /r rl:rvm");
-    T("vandnps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 55 /r rl:rvm");
-    T("vandpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 54 /r rl:rvm");
-    T("vandpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 54 /r rl:rvm");
-    T("vandpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 54 /r rl:rvm");
-    T("vandps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 54 /r rl:rvm");
-    T("vandps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 54 /r rl:rvm");
-    T("vandps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 54 /r rl:rvm");
-    T("vblendmpd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 65 /r rl:rvm");
-    T("vblendmpd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 65 /r rl:rvm");
-    T("vblendmpd", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 65 /r rl:rvm");
-    T("vblendmps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 65 /r rl:rvm");
-    T("vblendmps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 65 /r rl:rvm");
-    T("vblendmps", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 65 /r rl:rvm");
-    T("vbroadcastf32x2", "vy|mask|z,vx8", "xv:E:1:1:2:0:t2 19 /r rl:rm");
-    T("vbroadcastf32x2", "vz|mask|z,vx8", "xv:E:2:1:2:0:t2 19 /r rl:rm");
-    T("vbroadcastf32x4", "vy|mask|z,m128", "xv:E:1:1:2:0:t4 1a /r rl:rm");
-    T("vbroadcastf32x4", "vz|mask|z,m128", "xv:E:2:1:2:0:t4 1a /r rl:rm");
-    T("vbroadcastf32x8", "vz|mask|z,m256", "xv:E:2:1:2:0:t8 1b /r rl:rm");
-    T("vbroadcastf64x2", "vy|mask|z,m128", "xv:E:1:1:2:1:t2 1a /r rl:rm");
-    T("vbroadcastf64x2", "vz|mask|z,m128", "xv:E:2:1:2:1:t2 1a /r rl:rm");
-    T("vbroadcastf64x4", "vz|mask|z,m256", "xv:E:2:1:2:1:t4 1b /r rl:rm");
-    T("vbroadcasti32x2", "vx|mask|z,vx8", "xv:E:0:1:2:0:t2 59 /r rl:rm");
-    T("vbroadcasti32x2", "vy|mask|z,vx8", "xv:E:1:1:2:0:t2 59 /r rl:rm");
-    T("vbroadcasti32x2", "vz|mask|z,vx8", "xv:E:2:1:2:0:t2 59 /r rl:rm");
-    T("vbroadcasti32x4", "vy|mask|z,m128", "xv:E:1:1:2:0:t4 5a /r rl:rm");
-    T("vbroadcasti32x4", "vz|mask|z,m128", "xv:E:2:1:2:0:t4 5a /r rl:rm");
-    T("vbroadcasti32x8", "vz|mask|z,m256", "xv:E:2:1:2:0:t8 5b /r rl:rm");
-    T("vbroadcasti64x2", "vy|mask|z,m128", "xv:E:1:1:2:1:t2 5a /r rl:rm");
-    T("vbroadcasti64x2", "vz|mask|z,m128", "xv:E:2:1:2:1:t2 5a /r rl:rm");
-    T("vbroadcasti64x4", "vz|mask|z,m256", "xv:E:2:1:2:1:t4 5b /r rl:rm");
-    T("vbroadcastsd", "vy|mask|z,m64", "xv:E:1:1:2:1:t1s 19 /r rl:rm");
-    T("vbroadcastsd", "vz|mask|z,m64", "xv:E:2:1:2:1:t1s 19 /r rl:rm");
-    T("vbroadcastsd", "vy|mask|z,vx", "xv:E:1:1:2:1:x 19 /r rl:rm");
-    T("vbroadcastsd", "vz|mask|z,vx", "xv:E:2:1:2:1:x 19 /r rl:rm");
-    T("vbroadcastss", "vx|mask|z,m32", "xv:E:0:1:2:0:t1s 18 /r rl:rm");
-    T("vbroadcastss", "vy|mask|z,m32", "xv:E:1:1:2:0:t1s 18 /r rl:rm");
-    T("vbroadcastss", "vz|mask|z,m32", "xv:E:2:1:2:0:t1s 18 /r rl:rm");
-    T("vbroadcastss", "vx|mask|z,vx", "xv:E:0:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastss", "vy|mask|z,vx", "xv:E:1:1:2:0:x 18 /r rl:rm");
-    T("vbroadcastss", "vz|mask|z,vx", "xv:E:2:1:2:0:x 18 /r rl:rm");
-    T("vcmpeqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p00 rl:rvm");
-    T("vcmpeqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p00 rl:rvm");
-    T("vcmpeq_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p00 rl:rvm");
-    T("vcmpeq_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p00 rl:rvm");
-    T("vcmpeq_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p00 rl:rvm");
-    T("vcmpltpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmpltpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmpltpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmpltps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmpltps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmpltps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmpltsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p01 rl:rvm");
-    T("vcmpltss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p01 rl:rvm");
-    T("vcmplt_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmplt_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmplt_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p01 rl:rvm");
-    T("vcmplt_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmplt_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmplt_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p01 rl:rvm");
-    T("vcmplt_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p01 rl:rvm");
-    T("vcmplt_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p01 rl:rvm");
-    T("vcmplepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmplepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmplepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmpleps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmpleps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmpleps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmplesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p02 rl:rvm");
-    T("vcmpless", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p02 rl:rvm");
-    T("vcmple_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmple_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmple_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p02 rl:rvm");
-    T("vcmple_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmple_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmple_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p02 rl:rvm");
-    T("vcmple_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p02 rl:rvm");
-    T("vcmple_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p02 rl:rvm");
-    T("vcmpunordpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunordpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunordpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunordps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunordps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunordps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunordsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p03 rl:rvm");
-    T("vcmpunordss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p03 rl:rvm");
-    T("vcmpunord_qpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p03 rl:rvm");
-    T("vcmpunord_qsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p03 rl:rvm");
-    T("vcmpunord_qss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p03 rl:rvm");
-    T("vcmpneqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p04 rl:rvm");
-    T("vcmpneqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p04 rl:rvm");
-    T("vcmpneq_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p04 rl:rvm");
-    T("vcmpneq_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p04 rl:rvm");
-    T("vcmpneq_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p04 rl:rvm");
-    T("vcmpnltpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnltpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnltpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnltps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnltps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnltps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnltsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p05 rl:rvm");
-    T("vcmpnltss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p05 rl:rvm");
-    T("vcmpnlt_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p05 rl:rvm");
-    T("vcmpnlt_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p05 rl:rvm");
-    T("vcmpnlt_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p05 rl:rvm");
-    T("vcmpnlepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnlepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnlepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnleps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnleps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnleps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnlesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p06 rl:rvm");
-    T("vcmpnless", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p06 rl:rvm");
-    T("vcmpnle_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p06 rl:rvm");
-    T("vcmpnle_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p06 rl:rvm");
-    T("vcmpnle_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p06 rl:rvm");
-    T("vcmpordpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpordpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpordpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpordps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpordps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpordps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpordsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p07 rl:rvm");
-    T("vcmpordss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p07 rl:rvm");
-    T("vcmpord_qpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p07 rl:rvm");
-    T("vcmpord_qsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p07 rl:rvm");
-    T("vcmpord_qss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p07 rl:rvm");
-    T("vcmpeq_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p08 rl:rvm");
-    T("vcmpeq_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p08 rl:rvm");
-    T("vcmpeq_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p08 rl:rvm");
-    T("vcmpngepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpngepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpngepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpngeps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpngeps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpngeps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpngesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p09 rl:rvm");
-    T("vcmpngess", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p09 rl:rvm");
-    T("vcmpnge_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p09 rl:rvm");
-    T("vcmpnge_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p09 rl:rvm");
-    T("vcmpnge_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p09 rl:rvm");
-    T("vcmpngtpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngtpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngtpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngtps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngtps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngtps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngtsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0a rl:rvm");
-    T("vcmpngtss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0a rl:rvm");
-    T("vcmpngt_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0a rl:rvm");
-    T("vcmpngt_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0a rl:rvm");
-    T("vcmpngt_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0a rl:rvm");
-    T("vcmpfalsepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalsepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalsepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalseps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalseps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalseps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalsesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0b rl:rvm");
-    T("vcmpfalsess", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0b rl:rvm");
-    T("vcmpfalse_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0b rl:rvm");
-    T("vcmpneq_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0c rl:rvm");
-    T("vcmpneq_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0c rl:rvm");
-    T("vcmpneq_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0c rl:rvm");
-    T("vcmpgepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpgepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpgepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpgeps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpgeps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpgeps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpgesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0d rl:rvm");
-    T("vcmpgess", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0d rl:rvm");
-    T("vcmpge_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpge_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpge_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0d rl:rvm");
-    T("vcmpge_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpge_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpge_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0d rl:rvm");
-    T("vcmpge_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0d rl:rvm");
-    T("vcmpge_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0d rl:rvm");
-    T("vcmpgtpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgtpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgtpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgtps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgtps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgtps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgtsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0e rl:rvm");
-    T("vcmpgtss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0e rl:rvm");
-    T("vcmpgt_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0e rl:rvm");
-    T("vcmpgt_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0e rl:rvm");
-    T("vcmpgt_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0e rl:rvm");
-    T("vcmptruepd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptruepd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptruepd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptrueps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptrueps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptrueps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptruesd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0f rl:rvm");
-    T("vcmptruess", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0f rl:rvm");
-    T("vcmptrue_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p0f rl:rvm");
-    T("vcmptrue_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p0f rl:rvm");
-    T("vcmptrue_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p0f rl:rvm");
-    T("vcmpeq_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p10 rl:rvm");
-    T("vcmpeq_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p10 rl:rvm");
-    T("vcmpeq_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p10 rl:rvm");
-    T("vcmplt_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p11 rl:rvm");
-    T("vcmplt_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p11 rl:rvm");
-    T("vcmplt_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p11 rl:rvm");
-    T("vcmple_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p12 rl:rvm");
-    T("vcmple_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p12 rl:rvm");
-    T("vcmple_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p12 rl:rvm");
-    T("vcmpunord_spd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_spd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_spd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_sps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_sps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_sps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p13 rl:rvm");
-    T("vcmpunord_ssd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p13 rl:rvm");
-    T("vcmpunord_sss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p13 rl:rvm");
-    T("vcmpneq_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p14 rl:rvm");
-    T("vcmpneq_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p14 rl:rvm");
-    T("vcmpneq_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p14 rl:rvm");
-    T("vcmpnlt_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p15 rl:rvm");
-    T("vcmpnlt_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p15 rl:rvm");
-    T("vcmpnle_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p16 rl:rvm");
-    T("vcmpnle_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p16 rl:rvm");
-    T("vcmpnle_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p16 rl:rvm");
-    T("vcmpord_spd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p17 rl:rvm");
-    T("vcmpord_spd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p17 rl:rvm");
-    T("vcmpord_spd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p17 rl:rvm");
-    T("vcmpord_sps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p17 rl:rvm");
-    T("vcmpord_sps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p17 rl:rvm");
-    T("vcmpord_sps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p17 rl:rvm");
-    T("vcmpord_ssd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p17 rl:rvm");
-    T("vcmpord_sss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p17 rl:rvm");
-    T("vcmpeq_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p18 rl:rvm");
-    T("vcmpeq_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p18 rl:rvm");
-    T("vcmpeq_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p18 rl:rvm");
-    T("vcmpnge_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p19 rl:rvm");
-    T("vcmpnge_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p19 rl:rvm");
-    T("vcmpnge_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p19 rl:rvm");
-    T("vcmpngt_uqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1a rl:rvm");
-    T("vcmpngt_uqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1a rl:rvm");
-    T("vcmpngt_uqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1a rl:rvm");
-    T("vcmpfalse_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1b rl:rvm");
-    T("vcmpfalse_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1b rl:rvm");
-    T("vcmpfalse_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1b rl:rvm");
-    T("vcmpneq_ospd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_ospd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_ospd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_osps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_osps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_osps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1c rl:rvm");
-    T("vcmpneq_ossd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1c rl:rvm");
-    T("vcmpneq_osss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1c rl:rvm");
-    T("vcmpge_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1d rl:rvm");
-    T("vcmpge_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1d rl:rvm");
-    T("vcmpge_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1d rl:rvm");
-    T("vcmpgt_oqpd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqpd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqpd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1e rl:rvm");
-    T("vcmpgt_oqsd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1e rl:rvm");
-    T("vcmpgt_oqss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1e rl:rvm");
-    T("vcmptrue_uspd", "vk|mask,vx,vx16|b64", "xv:E:0:1:1:1:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_uspd", "vk|mask,vy,vy32|b64", "xv:E:1:1:1:1:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_uspd", "vk|mask,vz,vz64|b64|sae", "xv:E:2:1:1:1:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_usps", "vk|mask,vx,vx16|b32", "xv:E:0:0:1:0:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_usps", "vk|mask,vy,vy32|b32", "xv:E:1:0:1:0:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_usps", "vk|mask,vz,vz64|b32|sae", "xv:E:2:0:1:0:fv c2 /r p1f rl:rvm");
-    T("vcmptrue_ussd", "vk|mask,vx,vx8|sae", "xv:E:0:3:1:1:t1s c2 /r p1f rl:rvm");
-    T("vcmptrue_usss", "vk|mask,vx,vx4|sae", "xv:E:0:2:1:0:t1s c2 /r p1f rl:rvm");
-    T("vcmppd", "vk|mask,vx,vx16|b64,imm8", "xv:E:0:1:1:1:fv c2 /r ib rl:rvmi");
-    T("vcmppd", "vk|mask,vy,vy32|b64,imm8", "xv:E:1:1:1:1:fv c2 /r ib rl:rvmi");
-    T("vcmppd", "vk|mask,vz,vz64|b64|sae,imm8", "xv:E:2:1:1:1:fv c2 /r ib rl:rvmi");
-    T("vcmpps", "vk|mask,vx,vx16|b32,imm8", "xv:E:0:0:1:0:fv c2 /r ib rl:rvmi");
-    T("vcmpps", "vk|mask,vy,vy32|b32,imm8", "xv:E:1:0:1:0:fv c2 /r ib rl:rvmi");
-    T("vcmpps", "vk|mask,vz,vz64|b32|sae,imm8", "xv:E:2:0:1:0:fv c2 /r ib rl:rvmi");
-    T("vcmpsd", "vk|mask,vx,vx8|sae,imm8", "xv:E:0:3:1:1:t1s c2 /r ib rl:rvmi");
-    T("vcmpss", "vk|mask,vx,vx4|sae,imm8", "xv:E:0:2:1:0:t1s c2 /r ib rl:rvmi");
-    T("vcomisd", "vx,vx8|sae", "xv:E:0:1:1:1:t1s 2f /r rl:rm");
-    T("vcomiss", "vx,vx4|sae", "xv:E:0:0:1:0:t1s 2f /r rl:rm");
-    T("vcompresspd", "m128|mask,vx", "xv:E:0:1:2:1:t1s 8a /r rl:mr");
-    T("vcompresspd", "m256|mask,vy", "xv:E:1:1:2:1:t1s 8a /r rl:mr");
-    T("vcompresspd", "m512|mask,vz", "xv:E:2:1:2:1:t1s 8a /r rl:mr");
-    T("vcompresspd", "vx|mask|z,vx", "xv:E:0:1:2:1:x 8a /r rl:mr");
-    T("vcompresspd", "vy|mask|z,vy", "xv:E:1:1:2:1:x 8a /r rl:mr");
-    T("vcompresspd", "vz|mask|z,vz", "xv:E:2:1:2:1:x 8a /r rl:mr");
-    T("vcompressps", "m128|mask,vx", "xv:E:0:1:2:0:t1s 8a /r rl:mr");
-    T("vcompressps", "m256|mask,vy", "xv:E:1:1:2:0:t1s 8a /r rl:mr");
-    T("vcompressps", "m512|mask,vz", "xv:E:2:1:2:0:t1s 8a /r rl:mr");
-    T("vcompressps", "vx|mask|z,vx", "xv:E:0:1:2:0:x 8a /r rl:mr");
-    T("vcompressps", "vy|mask|z,vy", "xv:E:1:1:2:0:x 8a /r rl:mr");
-    T("vcompressps", "vz|mask|z,vz", "xv:E:2:1:2:0:x 8a /r rl:mr");
-    T("vcvtdq2pd", "vx|mask|z,vx8|b32", "xv:E:0:2:1:0:hv e6 /r rl:rm");
-    T("vcvtdq2pd", "vy|mask|z,vx16|b32", "xv:E:1:2:1:0:hv e6 /r rl:rm");
-    T("vcvtdq2pd", "vz|mask|z,vy32|b32|er", "xv:E:2:2:1:0:hv e6 /r rl:rm");
-    T("vcvtdq2ps", "vx|mask|z,vx16|b32", "xv:E:0:0:1:0:fv 5b /r rl:rm");
-    T("vcvtdq2ps", "vy|mask|z,vy32|b32", "xv:E:1:0:1:0:fv 5b /r rl:rm");
-    T("vcvtdq2ps", "vz|mask|z,vz64|b32|er", "xv:E:2:0:1:0:fv 5b /r rl:rm");
-    T("vcvtpd2dq", "vx|mask|z,vx16|b64", "xv:E:0:3:1:1:fv e6 /r rl:rm");
-    T("vcvtpd2dq", "vx|mask|z,vy32|b64", "xv:E:1:3:1:1:fv e6 /r rl:rm");
-    T("vcvtpd2dq", "vy|mask|z,vz64|b64|er", "xv:E:2:3:1:1:fv e6 /r rl:rm");
-    T("vcvtpd2ps", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 5a /r rl:rm");
-    T("vcvtpd2ps", "vx|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 5a /r rl:rm");
-    T("vcvtpd2ps", "vy|mask|z,vz64|b64|er", "xv:E:2:1:1:1:fv 5a /r rl:rm");
-    T("vcvtpd2qq", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 7b /r rl:rm");
-    T("vcvtpd2qq", "vy|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 7b /r rl:rm");
-    T("vcvtpd2qq", "vz|mask|z,vz64|b64|er", "xv:E:2:1:1:1:fv 7b /r rl:rm");
-    T("vcvtpd2udq", "vx|mask|z,vx16|b64", "xv:E:0:0:1:1:fv 79 /r rl:rm");
-    T("vcvtpd2udq", "vx|mask|z,vy32|b64", "xv:E:1:0:1:1:fv 79 /r rl:rm");
-    T("vcvtpd2udq", "vy|mask|z,vz64|b64|er", "xv:E:2:0:1:1:fv 79 /r rl:rm");
-    T("vcvtpd2uqq", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 79 /r rl:rm");
-    T("vcvtpd2uqq", "vy|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 79 /r rl:rm");
-    T("vcvtpd2uqq", "vz|mask|z,vz64|b64|er", "xv:E:2:1:1:1:fv 79 /r rl:rm");
-    T("vcvtph2ps", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 13 /r rl:rm");
-    T("vcvtph2ps", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 13 /r rl:rm");
-    T("vcvtph2ps", "vz|mask|z,vy32|sae", "xv:E:2:1:2:0:hvm 13 /r rl:rm");
-    T("vcvtps2dq", "vx|mask|z,vx16|b32", "xv:E:0:1:1:0:fv 5b /r rl:rm");
-    T("vcvtps2dq", "vy|mask|z,vy32|b32", "xv:E:1:1:1:0:fv 5b /r rl:rm");
-    T("vcvtps2dq", "vz|mask|z,vz64|b32|er", "xv:E:2:1:1:0:fv 5b /r rl:rm");
-    T("vcvtps2pd", "vx|mask|z,vx8|b32", "xv:E:0:0:1:0:hv 5a /r rl:rm");
-    T("vcvtps2pd", "vy|mask|z,vx16|b32", "xv:E:1:0:1:0:hv 5a /r rl:rm");
-    T("vcvtps2pd", "vz|mask|z,vy32|b32|sae", "xv:E:2:0:1:0:hv 5a /r rl:rm");
-    T("vcvtps2ph", "vx|mask|z,vx,imm8", "xv:E:0:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2ph", "vx|mask|z,vy,imm8", "xv:E:1:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2ph", "vy|mask|z,vz|sae,imm8", "xv:E:2:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2ph", "m64|mask,vx,imm8", "xv:E:0:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2ph", "m128|mask,vy,imm8", "xv:E:1:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2ph", "m256|mask,vz|sae,imm8", "xv:E:2:1:3:0:hvm 1d /r ib rl:mri");
-    T("vcvtps2qq", "vx|mask|z,vx8|b32", "xv:E:0:1:1:0:hv 7b /r rl:rm");
-    T("vcvtps2qq", "vy|mask|z,vx16|b32", "xv:E:1:1:1:0:hv 7b /r rl:rm");
-    T("vcvtps2qq", "vz|mask|z,vy32|b32|er", "xv:E:2:1:1:0:hv 7b /r rl:rm");
-    T("vcvtps2udq", "vx|mask|z,vx16|b32", "xv:E:0:0:1:0:fv 79 /r rl:rm");
-    T("vcvtps2udq", "vy|mask|z,vy32|b32", "xv:E:1:0:1:0:fv 79 /r rl:rm");
-    T("vcvtps2udq", "vz|mask|z,vz64|b32|er", "xv:E:2:0:1:0:fv 79 /r rl:rm");
-    T("vcvtps2uqq", "vx|mask|z,vx8|b32", "xv:E:0:1:1:0:hv 79 /r rl:rm");
-    T("vcvtps2uqq", "vy|mask|z,vx16|b32", "xv:E:1:1:1:0:hv 79 /r rl:rm");
-    T("vcvtps2uqq", "vz|mask|z,vy32|b32|er", "xv:E:2:1:1:0:hv 79 /r rl:rm");
-    T("vcvtqq2pd", "vx|mask|z,vx16|b64", "xv:E:0:2:1:1:fv e6 /r rl:rm");
-    T("vcvtqq2pd", "vy|mask|z,vy32|b64", "xv:E:1:2:1:1:fv e6 /r rl:rm");
-    T("vcvtqq2pd", "vz|mask|z,vz64|b64|er", "xv:E:2:2:1:1:fv e6 /r rl:rm");
-    T("vcvtqq2ps", "vx|mask|z,vx16|b64", "xv:E:0:0:1:1:fv 5b /r rl:rm");
-    T("vcvtqq2ps", "vx|mask|z,vy32|b64", "xv:E:1:0:1:1:fv 5b /r rl:rm");
-    T("vcvtqq2ps", "vy|mask|z,vz64|b64|er", "xv:E:2:0:1:1:fv 5b /r rl:rm");
-    T("vcvtsd2si", "r32,vx8|er", "xv:E:0:3:1:0:t1f64 2d /r rl:rm");
-    T("vcvtsd2ss", "vx|mask|z,vx,vx8|er", "xv:E:0:3:1:1:t1s 5a /r rl:rvm");
-    T("vcvtsd2usi", "r32,vx8|er", "xv:E:0:3:1:0:t1f64 79 /r rl:rm");
-    T("vcvtsi2sd", "vx,vx|er,rm32", "xv:E:0:3:1:0:t1s 2a /r rl:rvm");
-    T("vcvtsi2sd", "vx,vx|er,m64", "xv:E:0:3:1:1:t1s 2a /r rl:rvm");
-    T("vcvtsi2ss", "vx,vx|er,rm32", "xv:E:0:2:1:0:t1s 2a /r rl:rvm");
-    T("vcvtsi2ss", "vx,vx|er,m64", "xv:E:0:2:1:1:t1s 2a /r rl:rvm");
-    T("vcvtss2sd", "vx|mask|z,vx,vx4|sae", "xv:E:0:2:1:0:t1s 5a /r rl:rvm");
-    T("vcvtss2si", "r32,vx4|er", "xv:E:0:2:1:0:t1f32 2d /r rl:rm");
-    T("vcvtss2usi", "r32,vx4|er", "xv:E:0:2:1:0:t1f32 79 /r rl:rm");
-    T("vcvttpd2dq", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv e6 /r rl:rm");
-    T("vcvttpd2dq", "vx|mask|z,vy32|b64", "xv:E:1:1:1:1:fv e6 /r rl:rm");
-    T("vcvttpd2dq", "vy|mask|z,vz64|b64|sae", "xv:E:2:1:1:1:fv e6 /r rl:rm");
-    T("vcvttpd2qq", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 7a /r rl:rm");
-    T("vcvttpd2qq", "vy|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 7a /r rl:rm");
-    T("vcvttpd2qq", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:1:1:fv 7a /r rl:rm");
-    T("vcvttpd2udq", "vx|mask|z,vx16|b64", "xv:E:0:0:1:1:fv 78 /r rl:rm");
-    T("vcvttpd2udq", "vx|mask|z,vy32|b64", "xv:E:1:0:1:1:fv 78 /r rl:rm");
-    T("vcvttpd2udq", "vy|mask|z,vz64|b64|sae", "xv:E:2:0:1:1:fv 78 /r rl:rm");
-    T("vcvttpd2uqq", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 78 /r rl:rm");
-    T("vcvttpd2uqq", "vy|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 78 /r rl:rm");
-    T("vcvttpd2uqq", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:1:1:fv 78 /r rl:rm");
-    T("vcvttps2dq", "vx|mask|z,vx16|b32", "xv:E:0:2:1:0:fv 5b /r rl:rm");
-    T("vcvttps2dq", "vy|mask|z,vy32|b32", "xv:E:1:2:1:0:fv 5b /r rl:rm");
-    T("vcvttps2dq", "vz|mask|z,vz64|b32|sae", "xv:E:2:2:1:0:fv 5b /r rl:rm");
-    T("vcvttps2qq", "vx|mask|z,vx8|b32", "xv:E:0:1:1:0:hv 7a /r rl:rm");
-    T("vcvttps2qq", "vy|mask|z,vx16|b32", "xv:E:1:1:1:0:hv 7a /r rl:rm");
-    T("vcvttps2qq", "vz|mask|z,vy32|b32|sae", "xv:E:2:1:1:0:hv 7a /r rl:rm");
-    T("vcvttps2udq", "vx|mask|z,vx16|b32", "xv:E:0:0:1:0:fv 78 /r rl:rm");
-    T("vcvttps2udq", "vy|mask|z,vy32|b32", "xv:E:1:0:1:0:fv 78 /r rl:rm");
-    T("vcvttps2udq", "vz|mask|z,vz64|b32|sae", "xv:E:2:0:1:0:fv 78 /r rl:rm");
-    T("vcvttps2uqq", "vx|mask|z,vx8|b32", "xv:E:0:1:1:0:hv 78 /r rl:rm");
-    T("vcvttps2uqq", "vy|mask|z,vx16|b32", "xv:E:1:1:1:0:hv 78 /r rl:rm");
-    T("vcvttps2uqq", "vz|mask|z,vy32|b32|sae", "xv:E:2:1:1:0:hv 78 /r rl:rm");
-    T("vcvttsd2si", "r32,vx8|sae", "xv:E:0:3:1:0:t1f64 2c /r rl:rm");
-    T("vcvttsd2usi", "r32,vx8|sae", "xv:E:0:3:1:0:t1f64 78 /r rl:rm");
-    T("vcvttss2si", "r32,vx4|sae", "xv:E:0:2:1:0:t1f32 2c /r rl:rm");
-    T("vcvttss2usi", "r32,vx4|sae", "xv:E:0:2:1:0:t1f32 78 /r rl:rm");
-    T("vcvtudq2pd", "vx|mask|z,vx8|b32", "xv:E:0:2:1:0:hv 7a /r rl:rm");
-    T("vcvtudq2pd", "vy|mask|z,vx16|b32", "xv:E:1:2:1:0:hv 7a /r rl:rm");
-    T("vcvtudq2pd", "vz|mask|z,vy32|b32|er", "xv:E:2:2:1:0:hv 7a /r rl:rm");
-    T("vcvtudq2ps", "vx|mask|z,vx16|b32", "xv:E:0:3:1:0:fv 7a /r rl:rm");
-    T("vcvtudq2ps", "vy|mask|z,vy32|b32", "xv:E:1:3:1:0:fv 7a /r rl:rm");
-    T("vcvtudq2ps", "vz|mask|z,vz64|b32|er", "xv:E:2:3:1:0:fv 7a /r rl:rm");
-    T("vcvtuqq2pd", "vx|mask|z,vx16|b64", "xv:E:0:2:1:1:fv 7a /r rl:rm");
-    T("vcvtuqq2pd", "vy|mask|z,vy32|b64", "xv:E:1:2:1:1:fv 7a /r rl:rm");
-    T("vcvtuqq2pd", "vz|mask|z,vz64|b64|er", "xv:E:2:2:1:1:fv 7a /r rl:rm");
-    T("vcvtuqq2ps", "vx|mask|z,vx16|b64", "xv:E:0:3:1:1:fv 7a /r rl:rm");
-    T("vcvtuqq2ps", "vx|mask|z,vy32|b64", "xv:E:1:3:1:1:fv 7a /r rl:rm");
-    T("vcvtuqq2ps", "vy|mask|z,vz64|b64|er", "xv:E:2:3:1:1:fv 7a /r rl:rm");
-    T("vcvtusi2sd", "vx,vx|er,rm32", "xv:E:0:3:1:0:t1s 7b /r rl:rvm");
-    T("vcvtusi2sd", "vx,vx|er,m64", "xv:E:0:3:1:1:t1s 7b /r rl:rvm");
-    T("vcvtusi2ss", "vx,vx|er,rm32", "xv:E:0:2:1:0:t1s 7b /r rl:rvm");
-    T("vcvtusi2ss", "vx,vx|er,m64", "xv:E:0:2:1:1:t1s 7b /r rl:rvm");
-    T("vdbpsadbw", "vx|mask|z,vx*,vx16,imm8", "xv:E:0:1:3:0:fvm 42 /r ib rl:rvmi");
-    T("vdbpsadbw", "vy|mask|z,vy*,vy32,imm8", "xv:E:1:1:3:0:fvm 42 /r ib rl:rvmi");
-    T("vdbpsadbw", "vz|mask|z,vz*,vz64,imm8", "xv:E:2:1:3:0:fvm 42 /r ib rl:rvmi");
-    T("vdivpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 5e /r rl:rvm");
-    T("vdivpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 5e /r rl:rvm");
-    T("vdivpd", "vz|mask|z,vz*,vz64|b64|er", "xv:E:2:1:1:1:fv 5e /r rl:rvm");
-    T("vdivps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 5e /r rl:rvm");
-    T("vdivps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 5e /r rl:rvm");
-    T("vdivps", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:0:1:0:fv 5e /r rl:rvm");
-    T("vdivsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:1:1:t1s 5e /r rl:rvm");
-    T("vdivss", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:1:0:t1s 5e /r rl:rvm");
-    T("vexp2pd", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:2:1:fv c8 /r rl:rm");
-    T("vexp2ps", "vz|mask|z,vz64|b32|sae", "xv:E:2:1:2:0:fv c8 /r rl:rm");
-    T("vexpandpd", "vx|mask|z,m128", "xv:E:0:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandpd", "vy|mask|z,m256", "xv:E:1:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandpd", "vz|mask|z,m512", "xv:E:2:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandpd", "vx|mask|z,vx", "xv:E:0:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandpd", "vy|mask|z,vy", "xv:E:1:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandpd", "vz|mask|z,vz", "xv:E:2:1:2:1:t1s 88 /r rl:rm");
-    T("vexpandps", "vx|mask|z,m128", "xv:E:0:1:2:0:t1s 88 /r rl:rm");
-    T("vexpandps", "vy|mask|z,m256", "xv:E:1:1:2:0:t1s 88 /r rl:rm");
-    T("vexpandps", "vz|mask|z,m512", "xv:E:2:1:2:0:t1s 88 /r rl:rm");
-    T("vexpandps", "vx|mask|z,vx", "xv:E:0:1:2:0:t1s 88 /r rl:rm");
-    T("vexpandps", "vy|mask|z,vy", "xv:E:1:1:2:0:t1s 88 /r rl:rm");
-    T("vexpandps", "vz|mask|z,vz", "xv:E:2:1:2:0:t1s 88 /r rl:rm");
-    T("vextractf32x4", "vx|mask|z,vy,imm8", "xv:E:1:1:3:0:x 19 /r ib rl:mri");
-    T("vextractf32x4", "vx|mask|z,vz,imm8", "xv:E:2:1:3:0:x 19 /r ib rl:mri");
-    T("vextractf32x4", "m128|mask,vy,imm8", "xv:E:1:1:3:0:t4 19 /r ib rl:mri");
-    T("vextractf32x4", "m128|mask,vz,imm8", "xv:E:2:1:3:0:t4 19 /r ib rl:mri");
-    T("vextractf32x8", "vy|mask|z,vz,imm8", "xv:E:2:1:3:0:x 1b /r ib rl:mri");
-    T("vextractf32x8", "m256|mask,vz,imm8", "xv:E:2:1:3:0:t8 1b /r ib rl:mri");
-    T("vextractf64x2", "vx|mask|z,vy,imm8", "xv:E:1:1:3:1:x 19 /r ib rl:mri");
-    T("vextractf64x2", "vx|mask|z,vz,imm8", "xv:E:2:1:3:1:x 19 /r ib rl:mri");
-    T("vextractf64x2", "m128|mask,vy,imm8", "xv:E:1:1:3:1:t2 19 /r ib rl:mri");
-    T("vextractf64x2", "m128|mask,vz,imm8", "xv:E:2:1:3:1:t2 19 /r ib rl:mri");
-    T("vextractf64x4", "vy|mask|z,vz,imm8", "xv:E:2:1:3:1:x 1b /r ib rl:mri");
-    T("vextractf64x4", "m256|mask,vz,imm8", "xv:E:2:1:3:1:t4 1b /r ib rl:mri");
-    T("vextracti32x4", "vx|mask|z,vy,imm8", "xv:E:1:1:3:0:x 39 /r ib rl:mri");
-    T("vextracti32x4", "vx|mask|z,vz,imm8", "xv:E:2:1:3:0:x 39 /r ib rl:mri");
-    T("vextracti32x4", "m128|mask,vy,imm8", "xv:E:1:1:3:0:t4 39 /r ib rl:mri");
-    T("vextracti32x4", "m128|mask,vz,imm8", "xv:E:2:1:3:0:t4 39 /r ib rl:mri");
-    T("vextracti32x8", "vy|mask|z,vz,imm8", "xv:E:2:1:3:0:x 3b /r ib rl:mri");
-    T("vextracti32x8", "m256|mask,vz,imm8", "xv:E:2:1:3:0:t8 3b /r ib rl:mri");
-    T("vextracti64x2", "vx|mask|z,vy,imm8", "xv:E:1:1:3:1:x 39 /r ib rl:mri");
-    T("vextracti64x2", "vx|mask|z,vz,imm8", "xv:E:2:1:3:1:x 39 /r ib rl:mri");
-    T("vextracti64x2", "m128|mask,vy,imm8", "xv:E:1:1:3:1:t2 39 /r ib rl:mri");
-    T("vextracti64x2", "m128|mask,vz,imm8", "xv:E:2:1:3:1:t2 39 /r ib rl:mri");
-    T("vextracti64x4", "vy|mask|z,vz,imm8", "xv:E:2:1:3:1:x 3b /r ib rl:mri");
-    T("vextracti64x4", "m256|mask,vz,imm8", "xv:E:2:1:3:1:t4 3b /r ib rl:mri");
-    T("vextractps", "r32,vx,imm8", "xv:E:0:1:3:0:t1s 17 /r ib rl:mri");
-    T("vextractps", "m32,vx,imm8", "xv:E:0:1:3:0:t1s 17 /r ib rl:mri");
-    T("vfixupimmpd", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv 54 /r ib rl:rvmi");
-    T("vfixupimmpd", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 54 /r ib rl:rvmi");
-    T("vfixupimmpd", "vz|mask|z,vz*,vz64|b64|sae,imm8", "xv:E:2:1:3:1:fv 54 /r ib rl:rvmi");
-    T("vfixupimmps", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:1:3:0:fv 54 /r ib rl:rvmi");
-    T("vfixupimmps", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 54 /r ib rl:rvmi");
-    T("vfixupimmps", "vz|mask|z,vz*,vz64|b32|sae,imm8", "xv:E:2:1:3:0:fv 54 /r ib rl:rvmi");
-    T("vfixupimmsd", "vx|mask|z,vx*,vx8|sae,imm8", "xv:E:0:1:3:1:t1s 55 /r ib rl:rvmi");
-    T("vfixupimmss", "vx|mask|z,vx*,vx4|sae,imm8", "xv:E:0:1:3:0:t1s 55 /r ib rl:rvmi");
-    T("vfmadd132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 98 /r rl:rvm");
-    T("vfmadd132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 98 /r rl:rvm");
-    T("vfmadd132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 98 /r rl:rvm");
-    T("vfmadd132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 98 /r rl:rvm");
-    T("vfmadd132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 98 /r rl:rvm");
-    T("vfmadd132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 98 /r rl:rvm");
-    T("vfmadd132sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s 99 /r rl:rvm");
-    T("vfmadd132ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s 99 /r rl:rvm");
-    T("vfmadd213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv a8 /r rl:rvm");
-    T("vfmadd213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv a8 /r rl:rvm");
-    T("vfmadd213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv a8 /r rl:rvm");
-    T("vfmadd213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv a8 /r rl:rvm");
-    T("vfmadd213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv a8 /r rl:rvm");
-    T("vfmadd213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv a8 /r rl:rvm");
-    T("vfmadd213sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s a9 /r rl:rvm");
-    T("vfmadd213ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s a9 /r rl:rvm");
-    T("vfmadd231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv b8 /r rl:rvm");
-    T("vfmadd231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv b8 /r rl:rvm");
-    T("vfmadd231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv b8 /r rl:rvm");
-    T("vfmadd231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv b8 /r rl:rvm");
-    T("vfmadd231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv b8 /r rl:rvm");
-    T("vfmadd231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv b8 /r rl:rvm");
-    T("vfmadd231sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s b9 /r rl:rvm");
-    T("vfmadd231ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s b9 /r rl:rvm");
-    T("vfmaddsub132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 96 /r rl:rvm");
-    T("vfmaddsub132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 96 /r rl:rvm");
-    T("vfmaddsub132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 96 /r rl:rvm");
-    T("vfmaddsub132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 96 /r rl:rvm");
-    T("vfmaddsub132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 96 /r rl:rvm");
-    T("vfmaddsub132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 96 /r rl:rvm");
-    T("vfmaddsub213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv a6 /r rl:rvm");
-    T("vfmaddsub213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv a6 /r rl:rvm");
-    T("vfmaddsub213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv a6 /r rl:rvm");
-    T("vfmaddsub213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv a6 /r rl:rvm");
-    T("vfmaddsub213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv a6 /r rl:rvm");
-    T("vfmaddsub213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv a6 /r rl:rvm");
-    T("vfmaddsub231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv b6 /r rl:rvm");
-    T("vfmaddsub231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv b6 /r rl:rvm");
-    T("vfmaddsub231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv b6 /r rl:rvm");
-    T("vfmaddsub231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv b6 /r rl:rvm");
-    T("vfmaddsub231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv b6 /r rl:rvm");
-    T("vfmaddsub231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv b6 /r rl:rvm");
-    T("vfmsub132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 9a /r rl:rvm");
-    T("vfmsub132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 9a /r rl:rvm");
-    T("vfmsub132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 9a /r rl:rvm");
-    T("vfmsub132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 9a /r rl:rvm");
-    T("vfmsub132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 9a /r rl:rvm");
-    T("vfmsub132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 9a /r rl:rvm");
-    T("vfmsub132sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s 9b /r rl:rvm");
-    T("vfmsub132ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s 9b /r rl:rvm");
-    T("vfmsub213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv aa /r rl:rvm");
-    T("vfmsub213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv aa /r rl:rvm");
-    T("vfmsub213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv aa /r rl:rvm");
-    T("vfmsub213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv aa /r rl:rvm");
-    T("vfmsub213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv aa /r rl:rvm");
-    T("vfmsub213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv aa /r rl:rvm");
-    T("vfmsub213sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s ab /r rl:rvm");
-    T("vfmsub213ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s ab /r rl:rvm");
-    T("vfmsub231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv ba /r rl:rvm");
-    T("vfmsub231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv ba /r rl:rvm");
-    T("vfmsub231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv ba /r rl:rvm");
-    T("vfmsub231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv ba /r rl:rvm");
-    T("vfmsub231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv ba /r rl:rvm");
-    T("vfmsub231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv ba /r rl:rvm");
-    T("vfmsub231sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s bb /r rl:rvm");
-    T("vfmsub231ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s bb /r rl:rvm");
-    T("vfmsubadd132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 97 /r rl:rvm");
-    T("vfmsubadd132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 97 /r rl:rvm");
-    T("vfmsubadd132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 97 /r rl:rvm");
-    T("vfmsubadd132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 97 /r rl:rvm");
-    T("vfmsubadd132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 97 /r rl:rvm");
-    T("vfmsubadd132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 97 /r rl:rvm");
-    T("vfmsubadd213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv a7 /r rl:rvm");
-    T("vfmsubadd213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv a7 /r rl:rvm");
-    T("vfmsubadd213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv a7 /r rl:rvm");
-    T("vfmsubadd213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv a7 /r rl:rvm");
-    T("vfmsubadd213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv a7 /r rl:rvm");
-    T("vfmsubadd213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv a7 /r rl:rvm");
-    T("vfmsubadd231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv b7 /r rl:rvm");
-    T("vfmsubadd231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv b7 /r rl:rvm");
-    T("vfmsubadd231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv b7 /r rl:rvm");
-    T("vfmsubadd231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv b7 /r rl:rvm");
-    T("vfmsubadd231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv b7 /r rl:rvm");
-    T("vfmsubadd231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv b7 /r rl:rvm");
-    T("vfnmadd132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 9c /r rl:rvm");
-    T("vfnmadd132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 9c /r rl:rvm");
-    T("vfnmadd132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 9c /r rl:rvm");
-    T("vfnmadd132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 9c /r rl:rvm");
-    T("vfnmadd132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 9c /r rl:rvm");
-    T("vfnmadd132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 9c /r rl:rvm");
-    T("vfnmadd132sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s 9d /r rl:rvm");
-    T("vfnmadd132ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s 9d /r rl:rvm");
-    T("vfnmadd213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv ac /r rl:rvm");
-    T("vfnmadd213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv ac /r rl:rvm");
-    T("vfnmadd213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv ac /r rl:rvm");
-    T("vfnmadd213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv ac /r rl:rvm");
-    T("vfnmadd213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv ac /r rl:rvm");
-    T("vfnmadd213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv ac /r rl:rvm");
-    T("vfnmadd213sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s ad /r rl:rvm");
-    T("vfnmadd213ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s ad /r rl:rvm");
-    T("vfnmadd231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv bc /r rl:rvm");
-    T("vfnmadd231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv bc /r rl:rvm");
-    T("vfnmadd231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv bc /r rl:rvm");
-    T("vfnmadd231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv bc /r rl:rvm");
-    T("vfnmadd231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv bc /r rl:rvm");
-    T("vfnmadd231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv bc /r rl:rvm");
-    T("vfnmadd231sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s bd /r rl:rvm");
-    T("vfnmadd231ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s bd /r rl:rvm");
-    T("vfnmsub132pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 9e /r rl:rvm");
-    T("vfnmsub132pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 9e /r rl:rvm");
-    T("vfnmsub132pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv 9e /r rl:rvm");
-    T("vfnmsub132ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 9e /r rl:rvm");
-    T("vfnmsub132ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 9e /r rl:rvm");
-    T("vfnmsub132ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv 9e /r rl:rvm");
-    T("vfnmsub132sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s 9f /r rl:rvm");
-    T("vfnmsub132ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s 9f /r rl:rvm");
-    T("vfnmsub213pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv ae /r rl:rvm");
-    T("vfnmsub213pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv ae /r rl:rvm");
-    T("vfnmsub213pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv ae /r rl:rvm");
-    T("vfnmsub213ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv ae /r rl:rvm");
-    T("vfnmsub213ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv ae /r rl:rvm");
-    T("vfnmsub213ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv ae /r rl:rvm");
-    T("vfnmsub213sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s af /r rl:rvm");
-    T("vfnmsub213ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s af /r rl:rvm");
-    T("vfnmsub231pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv be /r rl:rvm");
-    T("vfnmsub231pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv be /r rl:rvm");
-    T("vfnmsub231pd", "vz|mask|z,vz,vz64|b64|er", "xv:E:2:1:2:1:fv be /r rl:rvm");
-    T("vfnmsub231ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv be /r rl:rvm");
-    T("vfnmsub231ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv be /r rl:rvm");
-    T("vfnmsub231ps", "vz|mask|z,vz,vz64|b32|er", "xv:E:2:1:2:0:fv be /r rl:rvm");
-    T("vfnmsub231sd", "vx|mask|z,vx,vx8|er", "xv:E:0:1:2:1:t1s bf /r rl:rvm");
-    T("vfnmsub231ss", "vx|mask|z,vx,vx4|er", "xv:E:0:1:2:0:t1s bf /r rl:rvm");
-    T("vfpclasspd", "vk|mask,vx16|b64,imm8", "xv:E:0:1:3:1:fv 66 /r ib rl:rmi");
-    T("vfpclasspd", "vk|mask,vy32|b64,imm8", "xv:E:1:1:3:1:fv 66 /r ib rl:rmi");
-    T("vfpclasspd", "vk|mask,vz64|b64,imm8", "xv:E:2:1:3:1:fv 66 /r ib rl:rmi");
-    T("vfpclassps", "vk|mask,vx16|b32,imm8", "xv:E:0:1:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclassps", "vk|mask,vy32|b32,imm8", "xv:E:1:1:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclassps", "vk|mask,vz64|b32,imm8", "xv:E:2:1:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclasssd", "vk|mask,vx8,imm8", "xv:E:0:1:3:1:t1s 67 /r ib rl:rmi");
-    T("vfpclassss", "vk|mask,vx4,imm8", "xv:E:0:1:3:0:t1s 67 /r ib rl:rmi");
-    T("vgatherdpd", "vx|mask,vsx64", "xv:E:0:1:2:1:t1s 92 /r rl:rm");
-    T("vgatherdpd", "vy|mask,vsx64", "xv:E:1:1:2:1:t1s 92 /r rl:rm");
-    T("vgatherdpd", "vz|mask,vsy64", "xv:E:2:1:2:1:t1s 92 /r rl:rm");
-    T("vgatherdps", "vx|mask,vsx32", "xv:E:0:1:2:0:t1s 92 /r rl:rm");
-    T("vgatherdps", "vy|mask,vsy32", "xv:E:1:1:2:0:t1s 92 /r rl:rm");
-    T("vgatherdps", "vz|mask,vsz32", "xv:E:2:1:2:0:t1s 92 /r rl:rm");
-    T("vgatherpf0dpd", "vsy64|mask", "xv:E:2:1:2:1:t1s c6 /1 rl:m");
-    T("vgatherpf0dps", "vsz32|mask", "xv:E:2:1:2:0:t1s c6 /1 rl:m");
-    T("vgatherpf0qpd", "vsz64|mask", "xv:E:2:1:2:1:t1s c7 /1 rl:m");
-    T("vgatherpf0qps", "vsz32|mask", "xv:E:2:1:2:0:t1s c7 /1 rl:m");
-    T("vgatherpf1dpd", "vsy64|mask", "xv:E:2:1:2:1:t1s c6 /2 rl:m");
-    T("vgatherpf1dps", "vsz32|mask", "xv:E:2:1:2:0:t1s c6 /2 rl:m");
-    T("vgatherpf1qpd", "vsz64|mask", "xv:E:2:1:2:1:t1s c7 /2 rl:m");
-    T("vgatherpf1qps", "vsz32|mask", "xv:E:2:1:2:0:t1s c7 /2 rl:m");
-    T("vgatherqpd", "vx|mask,vsx64", "xv:E:0:1:2:1:t1s 93 /r rl:rm");
-    T("vgatherqpd", "vy|mask,vsy64", "xv:E:1:1:2:1:t1s 93 /r rl:rm");
-    T("vgatherqpd", "vz|mask,vsz64", "xv:E:2:1:2:1:t1s 93 /r rl:rm");
-    T("vgatherqps", "vx|mask,vsx32", "xv:E:0:1:2:0:t1s 93 /r rl:rm");
-    T("vgatherqps", "vx|mask,vsy32", "xv:E:1:1:2:0:t1s 93 /r rl:rm");
-    T("vgatherqps", "vy|mask,vsz32", "xv:E:2:1:2:0:t1s 93 /r rl:rm");
-    T("vgetexppd", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv 42 /r rl:rm");
-    T("vgetexppd", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv 42 /r rl:rm");
-    T("vgetexppd", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:2:1:fv 42 /r rl:rm");
-    T("vgetexpps", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv 42 /r rl:rm");
-    T("vgetexpps", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv 42 /r rl:rm");
-    T("vgetexpps", "vz|mask|z,vz64|b32|sae", "xv:E:2:1:2:0:fv 42 /r rl:rm");
-    T("vgetexpsd", "vx|mask|z,vx,vx8|sae", "xv:E:0:1:2:1:t1s 43 /r rl:rvm");
-    T("vgetexpss", "vx|mask|z,vx,vx4|sae", "xv:E:0:1:2:0:t1s 43 /r rl:rvm");
-    T("vgetmantpd", "vx|mask|z,vx16|b64,imm8", "xv:E:0:1:3:1:fv 26 /r ib rl:rmi");
-    T("vgetmantpd", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 26 /r ib rl:rmi");
-    T("vgetmantpd", "vz|mask|z,vz64|b64|sae,imm8", "xv:E:2:1:3:1:fv 26 /r ib rl:rmi");
-    T("vgetmantps", "vx|mask|z,vx16|b32,imm8", "xv:E:0:1:3:0:fv 26 /r ib rl:rmi");
-    T("vgetmantps", "vy|mask|z,vy32|b32,imm8", "xv:E:1:1:3:0:fv 26 /r ib rl:rmi");
-    T("vgetmantps", "vz|mask|z,vz64|b32|sae,imm8", "xv:E:2:1:3:0:fv 26 /r ib rl:rmi");
-    T("vgetmantsd", "vx|mask|z,vx,vx8|sae,imm8", "xv:E:0:1:3:1:t1s 27 /r ib rl:rvmi");
-    T("vgetmantss", "vx|mask|z,vx,vx4|sae,imm8", "xv:E:0:1:3:0:t1s 27 /r ib rl:rvmi");
-    T("vinsertf32x4", "vy|mask|z,vy*,vx16,imm8", "xv:E:1:1:3:0:t4 18 /r ib rl:rvmi");
-    T("vinsertf32x4", "vz|mask|z,vz*,vx16,imm8", "xv:E:2:1:3:0:t4 18 /r ib rl:rvmi");
-    T("vinsertf32x8", "vz|mask|z,vz*,vy32,imm8", "xv:E:2:1:3:0:t8 1a /r ib rl:rvmi");
-    T("vinsertf64x2", "vy|mask|z,vy*,vx16,imm8", "xv:E:1:1:3:1:t2 18 /r ib rl:rvmi");
-    T("vinsertf64x2", "vz|mask|z,vz*,vx16,imm8", "xv:E:2:1:3:1:t2 18 /r ib rl:rvmi");
-    T("vinsertf64x4", "vz|mask|z,vz*,vy32,imm8", "xv:E:2:1:3:1:t4 1a /r ib rl:rvmi");
-    T("vinserti32x4", "vy|mask|z,vy*,vx16,imm8", "xv:E:1:1:3:0:t4 38 /r ib rl:rvmi");
-    T("vinserti32x4", "vz|mask|z,vz*,vx16,imm8", "xv:E:2:1:3:0:t4 38 /r ib rl:rvmi");
-    T("vinserti32x8", "vz|mask|z,vz*,vy32,imm8", "xv:E:2:1:3:0:t8 3a /r ib rl:rvmi");
-    T("vinserti64x2", "vy|mask|z,vy*,vx16,imm8", "xv:E:1:1:3:1:t2 38 /r ib rl:rvmi");
-    T("vinserti64x2", "vz|mask|z,vz*,vx16,imm8", "xv:E:2:1:3:1:t2 38 /r ib rl:rvmi");
-    T("vinserti64x4", "vz|mask|z,vz*,vy32,imm8", "xv:E:2:1:3:1:t4 3a /r ib rl:rvmi");
-    T("vinsertps", "vx,vx*,vx4,imm8", "xv:E:0:1:3:0:t1s 21 /r ib rl:rvmi");
-    T("vmaxpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 5f /r rl:rvm");
-    T("vmaxpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 5f /r rl:rvm");
-    T("vmaxpd", "vz|mask|z,vz*,vz64|b64|sae", "xv:E:2:1:1:1:fv 5f /r rl:rvm");
-    T("vmaxps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 5f /r rl:rvm");
-    T("vmaxps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 5f /r rl:rvm");
-    T("vmaxps", "vz|mask|z,vz*,vz64|b32|sae", "xv:E:2:0:1:0:fv 5f /r rl:rvm");
-    T("vmaxsd", "vx|mask|z,vx*,vx8|sae", "xv:E:0:3:1:1:t1s 5f /r rl:rvm");
-    T("vmaxss", "vx|mask|z,vx*,vx4|sae", "xv:E:0:2:1:0:t1s 5f /r rl:rvm");
-    T("vminpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 5d /r rl:rvm");
-    T("vminpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 5d /r rl:rvm");
-    T("vminpd", "vz|mask|z,vz*,vz64|b64|sae", "xv:E:2:1:1:1:fv 5d /r rl:rvm");
-    T("vminps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 5d /r rl:rvm");
-    T("vminps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 5d /r rl:rvm");
-    T("vminps", "vz|mask|z,vz*,vz64|b32|sae", "xv:E:2:0:1:0:fv 5d /r rl:rvm");
-    T("vminsd", "vx|mask|z,vx*,vx8|sae", "xv:E:0:3:1:1:t1s 5d /r rl:rvm");
-    T("vminss", "vx|mask|z,vx*,vx4|sae", "xv:E:0:2:1:0:t1s 5d /r rl:rvm");
-    T("vmovapd", "vx|mask|z,vx16", "xv:E:0:1:1:1:fvm 28 /r rl:rm");
-    T("vmovapd", "vy|mask|z,vy32", "xv:E:1:1:1:1:fvm 28 /r rl:rm");
-    T("vmovapd", "vz|mask|z,vz64", "xv:E:2:1:1:1:fvm 28 /r rl:rm");
-    T("vmovapd", "vx|mask|z,vx", "xv:E:0:1:1:1:x 29 /r rl:mr");
-    T("vmovapd", "vy|mask|z,vy", "xv:E:1:1:1:1:x 29 /r rl:mr");
-    T("vmovapd", "vz|mask|z,vz", "xv:E:2:1:1:1:x 29 /r rl:mr");
-    T("vmovapd", "m128|mask,vx", "xv:E:0:1:1:1:fvm 29 /r rl:mr");
-    T("vmovapd", "m256|mask,vy", "xv:E:1:1:1:1:fvm 29 /r rl:mr");
-    T("vmovapd", "m512|mask,vz", "xv:E:2:1:1:1:fvm 29 /r rl:mr");
-    T("vmovaps", "vx|mask|z,vx16", "xv:E:0:0:1:0:fvm 28 /r rl:rm");
-    T("vmovaps", "vy|mask|z,vy32", "xv:E:1:0:1:0:fvm 28 /r rl:rm");
-    T("vmovaps", "vz|mask|z,vz64", "xv:E:2:0:1:0:fvm 28 /r rl:rm");
-    T("vmovaps", "vx|mask|z,vx", "xv:E:0:0:1:0:x 29 /r rl:mr");
-    T("vmovaps", "vy|mask|z,vy", "xv:E:1:0:1:0:x 29 /r rl:mr");
-    T("vmovaps", "vz|mask|z,vz", "xv:E:2:0:1:0:x 29 /r rl:mr");
-    T("vmovaps", "m128|mask,vx", "xv:E:0:0:1:0:fvm 29 /r rl:mr");
-    T("vmovaps", "m256|mask,vy", "xv:E:1:0:1:0:fvm 29 /r rl:mr");
-    T("vmovaps", "m512|mask,vz", "xv:E:2:0:1:0:fvm 29 /r rl:mr");
-    T("vmovd", "vx,rm32", "xv:E:0:1:1:0:t1s 6e /r rl:rm");
-    T("vmovd", "rm32,vx", "xv:E:0:1:1:0:t1s 7e /r rl:mr");
-    T("vmovddup", "vx|mask|z,vx8", "xv:E:0:3:1:1:dup 12 /r rl:rm");
-    T("vmovddup", "vy|mask|z,vy32", "xv:E:1:3:1:1:dup 12 /r rl:rm");
-    T("vmovddup", "vz|mask|z,vz64", "xv:E:2:3:1:1:dup 12 /r rl:rm");
-    T("vmovdqa32", "vx|mask|z,vx16", "xv:E:0:1:1:0:fvm 6f /r rl:rm");
-    T("vmovdqa32", "vy|mask|z,vy32", "xv:E:1:1:1:0:fvm 6f /r rl:rm");
-    T("vmovdqa32", "vz|mask|z,vz64", "xv:E:2:1:1:0:fvm 6f /r rl:rm");
-    T("vmovdqa32", "vx16|mask|z,vx", "xv:E:0:1:1:0:fvm 7f /r rl:mr");
-    T("vmovdqa32", "vy32|mask|z,vy", "xv:E:1:1:1:0:fvm 7f /r rl:mr");
-    T("vmovdqa32", "vz64|mask|z,vz", "xv:E:2:1:1:0:fvm 7f /r rl:mr");
-    T("vmovdqa64", "vx|mask|z,vx16", "xv:E:0:1:1:1:fvm 6f /r rl:rm");
-    T("vmovdqa64", "vy|mask|z,vy32", "xv:E:1:1:1:1:fvm 6f /r rl:rm");
-    T("vmovdqa64", "vz|mask|z,vz64", "xv:E:2:1:1:1:fvm 6f /r rl:rm");
-    T("vmovdqa64", "vx16|mask|z,vx", "xv:E:0:1:1:1:fvm 7f /r rl:mr");
-    T("vmovdqa64", "vy32|mask|z,vy", "xv:E:1:1:1:1:fvm 7f /r rl:mr");
-    T("vmovdqa64", "vz64|mask|z,vz", "xv:E:2:1:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu16", "vx|mask|z,vx16", "xv:E:0:3:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu16", "vy|mask|z,vy32", "xv:E:1:3:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu16", "vz|mask|z,vz64", "xv:E:2:3:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu16", "vx16|mask|z,vx", "xv:E:0:3:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu16", "vy32|mask|z,vy", "xv:E:1:3:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu16", "vz64|mask|z,vz", "xv:E:2:3:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu32", "vx|mask|z,vx16", "xv:E:0:2:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu32", "vy|mask|z,vy32", "xv:E:1:2:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu32", "vz|mask|z,vz64", "xv:E:2:2:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu32", "vx16|mask|z,vx", "xv:E:0:2:1:0:fvm 7f /r rl:mr");
-    T("vmovdqu32", "vy32|mask|z,vy", "xv:E:1:2:1:0:fvm 7f /r rl:mr");
-    T("vmovdqu32", "vz64|mask|z,vz", "xv:E:2:2:1:0:fvm 7f /r rl:mr");
-    T("vmovdqu64", "vx|mask|z,vx16", "xv:E:0:2:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu64", "vy|mask|z,vy32", "xv:E:1:2:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu64", "vz|mask|z,vz64", "xv:E:2:2:1:1:fvm 6f /r rl:rm");
-    T("vmovdqu64", "vx16|mask|z,vx", "xv:E:0:2:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu64", "vy32|mask|z,vy", "xv:E:1:2:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu64", "vz64|mask|z,vz", "xv:E:2:2:1:1:fvm 7f /r rl:mr");
-    T("vmovdqu8", "vx|mask|z,vx16", "xv:E:0:3:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu8", "vy|mask|z,vy32", "xv:E:1:3:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu8", "vz|mask|z,vz64", "xv:E:2:3:1:0:fvm 6f /r rl:rm");
-    T("vmovdqu8", "vx16|mask|z,vx", "xv:E:0:3:1:0:fvm 7f /r rl:mr");
-    T("vmovdqu8", "vy32|mask|z,vy", "xv:E:1:3:1:0:fvm 7f /r rl:mr");
-    T("vmovdqu8", "vz64|mask|z,vz", "xv:E:2:3:1:0:fvm 7f /r rl:mr");
-    T("vmovhlps", "vx,vx*,vx", "xv:E:0:0:1:0:x 12 /r rl:rvm");
-    T("vmovhpd", "vx,vx*,m64", "xv:E:0:1:1:1:t1s 16 /r rl:rvm");
-    T("vmovhpd", "m64,vx", "xv:E:0:1:1:1:t1s 17 /r rl:mr");
-    T("vmovhps", "vx,vx*,m64", "xv:E:0:0:1:0:t2 16 /r rl:rvm");
-    T("vmovhps", "m64,vx", "xv:E:0:0:1:0:t2 17 /r rl:mr");
-    T("vmovlhps", "vx,vx*,vx", "xv:E:0:0:1:0:x 16 /r rl:rvm");
-    T("vmovlpd", "vx,vx*,m64", "xv:E:0:1:1:1:t1s 12 /r rl:rvm");
-    T("vmovlpd", "m64,vx", "xv:E:0:1:1:1:t1s 13 /r rl:mr");
-    T("vmovlps", "vx,vx*,m64", "xv:E:0:0:1:0:t2 12 /r rl:rvm");
-    T("vmovlps", "m64,vx", "xv:E:0:0:1:0:t2 13 /r rl:mr");
-    T("vmovntdq", "m128,vx", "xv:E:0:1:1:0:fvm e7 /r rl:mr");
-    T("vmovntdq", "m256,vy", "xv:E:1:1:1:0:fvm e7 /r rl:mr");
-    T("vmovntdq", "m512,vz", "xv:E:2:1:1:0:fvm e7 /r rl:mr");
-    T("vmovntdqa", "vx,m128", "xv:E:0:1:2:0:fvm 2a /r rl:rm");
-    T("vmovntdqa", "vy,m256", "xv:E:1:1:2:0:fvm 2a /r rl:rm");
-    T("vmovntdqa", "vz,m512", "xv:E:2:1:2:0:fvm 2a /r rl:rm");
-    T("vmovntpd", "m128,vx", "xv:E:0:1:1:1:fvm 2b /r rl:mr");
-    T("vmovntpd", "m256,vy", "xv:E:1:1:1:1:fvm 2b /r rl:mr");
-    T("vmovntpd", "m512,vz", "xv:E:2:1:1:1:fvm 2b /r rl:mr");
-    T("vmovntps", "m128,vx", "xv:E:0:0:1:0:fvm 2b /r rl:mr");
-    T("vmovntps", "m256,vy", "xv:E:1:0:1:0:fvm 2b /r rl:mr");
-    T("vmovntps", "m512,vz", "xv:E:2:0:1:0:fvm 2b /r rl:mr");
-    T("vmovq", "vx,m64", "xv:E:0:1:1:1:t1s 6e /r rl:rm");
-    T("vmovq", "m64,vx", "xv:E:0:1:1:1:t1s 7e /r rl:mr");
-    T("vmovq", "vx,vx8", "xv:E:0:2:1:1:t1s 7e /r rl:rm");
-    T("vmovq", "vx8,vx", "xv:E:0:1:1:1:t1s d6 /r rl:mr");
-    T("vmovsd", "vx|mask|z,m64", "xv:E:0:3:1:1:t1s 10 /r rl:rm");
-    T("vmovsd", "m64|mask,vx", "xv:E:0:3:1:1:t1s 11 /r rl:mr");
-    T("vmovsd", "vx|mask|z,vx*,vx", "xv:E:0:3:1:1:x 10 /r rl:rvm");
-    T("vmovsd", "vx|mask|z,vx*,vx", "xv:E:0:3:1:1:x 11 /r rl:mvr");
-    T("vmovshdup", "vx|mask|z,vx16", "xv:E:0:2:1:0:fvm 16 /r rl:rm");
-    T("vmovshdup", "vy|mask|z,vy32", "xv:E:1:2:1:0:fvm 16 /r rl:rm");
-    T("vmovshdup", "vz|mask|z,vz64", "xv:E:2:2:1:0:fvm 16 /r rl:rm");
-    T("vmovsldup", "vx|mask|z,vx16", "xv:E:0:2:1:0:fvm 12 /r rl:rm");
-    T("vmovsldup", "vy|mask|z,vy32", "xv:E:1:2:1:0:fvm 12 /r rl:rm");
-    T("vmovsldup", "vz|mask|z,vz64", "xv:E:2:2:1:0:fvm 12 /r rl:rm");
-    T("vmovss", "vx|mask|z,m32", "xv:E:0:2:1:0:t1s 10 /r rl:rm");
-    T("vmovss", "m32|mask,vx", "xv:E:0:2:1:0:t1s 11 /r rl:mr");
-    T("vmovss", "vx|mask|z,vx*,vx", "xv:E:0:2:1:0:x 10 /r rl:rvm");
-    T("vmovss", "vx|mask|z,vx*,vx", "xv:E:0:2:1:0:x 11 /r rl:mvr");
-    T("vmovupd", "vx|mask|z,vx16", "xv:E:0:1:1:1:fvm 10 /r rl:rm");
-    T("vmovupd", "vy|mask|z,vy32", "xv:E:1:1:1:1:fvm 10 /r rl:rm");
-    T("vmovupd", "vz|mask|z,vz64", "xv:E:2:1:1:1:fvm 10 /r rl:rm");
-    T("vmovupd", "vx|mask|z,vx", "xv:E:0:1:1:1:x 11 /r rl:mr");
-    T("vmovupd", "vy|mask|z,vy", "xv:E:1:1:1:1:x 11 /r rl:mr");
-    T("vmovupd", "vz|mask|z,vz", "xv:E:2:1:1:1:x 11 /r rl:mr");
-    T("vmovupd", "m128|mask,vx", "xv:E:0:1:1:1:fvm 11 /r rl:mr");
-    T("vmovupd", "m256|mask,vy", "xv:E:1:1:1:1:fvm 11 /r rl:mr");
-    T("vmovupd", "m512|mask,vz", "xv:E:2:1:1:1:fvm 11 /r rl:mr");
-    T("vmovups", "vx|mask|z,vx16", "xv:E:0:0:1:0:fvm 10 /r rl:rm");
-    T("vmovups", "vy|mask|z,vy32", "xv:E:1:0:1:0:fvm 10 /r rl:rm");
-    T("vmovups", "vz|mask|z,vz64", "xv:E:2:0:1:0:fvm 10 /r rl:rm");
-    T("vmovups", "vx|mask|z,vx", "xv:E:0:0:1:0:x 11 /r rl:mr");
-    T("vmovups", "vy|mask|z,vy", "xv:E:1:0:1:0:x 11 /r rl:mr");
-    T("vmovups", "vz|mask|z,vz", "xv:E:2:0:1:0:x 11 /r rl:mr");
-    T("vmovups", "m128|mask,vx", "xv:E:0:0:1:0:fvm 11 /r rl:mr");
-    T("vmovups", "m256|mask,vy", "xv:E:1:0:1:0:fvm 11 /r rl:mr");
-    T("vmovups", "m512|mask,vz", "xv:E:2:0:1:0:fvm 11 /r rl:mr");
-    T("vmulpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 59 /r rl:rvm");
-    T("vmulpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 59 /r rl:rvm");
-    T("vmulpd", "vz|mask|z,vz*,vz64|b64|er", "xv:E:2:1:1:1:fv 59 /r rl:rvm");
-    T("vmulps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 59 /r rl:rvm");
-    T("vmulps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 59 /r rl:rvm");
-    T("vmulps", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:0:1:0:fv 59 /r rl:rvm");
-    T("vmulsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:1:1:t1s 59 /r rl:rvm");
-    T("vmulss", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:1:0:t1s 59 /r rl:rvm");
-    T("vorpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 56 /r rl:rvm");
-    T("vorpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 56 /r rl:rvm");
-    T("vorpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 56 /r rl:rvm");
-    T("vorps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 56 /r rl:rvm");
-    T("vorps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 56 /r rl:rvm");
-    T("vorps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 56 /r rl:rvm");
-    T("vpabsb", "vx|mask|z,vx16", "xv:E:0:1:2:0:fvm 1c /r rl:rm");
-    T("vpabsb", "vy|mask|z,vy32", "xv:E:1:1:2:0:fvm 1c /r rl:rm");
-    T("vpabsb", "vz|mask|z,vz64", "xv:E:2:1:2:0:fvm 1c /r rl:rm");
-    T("vpabsd", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv 1e /r rl:rm");
-    T("vpabsd", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv 1e /r rl:rm");
-    T("vpabsd", "vz|mask|z,vz64|b32", "xv:E:2:1:2:0:fv 1e /r rl:rm");
-    T("vpabsq", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv 1f /r rl:rm");
-    T("vpabsq", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv 1f /r rl:rm");
-    T("vpabsq", "vz|mask|z,vz64|b64", "xv:E:2:1:2:1:fv 1f /r rl:rm");
-    T("vpabsw", "vx|mask|z,vx16", "xv:E:0:1:2:0:fvm 1d /r rl:rm");
-    T("vpabsw", "vy|mask|z,vy32", "xv:E:1:1:2:0:fvm 1d /r rl:rm");
-    T("vpabsw", "vz|mask|z,vz64", "xv:E:2:1:2:0:fvm 1d /r rl:rm");
-    T("vpackssdw", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv 6b /r rl:rvm");
-    T("vpackssdw", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv 6b /r rl:rvm");
-    T("vpackssdw", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv 6b /r rl:rvm");
-    T("vpacksswb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 63 /r rl:rvm");
-    T("vpacksswb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 63 /r rl:rvm");
-    T("vpacksswb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 63 /r rl:rvm");
-    T("vpackusdw", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 2b /r rl:rvm");
-    T("vpackusdw", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 2b /r rl:rvm");
-    T("vpackusdw", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 2b /r rl:rvm");
-    T("vpackuswb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 67 /r rl:rvm");
-    T("vpackuswb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 67 /r rl:rvm");
-    T("vpackuswb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 67 /r rl:rvm");
-    T("vpaddb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm fc /r rl:rvm");
-    T("vpaddb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm fc /r rl:rvm");
-    T("vpaddb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm fc /r rl:rvm");
-    T("vpaddd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv fe /r rl:rvm");
-    T("vpaddd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv fe /r rl:rvm");
-    T("vpaddd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv fe /r rl:rvm");
-    T("vpaddq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv d4 /r rl:rvm");
-    T("vpaddq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv d4 /r rl:rvm");
-    T("vpaddq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv d4 /r rl:rvm");
-    T("vpaddsb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm ec /r rl:rvm");
-    T("vpaddsb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm ec /r rl:rvm");
-    T("vpaddsb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm ec /r rl:rvm");
-    T("vpaddsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm ed /r rl:rvm");
-    T("vpaddsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm ed /r rl:rvm");
-    T("vpaddsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm ed /r rl:rvm");
-    T("vpaddusb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm dc /r rl:rvm");
-    T("vpaddusb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm dc /r rl:rvm");
-    T("vpaddusb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm dc /r rl:rvm");
-    T("vpaddusw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm dd /r rl:rvm");
-    T("vpaddusw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm dd /r rl:rvm");
-    T("vpaddusw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm dd /r rl:rvm");
-    T("vpaddw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm fd /r rl:rvm");
-    T("vpaddw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm fd /r rl:rvm");
-    T("vpaddw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm fd /r rl:rvm");
-    T("vpalignr", "vx|mask|z,vx*,vx16,imm8", "xv:E:0:1:3:0:fvm 0f /r ib rl:rvmi");
-    T("vpalignr", "vy|mask|z,vy*,vy32,imm8", "xv:E:1:1:3:0:fvm 0f /r ib rl:rvmi");
-    T("vpalignr", "vz|mask|z,vz*,vz64,imm8", "xv:E:2:1:3:0:fvm 0f /r ib rl:rvmi");
-    T("vpandd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv db /r rl:rvm");
-    T("vpandd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv db /r rl:rvm");
-    T("vpandd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv db /r rl:rvm");
-    T("vpandnd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv df /r rl:rvm");
-    T("vpandnd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv df /r rl:rvm");
-    T("vpandnd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv df /r rl:rvm");
-    T("vpandnq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv df /r rl:rvm");
-    T("vpandnq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv df /r rl:rvm");
-    T("vpandnq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv df /r rl:rvm");
-    T("vpandq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv db /r rl:rvm");
-    T("vpandq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv db /r rl:rvm");
-    T("vpandq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv db /r rl:rvm");
-    T("vpavgb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e0 /r rl:rvm");
-    T("vpavgb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e0 /r rl:rvm");
-    T("vpavgb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e0 /r rl:rvm");
-    T("vpavgw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e3 /r rl:rvm");
-    T("vpavgw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e3 /r rl:rvm");
-    T("vpavgw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e3 /r rl:rvm");
-    T("vpblendmb", "vx|mask|z,vx,vx16", "xv:E:0:1:2:0:fvm 66 /r rl:rvm");
-    T("vpblendmb", "vy|mask|z,vy,vy32", "xv:E:1:1:2:0:fvm 66 /r rl:rvm");
-    T("vpblendmb", "vz|mask|z,vz,vz64", "xv:E:2:1:2:0:fvm 66 /r rl:rvm");
-    T("vpblendmd", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 64 /r rl:rvm");
-    T("vpblendmd", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 64 /r rl:rvm");
-    T("vpblendmd", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 64 /r rl:rvm");
-    T("vpblendmq", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 64 /r rl:rvm");
-    T("vpblendmq", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 64 /r rl:rvm");
-    T("vpblendmq", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 64 /r rl:rvm");
-    T("vpblendmw", "vx|mask|z,vx,vx16", "xv:E:0:1:2:1:fvm 66 /r rl:rvm");
-    T("vpblendmw", "vy|mask|z,vy,vy32", "xv:E:1:1:2:1:fvm 66 /r rl:rvm");
-    T("vpblendmw", "vz|mask|z,vz,vz64", "xv:E:2:1:2:1:fvm 66 /r rl:rvm");
-    T("vpbroadcastb", "vx|mask|z,vx1", "xv:E:0:1:2:0:t1s8 78 /r rl:rm");
-    T("vpbroadcastb", "vy|mask|z,vx1", "xv:E:1:1:2:0:t1s8 78 /r rl:rm");
-    T("vpbroadcastb", "vz|mask|z,vx1", "xv:E:2:1:2:0:t1s8 78 /r rl:rm");
-    T("vpbroadcastb", "vx|mask|z,r8", "xv:E:0:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vx|mask|z,r16", "xv:E:0:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vx|mask|z,r32", "xv:E:0:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vy|mask|z,r8", "xv:E:1:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vy|mask|z,r16", "xv:E:1:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vy|mask|z,r32", "xv:E:1:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vz|mask|z,r8", "xv:E:2:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vz|mask|z,r16", "xv:E:2:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastb", "vz|mask|z,r32", "xv:E:2:1:2:0:x 7a /r rl:rm");
-    T("vpbroadcastd", "vx|mask|z,m32", "xv:E:0:1:2:0:t1s 58 /r rl:rm");
-    T("vpbroadcastd", "vy|mask|z,m32", "xv:E:1:1:2:0:t1s 58 /r rl:rm");
-    T("vpbroadcastd", "vz|mask|z,m32", "xv:E:2:1:2:0:t1s 58 /r rl:rm");
-    T("vpbroadcastd", "vx|mask|z,vx", "xv:E:0:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vy|mask|z,vx", "xv:E:1:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vz|mask|z,vx", "xv:E:2:1:2:0:x 58 /r rl:rm");
-    T("vpbroadcastd", "vx|mask|z,r32", "xv:E:0:1:2:0:x 7c /r rl:rm");
-    T("vpbroadcastd", "vy|mask|z,r32", "xv:E:1:1:2:0:x 7c /r rl:rm");
-    T("vpbroadcastd", "vz|mask|z,r32", "xv:E:2:1:2:0:x 7c /r rl:rm");
-    T("vpbroadcastmb2q", "vx,vk", "xv:E:0:2:2:1:x 2a /r rl:rm");
-    T("vpbroadcastmb2q", "vy,vk", "xv:E:1:2:2:1:x 2a /r rl:rm");
-    T("vpbroadcastmb2q", "vz,vk", "xv:E:2:2:2:1:x 2a /r rl:rm");
-    T("vpbroadcastmw2d", "vx,vk", "xv:E:0:2:2:0:x 3a /r rl:rm");
-    T("vpbroadcastmw2d", "vy,vk", "xv:E:1:2:2:0:x 3a /r rl:rm");
-    T("vpbroadcastmw2d", "vz,vk", "xv:E:2:2:2:0:x 3a /r rl:rm");
-    T("vpbroadcastq", "vx|mask|z,m64", "xv:E:0:1:2:1:t1s 59 /r rl:rm");
-    T("vpbroadcastq", "vy|mask|z,m64", "xv:E:1:1:2:1:t1s 59 /r rl:rm");
-    T("vpbroadcastq", "vz|mask|z,m64", "xv:E:2:1:2:1:t1s 59 /r rl:rm");
-    T("vpbroadcastq", "vx|mask|z,vx", "xv:E:0:1:2:1:x 59 /r rl:rm");
-    T("vpbroadcastq", "vy|mask|z,vx", "xv:E:1:1:2:1:x 59 /r rl:rm");
-    T("vpbroadcastq", "vz|mask|z,vx", "xv:E:2:1:2:1:x 59 /r rl:rm");
-    T("vpbroadcastw", "vx|mask|z,vx2", "xv:E:0:1:2:0:t1s16 79 /r rl:rm");
-    T("vpbroadcastw", "vy|mask|z,vx2", "xv:E:1:1:2:0:t1s16 79 /r rl:rm");
-    T("vpbroadcastw", "vz|mask|z,vx2", "xv:E:2:1:2:0:t1s16 79 /r rl:rm");
-    T("vpbroadcastw", "vx|mask|z,r16", "xv:E:0:1:2:0:x 7b /r rl:rm");
-    T("vpbroadcastw", "vx|mask|z,r32", "xv:E:0:1:2:0:x 7b /r rl:rm");
-    T("vpbroadcastw", "vy|mask|z,r16", "xv:E:1:1:2:0:x 7b /r rl:rm");
-    T("vpbroadcastw", "vy|mask|z,r32", "xv:E:1:1:2:0:x 7b /r rl:rm");
-    T("vpbroadcastw", "vz|mask|z,r16", "xv:E:2:1:2:0:x 7b /r rl:rm");
-    T("vpbroadcastw", "vz|mask|z,r32", "xv:E:2:1:2:0:x 7b /r rl:rm");
-    T("vpcmpeqb", "vk|mask,vx,vx16", "xv:E:0:1:1:0:fvm 74 /r rl:rvm");
-    T("vpcmpeqb", "vk|mask,vy,vy32", "xv:E:1:1:1:0:fvm 74 /r rl:rvm");
-    T("vpcmpeqb", "vk|mask,vz,vz64", "xv:E:2:1:1:0:fvm 74 /r rl:rvm");
-    T("vpcmpeqd", "vk|mask,vx,vx16|b32", "xv:E:0:1:1:0:fv 76 /r rl:rvm");
-    T("vpcmpeqd", "vk|mask,vy,vy32|b32", "xv:E:1:1:1:0:fv 76 /r rl:rvm");
-    T("vpcmpeqd", "vk|mask,vz,vz64|b32", "xv:E:2:1:1:0:fv 76 /r rl:rvm");
-    T("vpcmpeqq", "vk|mask,vx,vx16|b64", "xv:E:0:1:2:1:fv 29 /r rl:rvm");
-    T("vpcmpeqq", "vk|mask,vy,vy32|b64", "xv:E:1:1:2:1:fv 29 /r rl:rvm");
-    T("vpcmpeqq", "vk|mask,vz,vz64|b64", "xv:E:2:1:2:1:fv 29 /r rl:rvm");
-    T("vpcmpeqw", "vk|mask,vx,vx16", "xv:E:0:1:1:0:fvm 75 /r rl:rvm");
-    T("vpcmpeqw", "vk|mask,vy,vy32", "xv:E:1:1:1:0:fvm 75 /r rl:rvm");
-    T("vpcmpeqw", "vk|mask,vz,vz64", "xv:E:2:1:1:0:fvm 75 /r rl:rvm");
-    T("vpcmpgtb", "vk|mask,vx,vx16", "xv:E:0:1:1:0:fvm 64 /r rl:rvm");
-    T("vpcmpgtb", "vk|mask,vy,vy32", "xv:E:1:1:1:0:fvm 64 /r rl:rvm");
-    T("vpcmpgtb", "vk|mask,vz,vz64", "xv:E:2:1:1:0:fvm 64 /r rl:rvm");
-    T("vpcmpgtd", "vk|mask,vx,vx16|b32", "xv:E:0:1:1:0:fv 66 /r rl:rvm");
-    T("vpcmpgtd", "vk|mask,vy,vy32|b32", "xv:E:1:1:1:0:fv 66 /r rl:rvm");
-    T("vpcmpgtd", "vk|mask,vz,vz64|b32", "xv:E:2:1:1:0:fv 66 /r rl:rvm");
-    T("vpcmpgtq", "vk|mask,vx,vx16|b64", "xv:E:0:1:2:1:fv 37 /r rl:rvm");
-    T("vpcmpgtq", "vk|mask,vy,vy32|b64", "xv:E:1:1:2:1:fv 37 /r rl:rvm");
-    T("vpcmpgtq", "vk|mask,vz,vz64|b64", "xv:E:2:1:2:1:fv 37 /r rl:rvm");
-    T("vpcmpgtw", "vk|mask,vx,vx16", "xv:E:0:1:1:0:fvm 65 /r rl:rvm");
-    T("vpcmpgtw", "vk|mask,vy,vy32", "xv:E:1:1:1:0:fvm 65 /r rl:rvm");
-    T("vpcmpgtw", "vk|mask,vz,vz64", "xv:E:2:1:1:0:fvm 65 /r rl:rvm");
-    T("vpcmpeqb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p00 rl:rvm");
-    T("vpcmpeqb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p00 rl:rvm");
-    T("vpcmpeqb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p00 rl:rvm");
-    T("vpcmpeqd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p00 rl:rvm");
-    T("vpcmpeqd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p00 rl:rvm");
-    T("vpcmpeqd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p00 rl:rvm");
-    T("vpcmpeqq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p00 rl:rvm");
-    T("vpcmpeqq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p00 rl:rvm");
-    T("vpcmpeqq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p00 rl:rvm");
-    T("vpcmpequb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p00 rl:rvm");
-    T("vpcmpequb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p00 rl:rvm");
-    T("vpcmpequb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p00 rl:rvm");
-    T("vpcmpequd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p00 rl:rvm");
-    T("vpcmpequd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p00 rl:rvm");
-    T("vpcmpequd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p00 rl:rvm");
-    T("vpcmpequq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p00 rl:rvm");
-    T("vpcmpequq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p00 rl:rvm");
-    T("vpcmpequq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p00 rl:rvm");
-    T("vpcmpequw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p00 rl:rvm");
-    T("vpcmpequw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p00 rl:rvm");
-    T("vpcmpequw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p00 rl:rvm");
-    T("vpcmpeqw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p00 rl:rvm");
-    T("vpcmpeqw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p00 rl:rvm");
-    T("vpcmpeqw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p00 rl:rvm");
-    T("vpcmpgeb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpgeb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpgeb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpged", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpged", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpged", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpgeq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpgeq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpgeq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpgeub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgeub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgeub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgeud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpgeuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgeuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgeuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpgew", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpgew", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpgew", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpgtb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpgtb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpgtb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpgtd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpgtub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpgtuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpgtw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpgtw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpgtw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpleb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpleb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpleb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpled", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpled", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpled", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpleq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpleq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpleq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpleub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpleub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpleub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpleud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpleud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpleud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpleuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpleuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpleuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpleuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmpleuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmpleuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmplew", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmplew", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmplew", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmpltb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p01 rl:rvm");
-    T("vpcmpltb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p01 rl:rvm");
-    T("vpcmpltb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p01 rl:rvm");
-    T("vpcmpltd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p01 rl:rvm");
-    T("vpcmpltd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p01 rl:rvm");
-    T("vpcmpltd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p01 rl:rvm");
-    T("vpcmpltq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p01 rl:rvm");
-    T("vpcmpltq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p01 rl:rvm");
-    T("vpcmpltq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p01 rl:rvm");
-    T("vpcmpltub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p01 rl:rvm");
-    T("vpcmpltud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p01 rl:rvm");
-    T("vpcmpltud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p01 rl:rvm");
-    T("vpcmpltuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p01 rl:rvm");
-    T("vpcmpltuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p01 rl:rvm");
-    T("vpcmpltuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p01 rl:rvm");
-    T("vpcmpltuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p01 rl:rvm");
-    T("vpcmpltw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p01 rl:rvm");
-    T("vpcmpltw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p01 rl:rvm");
-    T("vpcmpltw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p01 rl:rvm");
-    T("vpcmpneqb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p04 rl:rvm");
-    T("vpcmpneqb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p04 rl:rvm");
-    T("vpcmpneqb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p04 rl:rvm");
-    T("vpcmpneqd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p04 rl:rvm");
-    T("vpcmpneqd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p04 rl:rvm");
-    T("vpcmpneqd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p04 rl:rvm");
-    T("vpcmpneqq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p04 rl:rvm");
-    T("vpcmpneqq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p04 rl:rvm");
-    T("vpcmpneqq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p04 rl:rvm");
-    T("vpcmpnequb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p04 rl:rvm");
-    T("vpcmpnequb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p04 rl:rvm");
-    T("vpcmpnequb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p04 rl:rvm");
-    T("vpcmpnequd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p04 rl:rvm");
-    T("vpcmpnequw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p04 rl:rvm");
-    T("vpcmpnequw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p04 rl:rvm");
-    T("vpcmpnequw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p04 rl:rvm");
-    T("vpcmpneqw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p04 rl:rvm");
-    T("vpcmpneqw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p04 rl:rvm");
-    T("vpcmpneqw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p04 rl:rvm");
-    T("vpcmpngtb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpngtb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpngtb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p02 rl:rvm");
-    T("vpcmpngtd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p02 rl:rvm");
-    T("vpcmpngtub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p02 rl:rvm");
-    T("vpcmpngtuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p02 rl:rvm");
-    T("vpcmpngtw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmpngtw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmpngtw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p02 rl:rvm");
-    T("vpcmpnleb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnleb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnleb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnled", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpnled", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpnled", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p06 rl:rvm");
-    T("vpcmpnleq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpnleq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpnleq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p06 rl:rvm");
-    T("vpcmpnleub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnleub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnleub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnleud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p06 rl:rvm");
-    T("vpcmpnleuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnleuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnleuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p06 rl:rvm");
-    T("vpcmpnlew", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnlew", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnlew", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p06 rl:rvm");
-    T("vpcmpnltb", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpnltb", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpnltb", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3f /r p05 rl:rvm");
-    T("vpcmpnltd", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltd", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltd", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1f /r p05 rl:rvm");
-    T("vpcmpnltub", "vk|mask,vx,vx16", "xv:E:0:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltub", "vk|mask,vy,vy32", "xv:E:1:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltub", "vk|mask,vz,vz64", "xv:E:2:1:3:0:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltud", "vk|mask,vx,vx16|b32", "xv:E:0:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltud", "vk|mask,vy,vy32|b32", "xv:E:1:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltud", "vk|mask,vz,vz64|b32", "xv:E:2:1:3:0:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltuq", "vk|mask,vx,vx16|b64", "xv:E:0:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltuq", "vk|mask,vy,vy32|b64", "xv:E:1:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltuq", "vk|mask,vz,vz64|b64", "xv:E:2:1:3:1:fv 1e /r p05 rl:rvm");
-    T("vpcmpnltuw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltuw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltuw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3e /r p05 rl:rvm");
-    T("vpcmpnltw", "vk|mask,vx,vx16", "xv:E:0:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpnltw", "vk|mask,vy,vy32", "xv:E:1:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpnltw", "vk|mask,vz,vz64", "xv:E:2:1:3:1:fvm 3f /r p05 rl:rvm");
-    T("vpcmpb", "vk|mask,vx,vx16,imm8", "xv:E:0:1:3:0:fvm 3f /r ib rl:rvmi");
-    T("vpcmpb", "vk|mask,vy,vy32,imm8", "xv:E:1:1:3:0:fvm 3f /r ib rl:rvmi");
-    T("vpcmpb", "vk|mask,vz,vz64,imm8", "xv:E:2:1:3:0:fvm 3f /r ib rl:rvmi");
-    T("vpcmpd", "vk|mask,vx,vx16|b32,imm8", "xv:E:0:1:3:0:fv 1f /r ib rl:rvmi");
-    T("vpcmpd", "vk|mask,vy,vy32|b32,imm8", "xv:E:1:1:3:0:fv 1f /r ib rl:rvmi");
-    T("vpcmpd", "vk|mask,vz,vz64|b32,imm8", "xv:E:2:1:3:0:fv 1f /r ib rl:rvmi");
-    T("vpcmpq", "vk|mask,vx,vx16|b64,imm8", "xv:E:0:1:3:1:fv 1f /r ib rl:rvmi");
-    T("vpcmpq", "vk|mask,vy,vy32|b64,imm8", "xv:E:1:1:3:1:fv 1f /r ib rl:rvmi");
-    T("vpcmpq", "vk|mask,vz,vz64|b64,imm8", "xv:E:2:1:3:1:fv 1f /r ib rl:rvmi");
-    T("vpcmpub", "vk|mask,vx,vx16,imm8", "xv:E:0:1:3:0:fvm 3e /r ib rl:rvmi");
-    T("vpcmpub", "vk|mask,vy,vy32,imm8", "xv:E:1:1:3:0:fvm 3e /r ib rl:rvmi");
-    T("vpcmpub", "vk|mask,vz,vz64,imm8", "xv:E:2:1:3:0:fvm 3e /r ib rl:rvmi");
-    T("vpcmpud", "vk|mask,vx,vx16|b32,imm8", "xv:E:0:1:3:0:fv 1e /r ib rl:rvmi");
-    T("vpcmpud", "vk|mask,vy,vy32|b32,imm8", "xv:E:1:1:3:0:fv 1e /r ib rl:rvmi");
-    T("vpcmpud", "vk|mask,vz,vz64|b32,imm8", "xv:E:2:1:3:0:fv 1e /r ib rl:rvmi");
-    T("vpcmpuq", "vk|mask,vx,vx16|b64,imm8", "xv:E:0:1:3:1:fv 1e /r ib rl:rvmi");
-    T("vpcmpuq", "vk|mask,vy,vy32|b64,imm8", "xv:E:1:1:3:1:fv 1e /r ib rl:rvmi");
-    T("vpcmpuq", "vk|mask,vz,vz64|b64,imm8", "xv:E:2:1:3:1:fv 1e /r ib rl:rvmi");
-    T("vpcmpuw", "vk|mask,vx,vx16,imm8", "xv:E:0:1:3:1:fvm 3e /r ib rl:rvmi");
-    T("vpcmpuw", "vk|mask,vy,vy32,imm8", "xv:E:1:1:3:1:fvm 3e /r ib rl:rvmi");
-    T("vpcmpuw", "vk|mask,vz,vz64,imm8", "xv:E:2:1:3:1:fvm 3e /r ib rl:rvmi");
-    T("vpcmpw", "vk|mask,vx,vx16,imm8", "xv:E:0:1:3:1:fvm 3f /r ib rl:rvmi");
-    T("vpcmpw", "vk|mask,vy,vy32,imm8", "xv:E:1:1:3:1:fvm 3f /r ib rl:rvmi");
-    T("vpcmpw", "vk|mask,vz,vz64,imm8", "xv:E:2:1:3:1:fvm 3f /r ib rl:rvmi");
-    T("vpcompressd", "m128|mask,vx", "xv:E:0:1:2:0:t1s 8b /r rl:mr");
-    T("vpcompressd", "m256|mask,vy", "xv:E:1:1:2:0:t1s 8b /r rl:mr");
-    T("vpcompressd", "m512|mask,vz", "xv:E:2:1:2:0:t1s 8b /r rl:mr");
-    T("vpcompressd", "vx|mask|z,vx", "xv:E:0:1:2:0:x 8b /r rl:mr");
-    T("vpcompressd", "vy|mask|z,vy", "xv:E:1:1:2:0:x 8b /r rl:mr");
-    T("vpcompressd", "vz|mask|z,vz", "xv:E:2:1:2:0:x 8b /r rl:mr");
-    T("vpcompressq", "m128|mask,vx", "xv:E:0:1:2:1:t1s 8b /r rl:mr");
-    T("vpcompressq", "m256|mask,vy", "xv:E:1:1:2:1:t1s 8b /r rl:mr");
-    T("vpcompressq", "m512|mask,vz", "xv:E:2:1:2:1:t1s 8b /r rl:mr");
-    T("vpcompressq", "vx|mask|z,vx", "xv:E:0:1:2:1:x 8b /r rl:mr");
-    T("vpcompressq", "vy|mask|z,vy", "xv:E:1:1:2:1:x 8b /r rl:mr");
-    T("vpcompressq", "vz|mask|z,vz", "xv:E:2:1:2:1:x 8b /r rl:mr");
-    T("vpconflictd", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv c4 /r rl:rm");
-    T("vpconflictd", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv c4 /r rl:rm");
-    T("vpconflictd", "vz|mask|z,vz64|b32", "xv:E:2:1:2:0:fv c4 /r rl:rm");
-    T("vpconflictq", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv c4 /r rl:rm");
-    T("vpconflictq", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv c4 /r rl:rm");
-    T("vpconflictq", "vz|mask|z,vz64|b64", "xv:E:2:1:2:1:fv c4 /r rl:rm");
-    T("vpermb", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 8d /r rl:rvm");
-    T("vpermb", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 8d /r rl:rvm");
-    T("vpermb", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 8d /r rl:rvm");
-    T("vpermd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 36 /r rl:rvm");
-    T("vpermd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 36 /r rl:rvm");
-    T("vpermi2b", "vx|mask|z,vx,vx16", "xv:E:0:1:2:0:fvm 75 /r rl:rvm");
-    T("vpermi2b", "vy|mask|z,vy,vy32", "xv:E:1:1:2:0:fvm 75 /r rl:rvm");
-    T("vpermi2b", "vz|mask|z,vz,vz64", "xv:E:2:1:2:0:fvm 75 /r rl:rvm");
-    T("vpermi2d", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 76 /r rl:rvm");
-    T("vpermi2d", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 76 /r rl:rvm");
-    T("vpermi2d", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 76 /r rl:rvm");
-    T("vpermi2pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 77 /r rl:rvm");
-    T("vpermi2pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 77 /r rl:rvm");
-    T("vpermi2pd", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 77 /r rl:rvm");
-    T("vpermi2ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 77 /r rl:rvm");
-    T("vpermi2ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 77 /r rl:rvm");
-    T("vpermi2ps", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 77 /r rl:rvm");
-    T("vpermi2q", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 76 /r rl:rvm");
-    T("vpermi2q", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 76 /r rl:rvm");
-    T("vpermi2q", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 76 /r rl:rvm");
-    T("vpermi2w", "vx|mask|z,vx,vx16", "xv:E:0:1:2:1:fvm 75 /r rl:rvm");
-    T("vpermi2w", "vy|mask|z,vy,vy32", "xv:E:1:1:2:1:fvm 75 /r rl:rvm");
-    T("vpermi2w", "vz|mask|z,vz,vz64", "xv:E:2:1:2:1:fvm 75 /r rl:rvm");
-    T("vpermilpd", "vx|mask|z,vx16|b64,imm8", "xv:E:0:1:3:1:fv 05 /r ib rl:rmi");
-    T("vpermilpd", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 05 /r ib rl:rmi");
-    T("vpermilpd", "vz|mask|z,vz64|b64,imm8", "xv:E:2:1:3:1:fv 05 /r ib rl:rmi");
-    T("vpermilpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 0d /r rl:rvm");
-    T("vpermilpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 0d /r rl:rvm");
-    T("vpermilpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 0d /r rl:rvm");
-    T("vpermilps", "vx|mask|z,vx16|b32,imm8", "xv:E:0:1:3:0:fv 04 /r ib rl:rmi");
-    T("vpermilps", "vy|mask|z,vy32|b32,imm8", "xv:E:1:1:3:0:fv 04 /r ib rl:rmi");
-    T("vpermilps", "vz|mask|z,vz64|b32,imm8", "xv:E:2:1:3:0:fv 04 /r ib rl:rmi");
-    T("vpermilps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 0c /r rl:rvm");
-    T("vpermilps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 0c /r rl:rvm");
-    T("vpermilps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 0c /r rl:rvm");
-    T("vpermpd", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 01 /r ib rl:rmi");
-    T("vpermpd", "vz|mask|z,vz64|b64,imm8", "xv:E:2:1:3:1:fv 01 /r ib rl:rmi");
-    T("vpermpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 16 /r rl:rvm");
-    T("vpermpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 16 /r rl:rvm");
-    T("vpermps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 16 /r rl:rvm");
-    T("vpermps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 16 /r rl:rvm");
-    T("vpermq", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 00 /r ib rl:rmi");
-    T("vpermq", "vz|mask|z,vz64|b64,imm8", "xv:E:2:1:3:1:fv 00 /r ib rl:rmi");
-    T("vpermq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 36 /r rl:rvm");
-    T("vpermq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 36 /r rl:rvm");
-    T("vpermt2b", "vx|mask|z,vx,vx16", "xv:E:0:1:2:0:fvm 7d /r rl:rvm");
-    T("vpermt2b", "vy|mask|z,vy,vy32", "xv:E:1:1:2:0:fvm 7d /r rl:rvm");
-    T("vpermt2b", "vz|mask|z,vz,vz64", "xv:E:2:1:2:0:fvm 7d /r rl:rvm");
-    T("vpermt2d", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 7e /r rl:rvm");
-    T("vpermt2d", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 7e /r rl:rvm");
-    T("vpermt2d", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 7e /r rl:rvm");
-    T("vpermt2pd", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 7f /r rl:rvm");
-    T("vpermt2pd", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 7f /r rl:rvm");
-    T("vpermt2pd", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 7f /r rl:rvm");
-    T("vpermt2ps", "vx|mask|z,vx,vx16|b32", "xv:E:0:1:2:0:fv 7f /r rl:rvm");
-    T("vpermt2ps", "vy|mask|z,vy,vy32|b32", "xv:E:1:1:2:0:fv 7f /r rl:rvm");
-    T("vpermt2ps", "vz|mask|z,vz,vz64|b32", "xv:E:2:1:2:0:fv 7f /r rl:rvm");
-    T("vpermt2q", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv 7e /r rl:rvm");
-    T("vpermt2q", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv 7e /r rl:rvm");
-    T("vpermt2q", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv 7e /r rl:rvm");
-    T("vpermt2w", "vx|mask|z,vx,vx16", "xv:E:0:1:2:1:fvm 7d /r rl:rvm");
-    T("vpermt2w", "vy|mask|z,vy,vy32", "xv:E:1:1:2:1:fvm 7d /r rl:rvm");
-    T("vpermt2w", "vz|mask|z,vz,vz64", "xv:E:2:1:2:1:fvm 7d /r rl:rvm");
-    T("vpermw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 8d /r rl:rvm");
-    T("vpermw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 8d /r rl:rvm");
-    T("vpermw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 8d /r rl:rvm");
-    T("vpexpandd", "vx|mask|z,m128", "xv:E:0:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandd", "vy|mask|z,m256", "xv:E:1:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandd", "vz|mask|z,m512", "xv:E:2:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandd", "vx|mask|z,vx", "xv:E:0:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandd", "vy|mask|z,vy", "xv:E:1:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandd", "vz|mask|z,vz", "xv:E:2:1:2:0:t1s 89 /r rl:rm");
-    T("vpexpandq", "vx|mask|z,m128", "xv:E:0:1:2:1:t1s 89 /r rl:rm");
-    T("vpexpandq", "vy|mask|z,m256", "xv:E:1:1:2:1:t1s 89 /r rl:rm");
-    T("vpexpandq", "vz|mask|z,m512", "xv:E:2:1:2:1:t1s 89 /r rl:rm");
-    T("vpexpandq", "vx|mask|z,vx", "xv:E:0:1:2:1:t1s 89 /r rl:rm");
-    T("vpexpandq", "vy|mask|z,vy", "xv:E:1:1:2:1:t1s 89 /r rl:rm");
-    T("vpexpandq", "vz|mask|z,vz", "xv:E:2:1:2:1:t1s 89 /r rl:rm");
-    T("vpextrb", "r8,vx,imm8", "xv:E:0:1:3:0:t1s8 14 /r ib rl:mri");
-    T("vpextrb", "r16,vx,imm8", "xv:E:0:1:3:0:t1s8 14 /r ib rl:mri");
-    T("vpextrb", "r32,vx,imm8", "xv:E:0:1:3:0:t1s8 14 /r ib rl:mri");
-    T("vpextrb", "m8,vx,imm8", "xv:E:0:1:3:0:t1s8 14 /r ib rl:mri");
-    T("vpextrd", "rm32,vx,imm8", "xv:E:0:1:3:0:t1s 16 /r ib rl:mri");
-    T("vpextrq", "m64,vx,imm8", "xv:E:0:1:3:1:t1s 16 /r ib rl:mri");
-    T("vpextrw", "r16,vx,imm8", "xv:E:0:1:3:0:t1s16 15 /r ib rl:mri");
-    T("vpextrw", "r32,vx,imm8", "xv:E:0:1:3:0:t1s16 15 /r ib rl:mri");
-    T("vpextrw", "m16,vx,imm8", "xv:E:0:1:3:0:t1s16 15 /r ib rl:mri");
-    T("vpextrw", "r16,vx,imm8", "xv:E:0:1:1:0:x c5 /r ib rl:rmi");
-    T("vpextrw", "r32,vx,imm8", "xv:E:0:1:1:0:x c5 /r ib rl:rmi");
-    T("vpgatherdd", "vx|mask,vsx32", "xv:E:0:1:2:0:t1s 90 /r rl:rm");
-    T("vpgatherdd", "vy|mask,vsy32", "xv:E:1:1:2:0:t1s 90 /r rl:rm");
-    T("vpgatherdd", "vz|mask,vsz32", "xv:E:2:1:2:0:t1s 90 /r rl:rm");
-    T("vpgatherdq", "vx|mask,vsx64", "xv:E:0:1:2:1:t1s 90 /r rl:rm");
-    T("vpgatherdq", "vy|mask,vsx64", "xv:E:1:1:2:1:t1s 90 /r rl:rm");
-    T("vpgatherdq", "vz|mask,vsy64", "xv:E:2:1:2:1:t1s 90 /r rl:rm");
-    T("vpgatherqd", "vx|mask,vsx32", "xv:E:0:1:2:0:t1s 91 /r rl:rm");
-    T("vpgatherqd", "vx|mask,vsy32", "xv:E:1:1:2:0:t1s 91 /r rl:rm");
-    T("vpgatherqd", "vy|mask,vsz32", "xv:E:2:1:2:0:t1s 91 /r rl:rm");
-    T("vpgatherqq", "vx|mask,vsx64", "xv:E:0:1:2:1:t1s 91 /r rl:rm");
-    T("vpgatherqq", "vy|mask,vsy64", "xv:E:1:1:2:1:t1s 91 /r rl:rm");
-    T("vpgatherqq", "vz|mask,vsz64", "xv:E:2:1:2:1:t1s 91 /r rl:rm");
-    T("vpinsrb", "vx,vx*,r32,imm8", "xv:E:0:1:3:0:t1s8 20 /r ib rl:rvmi");
-    T("vpinsrb", "vx,vx*,m8,imm8", "xv:E:0:1:3:0:t1s8 20 /r ib rl:rvmi");
-    T("vpinsrd", "vx,vx*,rm32,imm8", "xv:E:0:1:3:0:t1s 22 /r ib rl:rvmi");
-    T("vpinsrq", "vx,vx*,m64,imm8", "xv:E:0:1:3:1:t1s 22 /r ib rl:rvmi");
-    T("vpinsrw", "vx,vx*,r32,imm8", "xv:E:0:1:1:0:t1s16 c4 /r ib rl:rvmi");
-    T("vpinsrw", "vx,vx*,m16,imm8", "xv:E:0:1:1:0:t1s16 c4 /r ib rl:rvmi");
-    T("vplzcntd", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv 44 /r rl:rm");
-    T("vplzcntd", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv 44 /r rl:rm");
-    T("vplzcntd", "vz|mask|z,vz64|b32", "xv:E:2:1:2:0:fv 44 /r rl:rm");
-    T("vplzcntq", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv 44 /r rl:rm");
-    T("vplzcntq", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv 44 /r rl:rm");
-    T("vplzcntq", "vz|mask|z,vz64|b64", "xv:E:2:1:2:1:fv 44 /r rl:rm");
-    T("vpmadd52huq", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv b5 /r rl:rvm");
-    T("vpmadd52huq", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv b5 /r rl:rvm");
-    T("vpmadd52huq", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv b5 /r rl:rvm");
-    T("vpmadd52luq", "vx|mask|z,vx,vx16|b64", "xv:E:0:1:2:1:fv b4 /r rl:rvm");
-    T("vpmadd52luq", "vy|mask|z,vy,vy32|b64", "xv:E:1:1:2:1:fv b4 /r rl:rvm");
-    T("vpmadd52luq", "vz|mask|z,vz,vz64|b64", "xv:E:2:1:2:1:fv b4 /r rl:rvm");
-    T("vpmaddubsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 04 /r rl:rvm");
-    T("vpmaddubsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 04 /r rl:rvm");
-    T("vpmaddubsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 04 /r rl:rvm");
-    T("vpmaddwd", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm f5 /r rl:rvm");
-    T("vpmaddwd", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm f5 /r rl:rvm");
-    T("vpmaddwd", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm f5 /r rl:rvm");
-    T("vpmaxsb", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 3c /r rl:rvm");
-    T("vpmaxsb", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 3c /r rl:rvm");
-    T("vpmaxsb", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 3c /r rl:rvm");
-    T("vpmaxsd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 3d /r rl:rvm");
-    T("vpmaxsd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 3d /r rl:rvm");
-    T("vpmaxsd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 3d /r rl:rvm");
-    T("vpmaxsq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 3d /r rl:rvm");
-    T("vpmaxsq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 3d /r rl:rvm");
-    T("vpmaxsq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 3d /r rl:rvm");
-    T("vpmaxsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm ee /r rl:rvm");
-    T("vpmaxsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm ee /r rl:rvm");
-    T("vpmaxsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm ee /r rl:rvm");
-    T("vpmaxub", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm de /r rl:rvm");
-    T("vpmaxub", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm de /r rl:rvm");
-    T("vpmaxub", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm de /r rl:rvm");
-    T("vpmaxud", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 3f /r rl:rvm");
-    T("vpmaxud", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 3f /r rl:rvm");
-    T("vpmaxud", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 3f /r rl:rvm");
-    T("vpmaxuq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 3f /r rl:rvm");
-    T("vpmaxuq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 3f /r rl:rvm");
-    T("vpmaxuq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 3f /r rl:rvm");
-    T("vpmaxuw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 3e /r rl:rvm");
-    T("vpmaxuw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 3e /r rl:rvm");
-    T("vpmaxuw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 3e /r rl:rvm");
-    T("vpminsb", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 38 /r rl:rvm");
-    T("vpminsb", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 38 /r rl:rvm");
-    T("vpminsb", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 38 /r rl:rvm");
-    T("vpminsd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 39 /r rl:rvm");
-    T("vpminsd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 39 /r rl:rvm");
-    T("vpminsd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 39 /r rl:rvm");
-    T("vpminsq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 39 /r rl:rvm");
-    T("vpminsq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 39 /r rl:rvm");
-    T("vpminsq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 39 /r rl:rvm");
-    T("vpminsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm ea /r rl:rvm");
-    T("vpminsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm ea /r rl:rvm");
-    T("vpminsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm ea /r rl:rvm");
-    T("vpminub", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm da /r rl:rvm");
-    T("vpminub", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm da /r rl:rvm");
-    T("vpminub", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm da /r rl:rvm");
-    T("vpminud", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 3b /r rl:rvm");
-    T("vpminud", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 3b /r rl:rvm");
-    T("vpminud", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 3b /r rl:rvm");
-    T("vpminuq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 3b /r rl:rvm");
-    T("vpminuq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 3b /r rl:rvm");
-    T("vpminuq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 3b /r rl:rvm");
-    T("vpminuw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 3a /r rl:rvm");
-    T("vpminuw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 3a /r rl:rvm");
-    T("vpminuw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 3a /r rl:rvm");
-    T("vpmovb2m", "vk,vx", "xv:E:0:2:2:0:x 29 /r rl:rm");
-    T("vpmovb2m", "vk,vy", "xv:E:1:2:2:0:x 29 /r rl:rm");
-    T("vpmovb2m", "vk,vz", "xv:E:2:2:2:0:x 29 /r rl:rm");
-    T("vpmovd2m", "vk,vx", "xv:E:0:2:2:0:x 39 /r rl:rm");
-    T("vpmovd2m", "vk,vy", "xv:E:1:2:2:0:x 39 /r rl:rm");
-    T("vpmovd2m", "vk,vz", "xv:E:2:2:2:0:x 39 /r rl:rm");
-    T("vpmovdb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 31 /r rl:mr");
-    T("vpmovdb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 31 /r rl:mr");
-    T("vpmovdb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 31 /r rl:mr");
-    T("vpmovdb", "m32|mask,vx", "xv:E:0:2:2:0:qvm 31 /r rl:mr");
-    T("vpmovdb", "m64|mask,vy", "xv:E:1:2:2:0:qvm 31 /r rl:mr");
-    T("vpmovdb", "m128|mask,vz", "xv:E:2:2:2:0:qvm 31 /r rl:mr");
-    T("vpmovdw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 33 /r rl:mr");
-    T("vpmovdw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 33 /r rl:mr");
-    T("vpmovdw", "vy|mask|z,vz", "xv:E:2:2:2:0:x 33 /r rl:mr");
-    T("vpmovdw", "m64|mask,vx", "xv:E:0:2:2:0:hvm 33 /r rl:mr");
-    T("vpmovdw", "m128|mask,vy", "xv:E:1:2:2:0:hvm 33 /r rl:mr");
-    T("vpmovdw", "m256|mask,vz", "xv:E:2:2:2:0:hvm 33 /r rl:mr");
-    T("vpmovm2b", "vx,vk", "xv:E:0:2:2:0:x 28 /r rl:rm");
-    T("vpmovm2b", "vy,vk", "xv:E:1:2:2:0:x 28 /r rl:rm");
-    T("vpmovm2b", "vz,vk", "xv:E:2:2:2:0:x 28 /r rl:rm");
-    T("vpmovm2d", "vx,vk", "xv:E:0:2:2:0:x 38 /r rl:rm");
-    T("vpmovm2d", "vy,vk", "xv:E:1:2:2:0:x 38 /r rl:rm");
-    T("vpmovm2d", "vz,vk", "xv:E:2:2:2:0:x 38 /r rl:rm");
-    T("vpmovm2q", "vx,vk", "xv:E:0:2:2:1:x 38 /r rl:rm");
-    T("vpmovm2q", "vy,vk", "xv:E:1:2:2:1:x 38 /r rl:rm");
-    T("vpmovm2q", "vz,vk", "xv:E:2:2:2:1:x 38 /r rl:rm");
-    T("vpmovm2w", "vx,vk", "xv:E:0:2:2:1:x 28 /r rl:rm");
-    T("vpmovm2w", "vy,vk", "xv:E:1:2:2:1:x 28 /r rl:rm");
-    T("vpmovm2w", "vz,vk", "xv:E:2:2:2:1:x 28 /r rl:rm");
-    T("vpmovq2m", "vk,vx", "xv:E:0:2:2:1:x 39 /r rl:rm");
-    T("vpmovq2m", "vk,vy", "xv:E:1:2:2:1:x 39 /r rl:rm");
-    T("vpmovq2m", "vk,vz", "xv:E:2:2:2:1:x 39 /r rl:rm");
-    T("vpmovqb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 32 /r rl:mr");
-    T("vpmovqb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 32 /r rl:mr");
-    T("vpmovqb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 32 /r rl:mr");
-    T("vpmovqb", "m16|mask,vx", "xv:E:0:2:2:0:ovm 32 /r rl:mr");
-    T("vpmovqb", "m32|mask,vy", "xv:E:1:2:2:0:ovm 32 /r rl:mr");
-    T("vpmovqb", "m64|mask,vz", "xv:E:2:2:2:0:ovm 32 /r rl:mr");
-    T("vpmovqd", "vx|mask|z,vx", "xv:E:0:2:2:0:x 35 /r rl:mr");
-    T("vpmovqd", "vx|mask|z,vy", "xv:E:1:2:2:0:x 35 /r rl:mr");
-    T("vpmovqd", "vy|mask|z,vz", "xv:E:2:2:2:0:x 35 /r rl:mr");
-    T("vpmovqd", "m64|mask,vx", "xv:E:0:2:2:0:hvm 35 /r rl:mr");
-    T("vpmovqd", "m128|mask,vy", "xv:E:1:2:2:0:hvm 35 /r rl:mr");
-    T("vpmovqd", "m256|mask,vz", "xv:E:2:2:2:0:hvm 35 /r rl:mr");
-    T("vpmovqw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 34 /r rl:mr");
-    T("vpmovqw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 34 /r rl:mr");
-    T("vpmovqw", "vx|mask|z,vz", "xv:E:2:2:2:0:x 34 /r rl:mr");
-    T("vpmovqw", "m32|mask,vx", "xv:E:0:2:2:0:qvm 34 /r rl:mr");
-    T("vpmovqw", "m64|mask,vy", "xv:E:1:2:2:0:qvm 34 /r rl:mr");
-    T("vpmovqw", "m128|mask,vz", "xv:E:2:2:2:0:qvm 34 /r rl:mr");
-    T("vpmovsdb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 21 /r rl:mr");
-    T("vpmovsdb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 21 /r rl:mr");
-    T("vpmovsdb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 21 /r rl:mr");
-    T("vpmovsdb", "m32|mask,vx", "xv:E:0:2:2:0:qvm 21 /r rl:mr");
-    T("vpmovsdb", "m64|mask,vy", "xv:E:1:2:2:0:qvm 21 /r rl:mr");
-    T("vpmovsdb", "m128|mask,vz", "xv:E:2:2:2:0:qvm 21 /r rl:mr");
-    T("vpmovsdw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 23 /r rl:mr");
-    T("vpmovsdw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 23 /r rl:mr");
-    T("vpmovsdw", "vy|mask|z,vz", "xv:E:2:2:2:0:x 23 /r rl:mr");
-    T("vpmovsdw", "m64|mask,vx", "xv:E:0:2:2:0:hvm 23 /r rl:mr");
-    T("vpmovsdw", "m128|mask,vy", "xv:E:1:2:2:0:hvm 23 /r rl:mr");
-    T("vpmovsdw", "m256|mask,vz", "xv:E:2:2:2:0:hvm 23 /r rl:mr");
-    T("vpmovsqb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 22 /r rl:mr");
-    T("vpmovsqb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 22 /r rl:mr");
-    T("vpmovsqb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 22 /r rl:mr");
-    T("vpmovsqb", "m16|mask,vx", "xv:E:0:2:2:0:ovm 22 /r rl:mr");
-    T("vpmovsqb", "m32|mask,vy", "xv:E:1:2:2:0:ovm 22 /r rl:mr");
-    T("vpmovsqb", "m64|mask,vz", "xv:E:2:2:2:0:ovm 22 /r rl:mr");
-    T("vpmovsqd", "vx|mask|z,vx", "xv:E:0:2:2:0:x 25 /r rl:mr");
-    T("vpmovsqd", "vx|mask|z,vy", "xv:E:1:2:2:0:x 25 /r rl:mr");
-    T("vpmovsqd", "vy|mask|z,vz", "xv:E:2:2:2:0:x 25 /r rl:mr");
-    T("vpmovsqd", "m64|mask,vx", "xv:E:0:2:2:0:hvm 25 /r rl:mr");
-    T("vpmovsqd", "m128|mask,vy", "xv:E:1:2:2:0:hvm 25 /r rl:mr");
-    T("vpmovsqd", "m256|mask,vz", "xv:E:2:2:2:0:hvm 25 /r rl:mr");
-    T("vpmovsqw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 24 /r rl:mr");
-    T("vpmovsqw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 24 /r rl:mr");
-    T("vpmovsqw", "vx|mask|z,vz", "xv:E:2:2:2:0:x 24 /r rl:mr");
-    T("vpmovsqw", "m32|mask,vx", "xv:E:0:2:2:0:qvm 24 /r rl:mr");
-    T("vpmovsqw", "m64|mask,vy", "xv:E:1:2:2:0:qvm 24 /r rl:mr");
-    T("vpmovsqw", "m128|mask,vz", "xv:E:2:2:2:0:qvm 24 /r rl:mr");
-    T("vpmovswb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 20 /r rl:mr");
-    T("vpmovswb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 20 /r rl:mr");
-    T("vpmovswb", "vy|mask|z,vz", "xv:E:2:2:2:0:x 20 /r rl:mr");
-    T("vpmovswb", "m64|mask,vx", "xv:E:0:2:2:0:hvm 20 /r rl:mr");
-    T("vpmovswb", "m128|mask,vy", "xv:E:1:2:2:0:hvm 20 /r rl:mr");
-    T("vpmovswb", "m256|mask,vz", "xv:E:2:2:2:0:hvm 20 /r rl:mr");
-    T("vpmovsxbd", "vx|mask|z,vx4", "xv:E:0:1:2:0:qvm 21 /r rl:rm");
-    T("vpmovsxbd", "vy|mask|z,vx8", "xv:E:1:1:2:0:qvm 21 /r rl:rm");
-    T("vpmovsxbd", "vz|mask|z,vx16", "xv:E:2:1:2:0:qvm 21 /r rl:rm");
-    T("vpmovsxbq", "vx|mask|z,vx2", "xv:E:0:1:2:0:ovm 22 /r rl:rm");
-    T("vpmovsxbq", "vy|mask|z,vx4", "xv:E:1:1:2:0:ovm 22 /r rl:rm");
-    T("vpmovsxbq", "vz|mask|z,vx8", "xv:E:2:1:2:0:ovm 22 /r rl:rm");
-    T("vpmovsxbw", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 20 /r rl:rm");
-    T("vpmovsxbw", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 20 /r rl:rm");
-    T("vpmovsxbw", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 20 /r rl:rm");
-    T("vpmovsxdq", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 25 /r rl:rm");
-    T("vpmovsxdq", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 25 /r rl:rm");
-    T("vpmovsxdq", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 25 /r rl:rm");
-    T("vpmovsxwd", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 23 /r rl:rm");
-    T("vpmovsxwd", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 23 /r rl:rm");
-    T("vpmovsxwd", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 23 /r rl:rm");
-    T("vpmovsxwq", "vx|mask|z,vx4", "xv:E:0:1:2:0:qvm 24 /r rl:rm");
-    T("vpmovsxwq", "vy|mask|z,vx8", "xv:E:1:1:2:0:qvm 24 /r rl:rm");
-    T("vpmovsxwq", "vz|mask|z,vx16", "xv:E:2:1:2:0:qvm 24 /r rl:rm");
-    T("vpmovusdb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 11 /r rl:mr");
-    T("vpmovusdb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 11 /r rl:mr");
-    T("vpmovusdb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 11 /r rl:mr");
-    T("vpmovusdb", "m32|mask,vx", "xv:E:0:2:2:0:qvm 11 /r rl:mr");
-    T("vpmovusdb", "m64|mask,vy", "xv:E:1:2:2:0:qvm 11 /r rl:mr");
-    T("vpmovusdb", "m128|mask,vz", "xv:E:2:2:2:0:qvm 11 /r rl:mr");
-    T("vpmovusdw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 13 /r rl:mr");
-    T("vpmovusdw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 13 /r rl:mr");
-    T("vpmovusdw", "vy|mask|z,vz", "xv:E:2:2:2:0:x 13 /r rl:mr");
-    T("vpmovusdw", "m64|mask,vx", "xv:E:0:2:2:0:hvm 13 /r rl:mr");
-    T("vpmovusdw", "m128|mask,vy", "xv:E:1:2:2:0:hvm 13 /r rl:mr");
-    T("vpmovusdw", "m256|mask,vz", "xv:E:2:2:2:0:hvm 13 /r rl:mr");
-    T("vpmovusqb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 12 /r rl:mr");
-    T("vpmovusqb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 12 /r rl:mr");
-    T("vpmovusqb", "vx|mask|z,vz", "xv:E:2:2:2:0:x 12 /r rl:mr");
-    T("vpmovusqb", "m16|mask,vx", "xv:E:0:2:2:0:ovm 12 /r rl:mr");
-    T("vpmovusqb", "m32|mask,vy", "xv:E:1:2:2:0:ovm 12 /r rl:mr");
-    T("vpmovusqb", "m64|mask,vz", "xv:E:2:2:2:0:ovm 12 /r rl:mr");
-    T("vpmovusqd", "vx|mask|z,vx", "xv:E:0:2:2:0:x 15 /r rl:mr");
-    T("vpmovusqd", "vx|mask|z,vy", "xv:E:1:2:2:0:x 15 /r rl:mr");
-    T("vpmovusqd", "vy|mask|z,vz", "xv:E:2:2:2:0:x 15 /r rl:mr");
-    T("vpmovusqd", "m64|mask,vx", "xv:E:0:2:2:0:hvm 15 /r rl:mr");
-    T("vpmovusqd", "m128|mask,vy", "xv:E:1:2:2:0:hvm 15 /r rl:mr");
-    T("vpmovusqd", "m256|mask,vz", "xv:E:2:2:2:0:hvm 15 /r rl:mr");
-    T("vpmovusqw", "vx|mask|z,vx", "xv:E:0:2:2:0:x 14 /r rl:mr");
-    T("vpmovusqw", "vx|mask|z,vy", "xv:E:1:2:2:0:x 14 /r rl:mr");
-    T("vpmovusqw", "vx|mask|z,vz", "xv:E:2:2:2:0:x 14 /r rl:mr");
-    T("vpmovusqw", "m32|mask,vx", "xv:E:0:2:2:0:qvm 14 /r rl:mr");
-    T("vpmovusqw", "m64|mask,vy", "xv:E:1:2:2:0:qvm 14 /r rl:mr");
-    T("vpmovusqw", "m128|mask,vz", "xv:E:2:2:2:0:qvm 14 /r rl:mr");
-    T("vpmovuswb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 10 /r rl:mr");
-    T("vpmovuswb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 10 /r rl:mr");
-    T("vpmovuswb", "vy|mask|z,vz", "xv:E:2:2:2:0:x 10 /r rl:mr");
-    T("vpmovuswb", "m64|mask,vx", "xv:E:0:2:2:0:hvm 10 /r rl:mr");
-    T("vpmovuswb", "m128|mask,vy", "xv:E:1:2:2:0:hvm 10 /r rl:mr");
-    T("vpmovuswb", "m256|mask,vz", "xv:E:2:2:2:0:hvm 10 /r rl:mr");
-    T("vpmovw2m", "vk,vx", "xv:E:0:2:2:1:x 29 /r rl:rm");
-    T("vpmovw2m", "vk,vy", "xv:E:1:2:2:1:x 29 /r rl:rm");
-    T("vpmovw2m", "vk,vz", "xv:E:2:2:2:1:x 29 /r rl:rm");
-    T("vpmovwb", "vx|mask|z,vx", "xv:E:0:2:2:0:x 30 /r rl:mr");
-    T("vpmovwb", "vx|mask|z,vy", "xv:E:1:2:2:0:x 30 /r rl:mr");
-    T("vpmovwb", "vy|mask|z,vz", "xv:E:2:2:2:0:x 30 /r rl:mr");
-    T("vpmovwb", "m64|mask,vx", "xv:E:0:2:2:0:hvm 30 /r rl:mr");
-    T("vpmovwb", "m128|mask,vy", "xv:E:1:2:2:0:hvm 30 /r rl:mr");
-    T("vpmovwb", "m256|mask,vz", "xv:E:2:2:2:0:hvm 30 /r rl:mr");
-    T("vpmovzxbd", "vx|mask|z,vx4", "xv:E:0:1:2:0:qvm 31 /r rl:rm");
-    T("vpmovzxbd", "vy|mask|z,vx8", "xv:E:1:1:2:0:qvm 31 /r rl:rm");
-    T("vpmovzxbd", "vz|mask|z,vx16", "xv:E:2:1:2:0:qvm 31 /r rl:rm");
-    T("vpmovzxbq", "vx|mask|z,vx2", "xv:E:0:1:2:0:ovm 32 /r rl:rm");
-    T("vpmovzxbq", "vy|mask|z,vx4", "xv:E:1:1:2:0:ovm 32 /r rl:rm");
-    T("vpmovzxbq", "vz|mask|z,vx8", "xv:E:2:1:2:0:ovm 32 /r rl:rm");
-    T("vpmovzxbw", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 30 /r rl:rm");
-    T("vpmovzxbw", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 30 /r rl:rm");
-    T("vpmovzxbw", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 30 /r rl:rm");
-    T("vpmovzxdq", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 35 /r rl:rm");
-    T("vpmovzxdq", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 35 /r rl:rm");
-    T("vpmovzxdq", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 35 /r rl:rm");
-    T("vpmovzxwd", "vx|mask|z,vx8", "xv:E:0:1:2:0:hvm 33 /r rl:rm");
-    T("vpmovzxwd", "vy|mask|z,vx16", "xv:E:1:1:2:0:hvm 33 /r rl:rm");
-    T("vpmovzxwd", "vz|mask|z,vy32", "xv:E:2:1:2:0:hvm 33 /r rl:rm");
-    T("vpmovzxwq", "vx|mask|z,vx4", "xv:E:0:1:2:0:qvm 34 /r rl:rm");
-    T("vpmovzxwq", "vy|mask|z,vx8", "xv:E:1:1:2:0:qvm 34 /r rl:rm");
-    T("vpmovzxwq", "vz|mask|z,vx16", "xv:E:2:1:2:0:qvm 34 /r rl:rm");
-    T("vpmuldq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 28 /r rl:rvm");
-    T("vpmuldq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 28 /r rl:rvm");
-    T("vpmuldq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 28 /r rl:rvm");
-    T("vpmulhrsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 0b /r rl:rvm");
-    T("vpmulhrsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 0b /r rl:rvm");
-    T("vpmulhrsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 0b /r rl:rvm");
-    T("vpmulhuw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e4 /r rl:rvm");
-    T("vpmulhuw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e4 /r rl:rvm");
-    T("vpmulhuw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e4 /r rl:rvm");
-    T("vpmulhw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e5 /r rl:rvm");
-    T("vpmulhw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e5 /r rl:rvm");
-    T("vpmulhw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e5 /r rl:rvm");
-    T("vpmulld", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 40 /r rl:rvm");
-    T("vpmulld", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 40 /r rl:rvm");
-    T("vpmulld", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 40 /r rl:rvm");
-    T("vpmullq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 40 /r rl:rvm");
-    T("vpmullq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 40 /r rl:rvm");
-    T("vpmullq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 40 /r rl:rvm");
-    T("vpmullw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm d5 /r rl:rvm");
-    T("vpmullw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm d5 /r rl:rvm");
-    T("vpmullw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm d5 /r rl:rvm");
-    T("vpmultishiftqb", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 83 /r rl:rvm");
-    T("vpmultishiftqb", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 83 /r rl:rvm");
-    T("vpmultishiftqb", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 83 /r rl:rvm");
-    T("vpmuludq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv f4 /r rl:rvm");
-    T("vpmuludq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv f4 /r rl:rvm");
-    T("vpmuludq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv f4 /r rl:rvm");
-    T("vpord", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv eb /r rl:rvm");
-    T("vpord", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv eb /r rl:rvm");
-    T("vpord", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv eb /r rl:rvm");
-    T("vporq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv eb /r rl:rvm");
-    T("vporq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv eb /r rl:rvm");
-    T("vporq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv eb /r rl:rvm");
-    T("vprold", "vx|mask|z,vx16|b32*,imm8", "xv:E:0:1:1:0:fv 72 /1 ib rl:vmi");
-    T("vprold", "vy|mask|z,vy32|b32*,imm8", "xv:E:1:1:1:0:fv 72 /1 ib rl:vmi");
-    T("vprold", "vz|mask|z,vz64|b32*,imm8", "xv:E:2:1:1:0:fv 72 /1 ib rl:vmi");
-    T("vprolq", "vx|mask|z,vx16|b64*,imm8", "xv:E:0:1:1:1:fv 72 /1 ib rl:vmi");
-    T("vprolq", "vy|mask|z,vy32|b64*,imm8", "xv:E:1:1:1:1:fv 72 /1 ib rl:vmi");
-    T("vprolq", "vz|mask|z,vz64|b64*,imm8", "xv:E:2:1:1:1:fv 72 /1 ib rl:vmi");
-    T("vprolvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 15 /r rl:rvm");
-    T("vprolvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 15 /r rl:rvm");
-    T("vprolvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 15 /r rl:rvm");
-    T("vprolvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 15 /r rl:rvm");
-    T("vprolvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 15 /r rl:rvm");
-    T("vprolvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 15 /r rl:rvm");
-    T("vprord", "vx|mask|z,vx16|b32*,imm8", "xv:E:0:1:1:0:fv 72 /0 ib rl:vmi");
-    T("vprord", "vy|mask|z,vy32|b32*,imm8", "xv:E:1:1:1:0:fv 72 /0 ib rl:vmi");
-    T("vprord", "vz|mask|z,vz64|b32*,imm8", "xv:E:2:1:1:0:fv 72 /0 ib rl:vmi");
-    T("vprorq", "vx|mask|z,vx16|b64*,imm8", "xv:E:0:1:1:1:fv 72 /0 ib rl:vmi");
-    T("vprorq", "vy|mask|z,vy32|b64*,imm8", "xv:E:1:1:1:1:fv 72 /0 ib rl:vmi");
-    T("vprorq", "vz|mask|z,vz64|b64*,imm8", "xv:E:2:1:1:1:fv 72 /0 ib rl:vmi");
-    T("vprorvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 14 /r rl:rvm");
-    T("vprorvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 14 /r rl:rvm");
-    T("vprorvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 14 /r rl:rvm");
-    T("vprorvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 14 /r rl:rvm");
-    T("vprorvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 14 /r rl:rvm");
-    T("vprorvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 14 /r rl:rvm");
-    T("vpsadbw", "vx,vx*,vx16", "xv:E:0:1:1:0:fvm f6 /r rl:rvm");
-    T("vpsadbw", "vy,vy*,vy32", "xv:E:1:1:1:0:fvm f6 /r rl:rvm");
-    T("vpsadbw", "vz,vz*,vz64", "xv:E:2:1:1:0:fvm f6 /r rl:rvm");
-    T("vpscatterdd", "vsx32|mask,vx", "xv:E:0:1:2:0:t1s a0 /r rl:mr");
-    T("vpscatterdd", "vsy32|mask,vy", "xv:E:1:1:2:0:t1s a0 /r rl:mr");
-    T("vpscatterdd", "vsz32|mask,vz", "xv:E:2:1:2:0:t1s a0 /r rl:mr");
-    T("vpscatterdq", "vsx64|mask,vx", "xv:E:0:1:2:1:t1s a0 /r rl:mr");
-    T("vpscatterdq", "vsx64|mask,vy", "xv:E:1:1:2:1:t1s a0 /r rl:mr");
-    T("vpscatterdq", "vsy64|mask,vz", "xv:E:2:1:2:1:t1s a0 /r rl:mr");
-    T("vpscatterqd", "vsx32|mask,vx", "xv:E:0:1:2:0:t1s a1 /r rl:mr");
-    T("vpscatterqd", "vsy32|mask,vx", "xv:E:1:1:2:0:t1s a1 /r rl:mr");
-    T("vpscatterqd", "vsz32|mask,vy", "xv:E:2:1:2:0:t1s a1 /r rl:mr");
-    T("vpscatterqq", "vsx64|mask,vx", "xv:E:0:1:2:1:t1s a1 /r rl:mr");
-    T("vpscatterqq", "vsy64|mask,vy", "xv:E:1:1:2:1:t1s a1 /r rl:mr");
-    T("vpscatterqq", "vsz64|mask,vz", "xv:E:2:1:2:1:t1s a1 /r rl:mr");
-    T("vpshufb", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm 00 /r rl:rvm");
-    T("vpshufb", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm 00 /r rl:rvm");
-    T("vpshufb", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm 00 /r rl:rvm");
-    T("vpshufd", "vx|mask|z,vx16|b32,imm8", "xv:E:0:1:1:0:fv 70 /r ib rl:rmi");
-    T("vpshufd", "vy|mask|z,vy32|b32,imm8", "xv:E:1:1:1:0:fv 70 /r ib rl:rmi");
-    T("vpshufd", "vz|mask|z,vz64|b32,imm8", "xv:E:2:1:1:0:fv 70 /r ib rl:rmi");
-    T("vpshufhw", "vx|mask|z,vx16,imm8", "xv:E:0:2:1:0:fvm 70 /r ib rl:rmi");
-    T("vpshufhw", "vy|mask|z,vy32,imm8", "xv:E:1:2:1:0:fvm 70 /r ib rl:rmi");
-    T("vpshufhw", "vz|mask|z,vz64,imm8", "xv:E:2:2:1:0:fvm 70 /r ib rl:rmi");
-    T("vpshuflw", "vx|mask|z,vx16,imm8", "xv:E:0:3:1:0:fvm 70 /r ib rl:rmi");
-    T("vpshuflw", "vy|mask|z,vy32,imm8", "xv:E:1:3:1:0:fvm 70 /r ib rl:rmi");
-    T("vpshuflw", "vz|mask|z,vz64,imm8", "xv:E:2:3:1:0:fvm 70 /r ib rl:rmi");
-    T("vpslld", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 f2 /r rl:rvm");
-    T("vpslld", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 f2 /r rl:rvm");
-    T("vpslld", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 f2 /r rl:rvm");
-    T("vpslld", "vx|mask|z,vx16|b32*,imm8", "xv:E:0:1:1:0:fv 72 /6 ib rl:vmi");
-    T("vpslld", "vy|mask|z,vy32|b32*,imm8", "xv:E:1:1:1:0:fv 72 /6 ib rl:vmi");
-    T("vpslld", "vz|mask|z,vz64|b32*,imm8", "xv:E:2:1:1:0:fv 72 /6 ib rl:vmi");
-    T("vpslldq", "vx,vx16*,imm8", "xv:E:0:1:1:0:fvm 73 /7 ib rl:vmi");
-    T("vpslldq", "vy,vy32*,imm8", "xv:E:1:1:1:0:fvm 73 /7 ib rl:vmi");
-    T("vpslldq", "vz,vz64*,imm8", "xv:E:2:1:1:0:fvm 73 /7 ib rl:vmi");
-    T("vpsllq", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:1:m128 f3 /r rl:rvm");
-    T("vpsllq", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:1:m128 f3 /r rl:rvm");
-    T("vpsllq", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:1:m128 f3 /r rl:rvm");
-    T("vpsllq", "vx|mask|z,vx16|b64*,imm8", "xv:E:0:1:1:1:fv 73 /6 ib rl:vmi");
-    T("vpsllq", "vy|mask|z,vy32|b64*,imm8", "xv:E:1:1:1:1:fv 73 /6 ib rl:vmi");
-    T("vpsllq", "vz|mask|z,vz64|b64*,imm8", "xv:E:2:1:1:1:fv 73 /6 ib rl:vmi");
-    T("vpsllvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 47 /r rl:rvm");
-    T("vpsllvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 47 /r rl:rvm");
-    T("vpsllvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 47 /r rl:rvm");
-    T("vpsllvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 47 /r rl:rvm");
-    T("vpsllvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 47 /r rl:rvm");
-    T("vpsllvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 47 /r rl:rvm");
-    T("vpsllvw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 12 /r rl:rvm");
-    T("vpsllvw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 12 /r rl:rvm");
-    T("vpsllvw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 12 /r rl:rvm");
-    T("vpsllw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 f1 /r rl:rvm");
-    T("vpsllw", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 f1 /r rl:rvm");
-    T("vpsllw", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 f1 /r rl:rvm");
-    T("vpsllw", "vx|mask|z,vx16*,imm8", "xv:E:0:1:1:0:fvm 71 /6 ib rl:vmi");
-    T("vpsllw", "vy|mask|z,vy32*,imm8", "xv:E:1:1:1:0:fvm 71 /6 ib rl:vmi");
-    T("vpsllw", "vz|mask|z,vz64*,imm8", "xv:E:2:1:1:0:fvm 71 /6 ib rl:vmi");
-    T("vpsrad", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 e2 /r rl:rvm");
-    T("vpsrad", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 e2 /r rl:rvm");
-    T("vpsrad", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 e2 /r rl:rvm");
-    T("vpsrad", "vx|mask|z,vx16|b32*,imm8", "xv:E:0:1:1:0:fv 72 /4 ib rl:vmi");
-    T("vpsrad", "vy|mask|z,vy32|b32*,imm8", "xv:E:1:1:1:0:fv 72 /4 ib rl:vmi");
-    T("vpsrad", "vz|mask|z,vz64|b32*,imm8", "xv:E:2:1:1:0:fv 72 /4 ib rl:vmi");
-    T("vpsraq", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:1:m128 e2 /r rl:rvm");
-    T("vpsraq", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:1:m128 e2 /r rl:rvm");
-    T("vpsraq", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:1:m128 e2 /r rl:rvm");
-    T("vpsraq", "vx|mask|z,vx16|b64*,imm8", "xv:E:0:1:1:1:fv 72 /4 ib rl:vmi");
-    T("vpsraq", "vy|mask|z,vy32|b64*,imm8", "xv:E:1:1:1:1:fv 72 /4 ib rl:vmi");
-    T("vpsraq", "vz|mask|z,vz64|b64*,imm8", "xv:E:2:1:1:1:fv 72 /4 ib rl:vmi");
-    T("vpsravd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 46 /r rl:rvm");
-    T("vpsravd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 46 /r rl:rvm");
-    T("vpsravd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 46 /r rl:rvm");
-    T("vpsravq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 46 /r rl:rvm");
-    T("vpsravq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 46 /r rl:rvm");
-    T("vpsravq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 46 /r rl:rvm");
-    T("vpsravw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 11 /r rl:rvm");
-    T("vpsravw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 11 /r rl:rvm");
-    T("vpsravw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 11 /r rl:rvm");
-    T("vpsraw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 e1 /r rl:rvm");
-    T("vpsraw", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 e1 /r rl:rvm");
-    T("vpsraw", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 e1 /r rl:rvm");
-    T("vpsraw", "vx|mask|z,vx16*,imm8", "xv:E:0:1:1:0:fvm 71 /4 ib rl:vmi");
-    T("vpsraw", "vy|mask|z,vy32*,imm8", "xv:E:1:1:1:0:fvm 71 /4 ib rl:vmi");
-    T("vpsraw", "vz|mask|z,vz64*,imm8", "xv:E:2:1:1:0:fvm 71 /4 ib rl:vmi");
-    T("vpsrld", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 d2 /r rl:rvm");
-    T("vpsrld", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 d2 /r rl:rvm");
-    T("vpsrld", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 d2 /r rl:rvm");
-    T("vpsrld", "vx|mask|z,vx16|b32*,imm8", "xv:E:0:1:1:0:fv 72 /2 ib rl:vmi");
-    T("vpsrld", "vy|mask|z,vy32|b32*,imm8", "xv:E:1:1:1:0:fv 72 /2 ib rl:vmi");
-    T("vpsrld", "vz|mask|z,vz64|b32*,imm8", "xv:E:2:1:1:0:fv 72 /2 ib rl:vmi");
-    T("vpsrldq", "vx,vx16*,imm8", "xv:E:0:1:1:0:fvm 73 /3 ib rl:vmi");
-    T("vpsrldq", "vy,vy32*,imm8", "xv:E:1:1:1:0:fvm 73 /3 ib rl:vmi");
-    T("vpsrldq", "vz,vz64*,imm8", "xv:E:2:1:1:0:fvm 73 /3 ib rl:vmi");
-    T("vpsrlq", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:1:m128 d3 /r rl:rvm");
-    T("vpsrlq", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:1:m128 d3 /r rl:rvm");
-    T("vpsrlq", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:1:m128 d3 /r rl:rvm");
-    T("vpsrlq", "vx|mask|z,vx16|b64*,imm8", "xv:E:0:1:1:1:fv 73 /2 ib rl:vmi");
-    T("vpsrlq", "vy|mask|z,vy32|b64*,imm8", "xv:E:1:1:1:1:fv 73 /2 ib rl:vmi");
-    T("vpsrlq", "vz|mask|z,vz64|b64*,imm8", "xv:E:2:1:1:1:fv 73 /2 ib rl:vmi");
-    T("vpsrlvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 45 /r rl:rvm");
-    T("vpsrlvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 45 /r rl:rvm");
-    T("vpsrlvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 45 /r rl:rvm");
-    T("vpsrlvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 45 /r rl:rvm");
-    T("vpsrlvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 45 /r rl:rvm");
-    T("vpsrlvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 45 /r rl:rvm");
-    T("vpsrlvw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 10 /r rl:rvm");
-    T("vpsrlvw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 10 /r rl:rvm");
-    T("vpsrlvw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 10 /r rl:rvm");
-    T("vpsrlw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:m128 d1 /r rl:rvm");
-    T("vpsrlw", "vy|mask|z,vy*,vx16", "xv:E:1:1:1:0:m128 d1 /r rl:rvm");
-    T("vpsrlw", "vz|mask|z,vz*,vx16", "xv:E:2:1:1:0:m128 d1 /r rl:rvm");
-    T("vpsrlw", "vx|mask|z,vx16*,imm8", "xv:E:0:1:1:0:fvm 71 /2 ib rl:vmi");
-    T("vpsrlw", "vy|mask|z,vy32*,imm8", "xv:E:1:1:1:0:fvm 71 /2 ib rl:vmi");
-    T("vpsrlw", "vz|mask|z,vz64*,imm8", "xv:E:2:1:1:0:fvm 71 /2 ib rl:vmi");
-    T("vpsubb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm f8 /r rl:rvm");
-    T("vpsubb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm f8 /r rl:rvm");
-    T("vpsubb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm f8 /r rl:rvm");
-    T("vpsubd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv fa /r rl:rvm");
-    T("vpsubd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv fa /r rl:rvm");
-    T("vpsubd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv fa /r rl:rvm");
-    T("vpsubq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv fb /r rl:rvm");
-    T("vpsubq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv fb /r rl:rvm");
-    T("vpsubq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv fb /r rl:rvm");
-    T("vpsubsb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e8 /r rl:rvm");
-    T("vpsubsb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e8 /r rl:rvm");
-    T("vpsubsb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e8 /r rl:rvm");
-    T("vpsubsw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm e9 /r rl:rvm");
-    T("vpsubsw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm e9 /r rl:rvm");
-    T("vpsubsw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm e9 /r rl:rvm");
-    T("vpsubusb", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm d8 /r rl:rvm");
-    T("vpsubusb", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm d8 /r rl:rvm");
-    T("vpsubusb", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm d8 /r rl:rvm");
-    T("vpsubusw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm d9 /r rl:rvm");
-    T("vpsubusw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm d9 /r rl:rvm");
-    T("vpsubusw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm d9 /r rl:rvm");
-    T("vpsubw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm f9 /r rl:rvm");
-    T("vpsubw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm f9 /r rl:rvm");
-    T("vpsubw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm f9 /r rl:rvm");
-    T("vpternlogd", "vx|mask|z,vx,vx16|b32,imm8", "xv:E:0:1:3:0:fv 25 /r ib rl:rvmi");
-    T("vpternlogd", "vy|mask|z,vy,vy32|b32,imm8", "xv:E:1:1:3:0:fv 25 /r ib rl:rvmi");
-    T("vpternlogd", "vz|mask|z,vz,vz64|b32,imm8", "xv:E:2:1:3:0:fv 25 /r ib rl:rvmi");
-    T("vpternlogq", "vx|mask|z,vx,vx16|b64,imm8", "xv:E:0:1:3:1:fv 25 /r ib rl:rvmi");
-    T("vpternlogq", "vy|mask|z,vy,vy32|b64,imm8", "xv:E:1:1:3:1:fv 25 /r ib rl:rvmi");
-    T("vpternlogq", "vz|mask|z,vz,vz64|b64,imm8", "xv:E:2:1:3:1:fv 25 /r ib rl:rvmi");
-    T("vptestmb", "vk|mask,vx,vx16", "xv:E:0:1:2:0:fvm 26 /r rl:rvm");
-    T("vptestmb", "vk|mask,vy,vy32", "xv:E:1:1:2:0:fvm 26 /r rl:rvm");
-    T("vptestmb", "vk|mask,vz,vz64", "xv:E:2:1:2:0:fvm 26 /r rl:rvm");
-    T("vptestmd", "vk|mask,vx,vx16|b32", "xv:E:0:1:2:0:fv 27 /r rl:rvm");
-    T("vptestmd", "vk|mask,vy,vy32|b32", "xv:E:1:1:2:0:fv 27 /r rl:rvm");
-    T("vptestmd", "vk|mask,vz,vz64|b32", "xv:E:2:1:2:0:fv 27 /r rl:rvm");
-    T("vptestmq", "vk|mask,vx,vx16|b64", "xv:E:0:1:2:1:fv 27 /r rl:rvm");
-    T("vptestmq", "vk|mask,vy,vy32|b64", "xv:E:1:1:2:1:fv 27 /r rl:rvm");
-    T("vptestmq", "vk|mask,vz,vz64|b64", "xv:E:2:1:2:1:fv 27 /r rl:rvm");
-    T("vptestmw", "vk|mask,vx,vx16", "xv:E:0:1:2:1:fvm 26 /r rl:rvm");
-    T("vptestmw", "vk|mask,vy,vy32", "xv:E:1:1:2:1:fvm 26 /r rl:rvm");
-    T("vptestmw", "vk|mask,vz,vz64", "xv:E:2:1:2:1:fvm 26 /r rl:rvm");
-    T("vptestnmb", "vk|mask,vx,vx16", "xv:E:0:2:2:0:fvm 26 /r rl:rvm");
-    T("vptestnmb", "vk|mask,vy,vy32", "xv:E:1:2:2:0:fvm 26 /r rl:rvm");
-    T("vptestnmb", "vk|mask,vz,vz64", "xv:E:2:2:2:0:fvm 26 /r rl:rvm");
-    T("vptestnmd", "vk|mask,vx,vx16|b32", "xv:E:0:2:2:0:fv 27 /r rl:rvm");
-    T("vptestnmd", "vk|mask,vy,vy32|b32", "xv:E:1:2:2:0:fv 27 /r rl:rvm");
-    T("vptestnmd", "vk|mask,vz,vz64|b32", "xv:E:2:2:2:0:fv 27 /r rl:rvm");
-    T("vptestnmq", "vk|mask,vx,vx16|b64", "xv:E:0:2:2:1:fv 27 /r rl:rvm");
-    T("vptestnmq", "vk|mask,vy,vy32|b64", "xv:E:1:2:2:1:fv 27 /r rl:rvm");
-    T("vptestnmq", "vk|mask,vz,vz64|b64", "xv:E:2:2:2:1:fv 27 /r rl:rvm");
-    T("vptestnmw", "vk|mask,vx,vx16", "xv:E:0:2:2:1:fvm 26 /r rl:rvm");
-    T("vptestnmw", "vk|mask,vy,vy32", "xv:E:1:2:2:1:fvm 26 /r rl:rvm");
-    T("vptestnmw", "vk|mask,vz,vz64", "xv:E:2:2:2:1:fvm 26 /r rl:rvm");
-    T("vpunpckhbw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 68 /r rl:rvm");
-    T("vpunpckhbw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 68 /r rl:rvm");
-    T("vpunpckhbw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 68 /r rl:rvm");
-    T("vpunpckhdq", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv 6a /r rl:rvm");
-    T("vpunpckhdq", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv 6a /r rl:rvm");
-    T("vpunpckhdq", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv 6a /r rl:rvm");
-    T("vpunpckhqdq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 6d /r rl:rvm");
-    T("vpunpckhqdq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 6d /r rl:rvm");
-    T("vpunpckhqdq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 6d /r rl:rvm");
-    T("vpunpckhwd", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 69 /r rl:rvm");
-    T("vpunpckhwd", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 69 /r rl:rvm");
-    T("vpunpckhwd", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 69 /r rl:rvm");
-    T("vpunpcklbw", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 60 /r rl:rvm");
-    T("vpunpcklbw", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 60 /r rl:rvm");
-    T("vpunpcklbw", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 60 /r rl:rvm");
-    T("vpunpckldq", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv 62 /r rl:rvm");
-    T("vpunpckldq", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv 62 /r rl:rvm");
-    T("vpunpckldq", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv 62 /r rl:rvm");
-    T("vpunpcklqdq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 6c /r rl:rvm");
-    T("vpunpcklqdq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 6c /r rl:rvm");
-    T("vpunpcklqdq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 6c /r rl:rvm");
-    T("vpunpcklwd", "vx|mask|z,vx*,vx16", "xv:E:0:1:1:0:fvm 61 /r rl:rvm");
-    T("vpunpcklwd", "vy|mask|z,vy*,vy32", "xv:E:1:1:1:0:fvm 61 /r rl:rvm");
-    T("vpunpcklwd", "vz|mask|z,vz*,vz64", "xv:E:2:1:1:0:fvm 61 /r rl:rvm");
-    T("vpxord", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:1:0:fv ef /r rl:rvm");
-    T("vpxord", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:1:0:fv ef /r rl:rvm");
-    T("vpxord", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:1:0:fv ef /r rl:rvm");
-    T("vpxorq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv ef /r rl:rvm");
-    T("vpxorq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv ef /r rl:rvm");
-    T("vpxorq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv ef /r rl:rvm");
-    T("vrangepd", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv 50 /r ib rl:rvmi");
-    T("vrangepd", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 50 /r ib rl:rvmi");
-    T("vrangepd", "vz|mask|z,vz*,vz64|b64|sae,imm8", "xv:E:2:1:3:1:fv 50 /r ib rl:rvmi");
-    T("vrangeps", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:1:3:0:fv 50 /r ib rl:rvmi");
-    T("vrangeps", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 50 /r ib rl:rvmi");
-    T("vrangeps", "vz|mask|z,vz*,vz64|b32|sae,imm8", "xv:E:2:1:3:0:fv 50 /r ib rl:rvmi");
-    T("vrangesd", "vx|mask|z,vx*,vx8|sae,imm8", "xv:E:0:1:3:1:t1s 51 /r ib rl:rvmi");
-    T("vrangess", "vx|mask|z,vx*,vx4|sae,imm8", "xv:E:0:1:3:0:t1s 51 /r ib rl:rvmi");
-    T("vrcp14pd", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv 4c /r rl:rm");
-    T("vrcp14pd", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv 4c /r rl:rm");
-    T("vrcp14pd", "vz|mask|z,vz64|b64", "xv:E:2:1:2:1:fv 4c /r rl:rm");
-    T("vrcp14ps", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv 4c /r rl:rm");
-    T("vrcp14ps", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv 4c /r rl:rm");
-    T("vrcp14ps", "vz|mask|z,vz64|b32", "xv:E:2:1:2:0:fv 4c /r rl:rm");
-    T("vrcp14sd", "vx|mask|z,vx*,vx8", "xv:E:0:1:2:1:t1s 4d /r rl:rvm");
-    T("vrcp14ss", "vx|mask|z,vx*,vx4", "xv:E:0:1:2:0:t1s 4d /r rl:rvm");
-    T("vrcp28pd", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:2:1:fv ca /r rl:rm");
-    T("vrcp28ps", "vz|mask|z,vz64|b32|sae", "xv:E:2:1:2:0:fv ca /r rl:rm");
-    T("vrcp28sd", "vx|mask|z,vx*,vx8|sae", "xv:E:0:1:2:1:t1s cb /r rl:rvm");
-    T("vrcp28ss", "vx|mask|z,vx*,vx4|sae", "xv:E:0:1:2:0:t1s cb /r rl:rvm");
-    T("vreducepd", "vx|mask|z,vx16|b64,imm8", "xv:E:0:1:3:1:fv 56 /r ib rl:rmi");
-    T("vreducepd", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 56 /r ib rl:rmi");
-    T("vreducepd", "vz|mask|z,vz64|b64|sae,imm8", "xv:E:2:1:3:1:fv 56 /r ib rl:rmi");
-    T("vreduceps", "vx|mask|z,vx16|b32,imm8", "xv:E:0:1:3:0:fv 56 /r ib rl:rmi");
-    T("vreduceps", "vy|mask|z,vy32|b32,imm8", "xv:E:1:1:3:0:fv 56 /r ib rl:rmi");
-    T("vreduceps", "vz|mask|z,vz64|b32|sae,imm8", "xv:E:2:1:3:0:fv 56 /r ib rl:rmi");
-    T("vreducesd", "vx|mask|z,vx*,vx8|sae,imm8", "xv:E:0:1:3:1:t1s 57 /r ib rl:rvmi");
-    T("vreducess", "vx|mask|z,vx*,vx4|sae,imm8", "xv:E:0:1:3:0:t1s 57 /r ib rl:rvmi");
-    T("vrndscalepd", "vx|mask|z,vx16|b64,imm8", "xv:E:0:1:3:1:fv 09 /r ib rl:rmi");
-    T("vrndscalepd", "vy|mask|z,vy32|b64,imm8", "xv:E:1:1:3:1:fv 09 /r ib rl:rmi");
-    T("vrndscalepd", "vz|mask|z,vz64|b64|sae,imm8", "xv:E:2:1:3:1:fv 09 /r ib rl:rmi");
-    T("vrndscaleps", "vx|mask|z,vx16|b32,imm8", "xv:E:0:1:3:0:fv 08 /r ib rl:rmi");
-    T("vrndscaleps", "vy|mask|z,vy32|b32,imm8", "xv:E:1:1:3:0:fv 08 /r ib rl:rmi");
-    T("vrndscaleps", "vz|mask|z,vz64|b32|sae,imm8", "xv:E:2:1:3:0:fv 08 /r ib rl:rmi");
-    T("vrndscalesd", "vx|mask|z,vx*,vx8|sae,imm8", "xv:E:0:1:3:1:t1s 0b /r ib rl:rvmi");
-    T("vrndscaless", "vx|mask|z,vx*,vx4|sae,imm8", "xv:E:0:1:3:0:t1s 0a /r ib rl:rvmi");
-    T("vrsqrt14pd", "vx|mask|z,vx16|b64", "xv:E:0:1:2:1:fv 4e /r rl:rm");
-    T("vrsqrt14pd", "vy|mask|z,vy32|b64", "xv:E:1:1:2:1:fv 4e /r rl:rm");
-    T("vrsqrt14pd", "vz|mask|z,vz64|b64", "xv:E:2:1:2:1:fv 4e /r rl:rm");
-    T("vrsqrt14ps", "vx|mask|z,vx16|b32", "xv:E:0:1:2:0:fv 4e /r rl:rm");
-    T("vrsqrt14ps", "vy|mask|z,vy32|b32", "xv:E:1:1:2:0:fv 4e /r rl:rm");
-    T("vrsqrt14ps", "vz|mask|z,vz64|b32", "xv:E:2:1:2:0:fv 4e /r rl:rm");
-    T("vrsqrt14sd", "vx|mask|z,vx*,vx8", "xv:E:0:1:2:1:t1s 4f /r rl:rvm");
-    T("vrsqrt14ss", "vx|mask|z,vx*,vx4", "xv:E:0:1:2:0:t1s 4f /r rl:rvm");
-    T("vrsqrt28pd", "vz|mask|z,vz64|b64|sae", "xv:E:2:1:2:1:fv cc /r rl:rm");
-    T("vrsqrt28ps", "vz|mask|z,vz64|b32|sae", "xv:E:2:1:2:0:fv cc /r rl:rm");
-    T("vrsqrt28sd", "vx|mask|z,vx*,vx8|sae", "xv:E:0:1:2:1:t1s cd /r rl:rvm");
-    T("vrsqrt28ss", "vx|mask|z,vx*,vx4|sae", "xv:E:0:1:2:0:t1s cd /r rl:rvm");
-    T("vscalefpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 2c /r rl:rvm");
-    T("vscalefpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 2c /r rl:rvm");
-    T("vscalefpd", "vz|mask|z,vz*,vz64|b64|er", "xv:E:2:1:2:1:fv 2c /r rl:rvm");
-    T("vscalefps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 2c /r rl:rvm");
-    T("vscalefps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 2c /r rl:rvm");
-    T("vscalefps", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:1:2:0:fv 2c /r rl:rvm");
-    T("vscalefsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:1:2:1:t1s 2d /r rl:rvm");
-    T("vscalefss", "vx|mask|z,vx*,vx4|er", "xv:E:0:1:2:0:t1s 2d /r rl:rvm");
-    T("vscatterdpd", "vsx64|mask,vx", "xv:E:0:1:2:1:t1s a2 /r rl:mr");
-    T("vscatterdpd", "vsx64|mask,vy", "xv:E:1:1:2:1:t1s a2 /r rl:mr");
-    T("vscatterdpd", "vsy64|mask,vz", "xv:E:2:1:2:1:t1s a2 /r rl:mr");
-    T("vscatterdps", "vsx32|mask,vx", "xv:E:0:1:2:0:t1s a2 /r rl:mr");
-    T("vscatterdps", "vsy32|mask,vy", "xv:E:1:1:2:0:t1s a2 /r rl:mr");
-    T("vscatterdps", "vsz32|mask,vz", "xv:E:2:1:2:0:t1s a2 /r rl:mr");
-    T("vscatterpf0dpd", "vsy64|mask", "xv:E:2:1:2:1:t1s c6 /5 rl:m");
-    T("vscatterpf0dps", "vsz32|mask", "xv:E:2:1:2:0:t1s c6 /5 rl:m");
-    T("vscatterpf0qpd", "vsz64|mask", "xv:E:2:1:2:1:t1s c7 /5 rl:m");
-    T("vscatterpf0qps", "vsz32|mask", "xv:E:2:1:2:0:t1s c7 /5 rl:m");
-    T("vscatterpf1dpd", "vsy64|mask", "xv:E:2:1:2:1:t1s c6 /6 rl:m");
-    T("vscatterpf1dps", "vsz32|mask", "xv:E:2:1:2:0:t1s c6 /6 rl:m");
-    T("vscatterpf1qpd", "vsz64|mask", "xv:E:2:1:2:1:t1s c7 /6 rl:m");
-    T("vscatterpf1qps", "vsz32|mask", "xv:E:2:1:2:0:t1s c7 /6 rl:m");
-    T("vscatterqpd", "vsx64|mask,vx", "xv:E:0:1:2:1:t1s a3 /r rl:mr");
-    T("vscatterqpd", "vsy64|mask,vy", "xv:E:1:1:2:1:t1s a3 /r rl:mr");
-    T("vscatterqpd", "vsz64|mask,vz", "xv:E:2:1:2:1:t1s a3 /r rl:mr");
-    T("vscatterqps", "vsx32|mask,vx", "xv:E:0:1:2:0:t1s a3 /r rl:mr");
-    T("vscatterqps", "vsy32|mask,vx", "xv:E:1:1:2:0:t1s a3 /r rl:mr");
-    T("vscatterqps", "vsz32|mask,vy", "xv:E:2:1:2:0:t1s a3 /r rl:mr");
-    T("vshuff32x4", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 23 /r ib rl:rvmi");
-    T("vshuff32x4", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:1:3:0:fv 23 /r ib rl:rvmi");
-    T("vshuff64x2", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 23 /r ib rl:rvmi");
-    T("vshuff64x2", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv 23 /r ib rl:rvmi");
-    T("vshufi32x4", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 43 /r ib rl:rvmi");
-    T("vshufi32x4", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:1:3:0:fv 43 /r ib rl:rvmi");
-    T("vshufi64x2", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 43 /r ib rl:rvmi");
-    T("vshufi64x2", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv 43 /r ib rl:rvmi");
-    T("vshufpd", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:1:1:fv c6 /r ib rl:rvmi");
-    T("vshufpd", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:1:1:fv c6 /r ib rl:rvmi");
-    T("vshufpd", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:1:1:fv c6 /r ib rl:rvmi");
-    T("vshufps", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:0:1:0:fv c6 /r ib rl:rvmi");
-    T("vshufps", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:0:1:0:fv c6 /r ib rl:rvmi");
-    T("vshufps", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:0:1:0:fv c6 /r ib rl:rvmi");
-    T("vsqrtpd", "vx|mask|z,vx16|b64", "xv:E:0:1:1:1:fv 51 /r rl:rm");
-    T("vsqrtpd", "vy|mask|z,vy32|b64", "xv:E:1:1:1:1:fv 51 /r rl:rm");
-    T("vsqrtpd", "vz|mask|z,vz64|b64|er", "xv:E:2:1:1:1:fv 51 /r rl:rm");
-    T("vsqrtps", "vx|mask|z,vx16|b32", "xv:E:0:0:1:0:fv 51 /r rl:rm");
-    T("vsqrtps", "vy|mask|z,vy32|b32", "xv:E:1:0:1:0:fv 51 /r rl:rm");
-    T("vsqrtps", "vz|mask|z,vz64|b32|er", "xv:E:2:0:1:0:fv 51 /r rl:rm");
-    T("vsqrtsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:1:1:t1s 51 /r rl:rvm");
-    T("vsqrtss", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:1:0:t1s 51 /r rl:rvm");
-    T("vsubpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 5c /r rl:rvm");
-    T("vsubpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 5c /r rl:rvm");
-    T("vsubpd", "vz|mask|z,vz*,vz64|b64|er", "xv:E:2:1:1:1:fv 5c /r rl:rvm");
-    T("vsubps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 5c /r rl:rvm");
-    T("vsubps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 5c /r rl:rvm");
-    T("vsubps", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:0:1:0:fv 5c /r rl:rvm");
-    T("vsubsd", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:1:1:t1s 5c /r rl:rvm");
-    T("vsubss", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:1:0:t1s 5c /r rl:rvm");
-    T("vucomisd", "vx,vx8|sae", "xv:E:0:1:1:1:t1s 2e /r rl:rm");
-    T("vucomiss", "vx,vx4|sae", "xv:E:0:0:1:0:t1s 2e /r rl:rm");
-    T("vunpckhpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 15 /r rl:rvm");
-    T("vunpckhpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 15 /r rl:rvm");
-    T("vunpckhpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 15 /r rl:rvm");
-    T("vunpckhps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 15 /r rl:rvm");
-    T("vunpckhps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 15 /r rl:rvm");
-    T("vunpckhps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 15 /r rl:rvm");
-    T("vunpcklpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 14 /r rl:rvm");
-    T("vunpcklpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 14 /r rl:rvm");
-    T("vunpcklpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 14 /r rl:rvm");
-    T("vunpcklps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 14 /r rl:rvm");
-    T("vunpcklps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 14 /r rl:rvm");
-    T("vunpcklps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 14 /r rl:rvm");
-    T("vxorpd", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:1:1:fv 57 /r rl:rvm");
-    T("vxorpd", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:1:1:fv 57 /r rl:rvm");
-    T("vxorpd", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:1:1:fv 57 /r rl:rvm");
-    T("vxorps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:0:1:0:fv 57 /r rl:rvm");
-    T("vxorps", "vy|mask|z,vy*,vy32|b32", "xv:E:1:0:1:0:fv 57 /r rl:rvm");
-    T("vxorps", "vz|mask|z,vz*,vz64|b32", "xv:E:2:0:1:0:fv 57 /r rl:rvm");
-    T("vgf2p8affineinvqb", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv cf /r ib rl:rvmi");
-    T("vgf2p8affineinvqb", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv cf /r ib rl:rvmi");
-    T("vgf2p8affineinvqb", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv cf /r ib rl:rvmi");
-    T("vgf2p8affineqb", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv ce /r ib rl:rvmi");
-    T("vgf2p8affineqb", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv ce /r ib rl:rvmi");
-    T("vgf2p8affineqb", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv ce /r ib rl:rvmi");
-    T("vgf2p8mulb", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:0:fvm cf /r rl:rvm");
-    T("vgf2p8mulb", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:0:fvm cf /r rl:rvm");
-    T("vgf2p8mulb", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:0:fvm cf /r rl:rvm");
-    T("vpcompressb", "m128|mask,vx", "xv:E:0:1:2:0:t1s8 63 /r rl:mr");
-    T("vpcompressb", "m256|mask,vy", "xv:E:1:1:2:0:t1s8 63 /r rl:mr");
-    T("vpcompressb", "m512|mask,vz", "xv:E:2:1:2:0:t1s8 63 /r rl:mr");
-    T("vpcompressb", "vx|mask|z,vx", "xv:E:0:1:2:0:x 63 /r rl:mr");
-    T("vpcompressb", "vy|mask|z,vy", "xv:E:1:1:2:0:x 63 /r rl:mr");
-    T("vpcompressb", "vz|mask|z,vz", "xv:E:2:1:2:0:x 63 /r rl:mr");
-    T("vpcompressw", "m128|mask,vx", "xv:E:0:1:2:1:t1s16 63 /r rl:mr");
-    T("vpcompressw", "m256|mask,vy", "xv:E:1:1:2:1:t1s16 63 /r rl:mr");
-    T("vpcompressw", "m512|mask,vz", "xv:E:2:1:2:1:t1s16 63 /r rl:mr");
-    T("vpcompressw", "vx|mask|z,vx", "xv:E:0:1:2:1:x 63 /r rl:mr");
-    T("vpcompressw", "vy|mask|z,vy", "xv:E:1:1:2:1:x 63 /r rl:mr");
-    T("vpcompressw", "vz|mask|z,vz", "xv:E:2:1:2:1:x 63 /r rl:mr");
-    T("vpexpandb", "vx|mask|z,vx16", "xv:E:0:1:2:0:t1s8 62 /r rl:rm");
-    T("vpexpandb", "vy|mask|z,vy32", "xv:E:1:1:2:0:t1s8 62 /r rl:rm");
-    T("vpexpandb", "vz|mask|z,vz64", "xv:E:2:1:2:0:t1s8 62 /r rl:rm");
-    T("vpexpandw", "vx|mask|z,vx16", "xv:E:0:1:2:1:t1s16 62 /r rl:rm");
-    T("vpexpandw", "vy|mask|z,vy32", "xv:E:1:1:2:1:t1s16 62 /r rl:rm");
-    T("vpexpandw", "vz|mask|z,vz64", "xv:E:2:1:2:1:t1s16 62 /r rl:rm");
-    T("vpshldw", "vx|mask|z,vx*,vx16,imm8", "xv:E:0:1:3:1:fvm 70 /r ib rl:rvmi");
-    T("vpshldw", "vy|mask|z,vy*,vy32,imm8", "xv:E:1:1:3:1:fvm 70 /r ib rl:rvmi");
-    T("vpshldw", "vz|mask|z,vz*,vz64,imm8", "xv:E:2:1:3:1:fvm 70 /r ib rl:rvmi");
-    T("vpshldd", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:1:3:0:fv 71 /r ib rl:rvmi");
-    T("vpshldd", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 71 /r ib rl:rvmi");
-    T("vpshldd", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:1:3:0:fv 71 /r ib rl:rvmi");
-    T("vpshldq", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv 71 /r ib rl:rvmi");
-    T("vpshldq", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 71 /r ib rl:rvmi");
-    T("vpshldq", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv 71 /r ib rl:rvmi");
-    T("vpshldvw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 70 /r rl:rvm");
-    T("vpshldvw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 70 /r rl:rvm");
-    T("vpshldvw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 70 /r rl:rvm");
-    T("vpshldvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 71 /r rl:rvm");
-    T("vpshldvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 71 /r rl:rvm");
-    T("vpshldvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 71 /r rl:rvm");
-    T("vpshldvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 71 /r rl:rvm");
-    T("vpshldvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 71 /r rl:rvm");
-    T("vpshldvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 71 /r rl:rvm");
-    T("vpshrdw", "vx|mask|z,vx*,vx16,imm8", "xv:E:0:1:3:1:fvm 72 /r ib rl:rvmi");
-    T("vpshrdw", "vy|mask|z,vy*,vy32,imm8", "xv:E:1:1:3:1:fvm 72 /r ib rl:rvmi");
-    T("vpshrdw", "vz|mask|z,vz*,vz64,imm8", "xv:E:2:1:3:1:fvm 72 /r ib rl:rvmi");
-    T("vpshrdd", "vx|mask|z,vx*,vx16|b32,imm8", "xv:E:0:1:3:0:fv 73 /r ib rl:rvmi");
-    T("vpshrdd", "vy|mask|z,vy*,vy32|b32,imm8", "xv:E:1:1:3:0:fv 73 /r ib rl:rvmi");
-    T("vpshrdd", "vz|mask|z,vz*,vz64|b32,imm8", "xv:E:2:1:3:0:fv 73 /r ib rl:rvmi");
-    T("vpshrdq", "vx|mask|z,vx*,vx16|b64,imm8", "xv:E:0:1:3:1:fv 73 /r ib rl:rvmi");
-    T("vpshrdq", "vy|mask|z,vy*,vy32|b64,imm8", "xv:E:1:1:3:1:fv 73 /r ib rl:rvmi");
-    T("vpshrdq", "vz|mask|z,vz*,vz64|b64,imm8", "xv:E:2:1:3:1:fv 73 /r ib rl:rvmi");
-    T("vpshrdvw", "vx|mask|z,vx*,vx16", "xv:E:0:1:2:1:fvm 72 /r rl:rvm");
-    T("vpshrdvw", "vy|mask|z,vy*,vy32", "xv:E:1:1:2:1:fvm 72 /r rl:rvm");
-    T("vpshrdvw", "vz|mask|z,vz*,vz64", "xv:E:2:1:2:1:fvm 72 /r rl:rvm");
-    T("vpshrdvd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 73 /r rl:rvm");
-    T("vpshrdvd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 73 /r rl:rvm");
-    T("vpshrdvd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 73 /r rl:rvm");
-    T("vpshrdvq", "vx|mask|z,vx*,vx16|b64", "xv:E:0:1:2:1:fv 73 /r rl:rvm");
-    T("vpshrdvq", "vy|mask|z,vy*,vy32|b64", "xv:E:1:1:2:1:fv 73 /r rl:rvm");
-    T("vpshrdvq", "vz|mask|z,vz*,vz64|b64", "xv:E:2:1:2:1:fv 73 /r rl:rvm");
-    T("vpdpbusd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 50 /r rl:rvm");
-    T("vpdpbusd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 50 /r rl:rvm");
-    T("vpdpbusd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 50 /r rl:rvm");
-    T("vpdpbusds", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 51 /r rl:rvm");
-    T("vpdpbusds", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 51 /r rl:rvm");
-    T("vpdpbusds", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 51 /r rl:rvm");
-    T("vpdpwssd", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 52 /r rl:rvm");
-    T("vpdpwssd", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 52 /r rl:rvm");
-    T("vpdpwssd", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 52 /r rl:rvm");
-    T("vpdpwssds", "vx|mask|z,vx*,vx16|b32", "xv:E:0:1:2:0:fv 53 /r rl:rvm");
-    T("vpdpwssds", "vy|mask|z,vy*,vy32|b32", "xv:E:1:1:2:0:fv 53 /r rl:rvm");
-    T("vpdpwssds", "vz|mask|z,vz*,vz64|b32", "xv:E:2:1:2:0:fv 53 /r rl:rvm");
-    T("vpopcntb", "vx|mask|z,vx16", "xv:E:0:1:2:0:fvm 54 /r rl:rm");
-    T("vpopcntb", "vy|mask|z,vy32", "xv:E:1:1:2:0:fvm 54 /r rl:rm");
-    T("vpopcntb", "vz|mask|z,vz64", "xv:E:2:1:2:0:fvm 54 /r rl:rm");
-    T("vpopcntw", "vx|mask|z,vx16", "xv:E:0:1:2:1:fvm 54 /r rl:rm");
-    T("vpopcntw", "vy|mask|z,vy32", "xv:E:1:1:2:1:fvm 54 /r rl:rm");
-    T("vpopcntw", "vz|mask|z,vz64", "xv:E:2:1:2:1:fvm 54 /r rl:rm");
-    T("vpopcntd", "vx|mask|z,vx16", "xv:E:0:1:2:0:fv 55 /r rl:rm");
-    T("vpopcntd", "vy|mask|z,vy32", "xv:E:1:1:2:0:fv 55 /r rl:rm");
-    T("vpopcntd", "vz|mask|z,vz64", "xv:E:2:1:2:0:fv 55 /r rl:rm");
-    T("vpopcntq", "vx|mask|z,vx16", "xv:E:0:1:2:1:fv 55 /r rl:rm");
-    T("vpopcntq", "vy|mask|z,vy32", "xv:E:1:1:2:1:fv 55 /r rl:rm");
-    T("vpopcntq", "vz|mask|z,vz64", "xv:E:2:1:2:1:fv 55 /r rl:rm");
-    T("vpshufbitqmb", "vk|mask,vx,vx16", "xv:E:0:1:2:0:fvm 8f /r rl:rvm");
-    T("vpshufbitqmb", "vk|mask,vy,vy32", "xv:E:1:1:2:0:fvm 8f /r rl:rvm");
-    T("vpshufbitqmb", "vk|mask,vz,vz64", "xv:E:2:1:2:0:fvm 8f /r rl:rvm");
-    T("v4fmaddps", "vz|mask|z,vz,m", "xv:E:2:3:2:0:m128 9a /r rl:rvm sf");
-    T("v4fnmaddps", "vz|mask|z,vz,m", "xv:E:2:3:2:0:m128 aa /r rl:rvm sf");
-    T("v4fmaddss", "vz|mask|z,vz,m", "xv:E:0:3:2:0:m128 9b /r rl:rvm sf");
-    T("v4fnmaddss", "vz|mask|z,vz,m", "xv:E:0:3:2:0:m128 ab /r rl:rvm sf");
-    T("v4dpwssds", "vz|mask|z,vz,m", "xv:E:2:3:2:0:m128 53 /r rl:rvm sf");
-    T("v4dpwssd", "vz|mask|z,vz,m", "xv:E:2:3:2:0:m128 52 /r rl:rvm sf");
-    T("vcvtne2ps2bf16", "vx|mask|z,vx*,vx16|b32", "xv:E:0:3:2:0:fv 72 /r rl:rvm");
-    T("vcvtne2ps2bf16", "vy|mask|z,vy*,vy32|b32", "xv:E:1:3:2:0:fv 72 /r rl:rvm");
-    T("vcvtne2ps2bf16", "vz|mask|z,vz*,vz64|b32", "xv:E:2:3:2:0:fv 72 /r rl:rvm");
-    T("vcvtneps2bf16", "vx|mask|z,vx*,vx16|b32", "xv:E:0:2:2:0:fv 72 /r rl:rvm");
-    T("vcvtneps2bf16", "vy|mask|z,vy*,vy32|b32", "xv:E:1:2:2:0:fv 72 /r rl:rvm");
-    T("vcvtneps2bf16", "vz|mask|z,vz*,vz64|b32", "xv:E:2:2:2:0:fv 72 /r rl:rvm");
-    T("vdpbf16ps", "vx|mask|z,vx*,vx16|b32", "xv:E:0:2:2:0:fv 52 /r rl:rvm");
-    T("vdpbf16ps", "vy|mask|z,vy*,vy16|b32", "xv:E:1:2:2:0:fv 52 /r rl:rvm");
-    T("vdpbf16ps", "vz|mask|z,vz*,vz16|b32", "xv:E:2:2:2:0:fv 52 /r rl:rvm");
-    T("vp2intersectd", "vk,vx,vx16|b32", "xv:E:0:3:2:0:fv 68 /r rl:rvm");
-    T("vp2intersectd", "vk,vy,vy16|b32", "xv:E:1:3:2:0:fv 68 /r rl:rvm");
-    T("vp2intersectd", "vk,vz,vz16|b32", "xv:E:2:3:2:0:fv 68 /r rl:rvm");
-    T("vaddph", "vx|mask|z,vx*,vx2|b16", "xv:E:0:0:5:0:fv 58 /r rl:rvm");
-    T("vaddph", "vy|mask|z,vy*,vy2|b16", "xv:E:1:0:5:0:fv 58 /r rl:rvm");
-    T("vaddph", "vz|mask|z,vz*,vz2|b16|er", "xv:E:2:0:5:0:fv 58 /r rl:rvm");
-    T("vaddsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:2:5:0:t1s 58 /r rl:rvm");
-    T("vcmpph", "vk|mask,vx*,vx2|b16,imm8", "xv:E:0:0:3:0:fv c2 /r ib rl:rvmi");
-    T("vcmpph", "vk|mask,vy*,vy2|b16,imm8", "xv:E:1:0:3:0:fv c2 /r ib rl:rvmi");
-    T("vcmpph", "vk|mask,vz*,vz2|b16|sae,imm8", "xv:E:2:0:3:0:fv c2 /r ib rl:rvmi");
-    T("vcmpsh", "vk|mask,vx*,vx2|sae,imm8", "xv:E:0:2:3:0:t1s c2 /r ib rl:rvmi");
-    T("vcomish", "vx,vx2|sae", "xv:E:0:0:5:0:fv 2f /r rl:rm");
-    T("vcvtdq2ph", "vx|mask|z,vx16|b32", "xv:E:0:0:5:0:fv 5b /r rl:rm");
-    T("vcvtdq2ph", "vy|mask|z,vy32|b32", "xv:E:1:0:5:0:fv 5b /r rl:rm");
-    T("vcvtdq2ph", "vz|mask|z,vz64|b32|er", "xv:E:2:0:5:0:fv 5b /r rl:rm");
-    T("vcvtpd2ph", "vx|mask|z,vx16|b64", "xv:E:0:1:5:1:fv 5a /r rl:rm");
-    T("vcvtpd2ph", "vy|mask|z,vy32|b64", "xv:E:1:1:5:1:fv 5a /r rl:rm");
-    T("vcvtpd2ph", "vz|mask|z,vz64|b64|er", "xv:E:2:1:5:1:fv 5a /r rl:rm");
-    T("vcvtph2dq", "vx|mask|z,vx8|b16", "xv:E:0:1:5:0:hv 5b /r rl:rm");
-    T("vcvtph2dq", "vy|mask|z,vx16|b16", "xv:E:1:1:5:0:hv 5b /r rl:rm");
-    T("vcvtph2dq", "vz|mask|z,vy32|b16|er", "xv:E:2:1:5:0:hv 5b /r rl:rm");
-    T("vcvtph2pd", "vx|mask|z,vx4|b16", "xv:E:0:0:5:0:qvm 5a /r rl:rm");
-    T("vcvtph2pd", "vy|mask|z,vx8|b16", "xv:E:1:0:5:0:qvm 5a /r rl:rm");
-    T("vcvtph2pd", "vz|mask|z,vx16|b16|sae", "xv:E:2:0:5:0:qvm 5a /r rl:rm");
-    T("vcvtph2psx", "vx|mask|z,vx8|b16", "xv:E:0:1:6:0:hv 13 /r rl:rm");
-    T("vcvtph2psx", "vy|mask|z,vx16|b16", "xv:E:1:1:6:0:hv 13 /r rl:rm");
-    T("vcvtph2psx", "vz|mask|z,vy32|b16|sae", "xv:E:2:1:6:0:hv 13 /r rl:rm");
-    T("vcvtph2qq", "vx|mask|z,vx4|b16", "xv:E:0:1:5:0:qvm 7b /r rl:rm");
-    T("vcvtph2qq", "vy|mask|z,vx8|b16", "xv:E:1:1:5:0:qvm 7b /r rl:rm");
-    T("vcvtph2qq", "vz|mask|z,vx16|b16|er", "xv:E:2:1:5:0:qvm 7b /r rl:rm");
-    T("vcvtph2udq", "vx|mask|z,vx4|b16", "xv:E:0:0:5:0:hv 79 /r rl:rm");
-    T("vcvtph2udq", "vy|mask|z,vx8|b16", "xv:E:1:0:5:0:hv 79 /r rl:rm");
-    T("vcvtph2udq", "vz|mask|z,vx16|b16|er", "xv:E:2:0:5:0:hv 79 /r rl:rm");
-    T("vcvtph2uqq", "vx|mask|z,vx4|b16", "xv:E:0:1:5:0:qvm 79 /r rl:rm");
-    T("vcvtph2uqq", "vy|mask|z,vx8|b16", "xv:E:1:1:5:0:qvm 79 /r rl:rm");
-    T("vcvtph2uqq", "vz|mask|z,vx16|b16|er", "xv:E:2:1:5:0:qvm 79 /r rl:rm");
-    T("vcvtph2uw", "vx|mask|z,vx16|b16", "xv:E:0:0:5:0:fv 7d /r rl:rm");
-    T("vcvtph2uw", "vy|mask|z,vy32|b16", "xv:E:1:0:5:0:fv 7d /r rl:rm");
-    T("vcvtph2uw", "vz|mask|z,vz64|b16|er", "xv:E:2:0:5:0:fv 7d /r rl:rm");
-    T("vcvtph2w", "vx|mask|z,vx16|b16", "xv:E:0:1:5:0:fv 7d /r rl:rm");
-    T("vcvtph2w", "vy|mask|z,vy32|b16", "xv:E:1:1:5:0:fv 7d /r rl:rm");
-    T("vcvtph2w", "vz|mask|z,vz64|b16|er", "xv:E:2:1:5:0:fv 7d /r rl:rm");
-    T("vcvtps2ph", "vx|mask|z,vx16|b32", "xv:E:0:1:5:0:fv 1d /r rl:rm");
-    T("vcvtps2ph", "vy|mask|z,vy32|b32", "xv:E:1:1:5:0:fv 1d /r rl:rm");
-    T("vcvtps2ph", "vz|mask|z,vz64|b32|er", "xv:E:2:1:5:0:fv 1d /r rl:rm");
-    T("vcvtqq2ph", "vx|mask|z,vx16|b64", "xv:E:0:0:5:1:fv 5b /r rl:rm");
-    T("vcvtqq2ph", "vy|mask|z,vy32|b64", "xv:E:1:0:5:1:fv 5b /r rl:rm");
-    T("vcvtqq2ph", "vz|mask|z,vz64|b64|er", "xv:E:2:0:5:1:fv 5b /r rl:rm");
-    T("vcvtsd2sh", "vx|mask|z,vx*,vx8|er", "xv:E:0:3:5:1:t1s 5a /r rl:rvm");
-    T("vcvtsh2sd", "vx,vx*,vx2|sae", "xv:E:0:2:5:0:t1s 5a /r rl:rvm");
-    T("vcvtsh2si", "r32,vx2|er", "xv:E:0:2:5:0:t1s 2d /r rl:rm");
-    T("vcvtsh2ss", "vx|mask|z,vx*,vx2|sae", "xv:E:0:0:6:0:t1s 13 /r rl:rvm");
-    T("vcvtsh2usi", "r32,vx2|er", "xv:E:0:2:5:0:t1s 79 /r rl:rm");
-    T("vcvtsi2sh", "vx,vx*,rm32|er", "xv:E:0:2:5:0:t1s 2a /r rl:rvm");
-    T("vcvtsi2sh", "vx,vx*,m64|er", "xv:E:0:2:5:1:t1s 2a /r rl:rvm");
-    T("vcvtss2sh", "vx,vx*,vx4|er", "xv:E:0:0:5:0:t1s 1d /r rl:rvm");
-    T("vcvttph2dq", "vx|mask|z,vx8|b16", "xv:E:0:2:5:0:hv 5b /r rl:rm");
-    T("vcvttph2dq", "vy|mask|z,vx16|b16", "xv:E:1:2:5:0:hv 5b /r rl:rm");
-    T("vcvttph2dq", "vz|mask|z,vy32|b16|sae", "xv:E:2:2:5:0:hv 5b /r rl:rm");
-    T("vcvttph2qq", "vx|mask|z,vx4|b16", "xv:E:0:1:5:0:t1s 7a /r rl:rm");
-    T("vcvttph2qq", "vy|mask|z,vx8|b16", "xv:E:1:1:5:0:t1s 7a /r rl:rm");
-    T("vcvttph2qq", "vz|mask|z,vx16|b16|sae", "xv:E:2:1:5:0:t1s 7a /r rl:rm");
-    T("vcvttph2udq", "vx|mask|z,vx8|b16", "xv:E:0:0:5:0:hv 78 /r rl:rm");
-    T("vcvttph2udq", "vy|mask|z,vx16|b16", "xv:E:1:0:5:0:hv 78 /r rl:rm");
-    T("vcvttph2udq", "vz|mask|z,vy32|b16|sae", "xv:E:2:0:5:0:hv 78 /r rl:rm");
-    T("vcvttph2uqq", "vx|mask|z,vx4|b16", "xv:E:0:1:5:0:t1s 78 /r rl:rm");
-    T("vcvttph2uqq", "vy|mask|z,vx8|b16", "xv:E:1:1:5:0:t1s 78 /r rl:rm");
-    T("vcvttph2uqq", "vz|mask|z,vx16|b16|sae", "xv:E:2:1:5:0:t1s 78 /r rl:rm");
-    T("vcvttph2uw", "vx|mask|z,vx16|b16", "xv:E:0:0:5:0:fv 7c /r rl:rm");
-    T("vcvttph2uw", "vy|mask|z,vy32|b16", "xv:E:1:0:5:0:fv 7c /r rl:rm");
-    T("vcvttph2uw", "vz|mask|z,vz64|b16|sae", "xv:E:2:0:5:0:fv 7c /r rl:rm");
-    T("vcvttph2w", "vx|mask|z,vx16|b16", "xv:E:0:1:5:0:fv 7c /r rl:rm");
-    T("vcvttph2w", "vy|mask|z,vy32|b16", "xv:E:1:1:5:0:fv 7c /r rl:rm");
-    T("vcvttph2w", "vz|mask|z,vz64|b16|sae", "xv:E:2:1:5:0:fv 7c /r rl:rm");
-    T("vcvttsh2si", "r32,vx2|sae", "xv:E:0:2:5:0:t1s 2c /r rl:rm");
-    T("vcvttsh2usi", "r32,vx2|sae", "xv:E:0:2:5:0:t1s 78 /r rl:rm");
-    T("vcvtudq2ph", "vx|mask|z,vx16|b32", "xv:E:0:3:5:0:fv 7a /r rl:rm");
-    T("vcvtudq2ph", "vy|mask|z,vy32|b32", "xv:E:1:3:5:0:fv 7a /r rl:rm");
-    T("vcvtudq2ph", "vz|mask|z,vz64|b32", "xv:E:2:3:5:0:fv 7a /r rl:rm");
-    T("vcvtuqq2ph", "vx|mask|z,vx16|b32", "xv:E:0:3:5:1:fv 7a /r rl:rm");
-    T("vcvtuqq2ph", "vy|mask|z,vy32|b32", "xv:E:1:3:5:1:fv 7a /r rl:rm");
-    T("vcvtuqq2ph", "vz|mask|z,vz64|b32", "xv:E:2:3:5:1:fv 7a /r rl:rm");
-    T("vcvtusi2sh", "vx,vx|er,rm32|er", "xv:E:0:2:5:0:t1s 7b /r rl:rvm");
-    T("vcvtusi2ss", "vx,vx|er,m64|er", "xv:E:0:2:5:1:t1s 7b /r rl:rvm");
-    T("vcvtuw2ph", "vx|mask|z,vx16|b16", "xv:E:0:3:5:0:fv 7d /r rl:rm");
-    T("vcvtuw2ph", "vy|mask|z,vy32|b16", "xv:E:1:3:5:0:fv 7d /r rl:rm");
-    T("vcvtuw2ph", "vz|mask|z,vz64|b16|er", "xv:E:2:3:5:0:fv 7d /r rl:rm");
-    T("vcvtw2ph", "vx|mask|z,vx16|b16", "xv:E:0:2:5:0:fv 7d /r rl:rm");
-    T("vcvtw2ph", "vy|mask|z,vy32|b16", "xv:E:1:2:5:0:fv 7d /r rl:rm");
-    T("vcvtw2ph", "vz|mask|z,vz64|b16|er", "xv:E:2:2:5:0:fv 7d /r rl:rm");
-    T("vdivph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:0:5:0:fv 5e /r rl:rvm");
-    T("vdivph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:0:5:0:fv 5e /r rl:rvm");
-    T("vdivph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:0:5:0:fv 5e /r rl:rvm");
-    T("vdivsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:2:5:0:t1s 5e /r rl:rvm");
-    T("vfcmaddcph", "vx|mask|z,vx*,vx16|b32", "xv:E:0:3:6:0:fv 56 /r rl:rvm");
-    T("vfcmaddcph", "vy|mask|z,vy*,vy32|b32", "xv:E:1:3:6:0:fv 56 /r rl:rvm");
-    T("vfcmaddcph", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:3:6:0:fv 56 /r rl:rvm");
-    T("vfmaddcph", "vx|mask|z,vx*,vx16|b32", "xv:E:0:2:6:0:fv 56 /r rl:rvm");
-    T("vfmaddcph", "vy|mask|z,vy*,vy32|b32", "xv:E:1:2:6:0:fv 56 /r rl:rvm");
-    T("vfmaddcph", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:2:6:0:fv 56 /r rl:rvm");
-    T("vfcmaddcsh", "vx|mask|z,vx*,vx4|er", "xv:E:0:3:6:0:t1s 57 /r rl:rvm");
-    T("vfmaddcsh", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:6:0:t1s 57 /r rl:rvm");
-    T("vfcmulcpch", "vx|mask|z,vx*,vx16|b32", "xv:E:0:3:6:0:fv d6 /r rl:rvm");
-    T("vfcmulcpch", "vy|mask|z,vy*,vy32|b32", "xv:E:1:3:6:0:fv d6 /r rl:rvm");
-    T("vfcmulcpch", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:3:6:0:fv d6 /r rl:rvm");
-    T("vfmulcpch", "vx|mask|z,vx*,vx16|b32", "xv:E:0:2:6:0:fv d6 /r rl:rvm");
-    T("vfmulcpch", "vy|mask|z,vy*,vy32|b32", "xv:E:1:2:6:0:fv d6 /r rl:rvm");
-    T("vfmulcpch", "vz|mask|z,vz*,vz64|b32|er", "xv:E:2:2:6:0:fv d6 /r rl:rvm");
-    T("vfcmulcsh", "vx|mask|z,vx*,vx4|er", "xv:E:0:3:6:0:t1s d7 /r rl:rvm");
-    T("vfmulcsh", "vx|mask|z,vx*,vx4|er", "xv:E:0:2:6:0:t1s d7 /r rl:rvm");
-    T("vfmaddsub132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 96 /r rl:rvm");
-    T("vfmaddsub132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 96 /r rl:rvm");
-    T("vfmaddsub132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 96 /r rl:rvm");
-    T("vfmaddsub213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv a6 /r rl:rvm");
-    T("vfmaddsub213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv a6 /r rl:rvm");
-    T("vfmaddsub213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv a6 /r rl:rvm");
-    T("vfmaddsub231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv b6 /r rl:rvm");
-    T("vfmaddsub231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv b6 /r rl:rvm");
-    T("vfmaddsub231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv b6 /r rl:rvm");
-    T("vfmsubadd132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 97 /r rl:rvm");
-    T("vfmsubadd132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 97 /r rl:rvm");
-    T("vfmsubadd132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 97 /r rl:rvm");
-    T("vfmsubadd213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv a7 /r rl:rvm");
-    T("vfmsubadd213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv a7 /r rl:rvm");
-    T("vfmsubadd213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv a7 /r rl:rvm");
-    T("vfmsubadd231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv b7 /r rl:rvm");
-    T("vfmsubadd231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv b7 /r rl:rvm");
-    T("vfmsubadd231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv b7 /r rl:rvm");
-    T("vpmadd132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 98 /r rl:rvm");
-    T("vpmadd132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 98 /r rl:rvm");
-    T("vpmadd132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 98 /r rl:rvm");
-    T("vpmadd213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv a8 /r rl:rvm");
-    T("vpmadd213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv a8 /r rl:rvm");
-    T("vpmadd213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv a8 /r rl:rvm");
-    T("vpmadd231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv b8 /r rl:rvm");
-    T("vpmadd231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv b8 /r rl:rvm");
-    T("vpmadd231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv b8 /r rl:rvm");
-    T("vfmadd132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 9c /r rl:rvm");
-    T("vfmadd132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 9c /r rl:rvm");
-    T("vfmadd132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 9c /r rl:rvm");
-    T("vfmadd213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv ac /r rl:rvm");
-    T("vfmadd213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv ac /r rl:rvm");
-    T("vfmadd213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv ac /r rl:rvm");
-    T("vfmadd231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv bc /r rl:rvm");
-    T("vfmadd231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv bc /r rl:rvm");
-    T("vfmadd231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv bc /r rl:rvm");
-    T("vpmadd132sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s 99 /r rl:rvm");
-    T("vpmadd213sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s a9 /r rl:rvm");
-    T("vpmadd231sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s b9 /r rl:rvm");
-    T("vpnmadd132sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s 9d /r rl:rvm");
-    T("vpnmadd213sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s ad /r rl:rvm");
-    T("vpnmadd231sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s bd /r rl:rvm");
-    T("vpmsub132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 9a /r rl:rvm");
-    T("vpmsub132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 9a /r rl:rvm");
-    T("vpmsub132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 9a /r rl:rvm");
-    T("vpmsub213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv aa /r rl:rvm");
-    T("vpmsub213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv aa /r rl:rvm");
-    T("vpmsub213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv aa /r rl:rvm");
-    T("vpmsub231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv ba /r rl:rvm");
-    T("vpmsub231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv ba /r rl:rvm");
-    T("vpmsub231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv ba /r rl:rvm");
-    T("vfmsub132ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 9e /r rl:rvm");
-    T("vfmsub132ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 9e /r rl:rvm");
-    T("vfmsub132ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 9e /r rl:rvm");
-    T("vfmsub213ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv ae /r rl:rvm");
-    T("vfmsub213ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv ae /r rl:rvm");
-    T("vfmsub213ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv ae /r rl:rvm");
-    T("vfmsub231ph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv be /r rl:rvm");
-    T("vfmsub231ph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv be /r rl:rvm");
-    T("vfmsub231ph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv be /r rl:rvm");
-    T("vpmsub132sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s 9b /r rl:rvm");
-    T("vpmsub213sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s ab /r rl:rvm");
-    T("vpmsub231sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s bb /r rl:rvm");
-    T("vpnmsub132sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s 9f /r rl:rvm");
-    T("vpnmsub213sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s af /r rl:rvm");
-    T("vpnmsub231sh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s bf /r rl:rvm");
-    T("vfpclassph", "vk|mask,vx16|b16,imm8", "xv:E:0:0:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclassph", "vk|mask,vy32|b16,imm8", "xv:E:1:0:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclassph", "vk|mask,vz64|b16,imm8", "xv:E:2:0:3:0:fv 66 /r ib rl:rmi");
-    T("vfpclasssh", "vk|mask,vx2,imm8", "xv:E:0:0:3:0:t1s 67 /r ib rl:rmi");
-    T("vgetexpph", "vx|mask|z,vx16|b16", "xv:E:0:1:6:0:fv 42 /r rl:rm");
-    T("vgetexpph", "vy|mask|z,vy32|b16", "xv:E:1:1:6:0:fv 42 /r rl:rm");
-    T("vgetexpph", "vz|mask|z,vz64|b16|sae", "xv:E:2:1:6:0:fv 42 /r rl:rm");
-    T("vgetexpsh", "vx|mask|z,vx2|sae", "xv:E:0:1:6:0:t1s 43 /r rl:rm");
-    T("vgetmantph", "vx|mask|z,vx16|b16,imm8", "xv:E:0:0:3:0:fv 25 /r ib rl:rmi");
-    T("vgetmantph", "vy|mask|z,vy32|b16,imm8", "xv:E:1:0:3:0:fv 25 /r ib rl:rmi");
-    T("vgetmantph", "vz|mask|z,vz64|b16|sae,imm8", "xv:E:2:0:3:0:fv 25 /r ib rl:rmi");
-    T("vgetmantsh", "vx|mask|z,vx2|sae,imm8", "xv:E:0:0:3:0:t1s 27 /r ib rl:rmi");
-    T("vgetmaxph", "vx|mask|z,vx16|b16", "xv:E:0:0:5:0:fv 5f /r rl:rm");
-    T("vgetmaxph", "vy|mask|z,vy32|b16", "xv:E:1:0:5:0:fv 5f /r rl:rm");
-    T("vgetmaxph", "vz|mask|z,vz64|b16|sae", "xv:E:2:0:5:0:fv 5f /r rl:rm");
-    T("vgetmaxsh", "vx|mask|z,vx2|sae", "xv:E:0:2:5:0:t1s 5f /r rl:rm");
-    T("vgetminph", "vx|mask|z,vx16|b16", "xv:E:0:0:5:0:fv 5d /r rl:rm");
-    T("vgetminph", "vy|mask|z,vx32|b16", "xv:E:1:0:5:0:fv 5d /r rl:rm");
-    T("vgetminph", "vz|mask|z,vz64|b16|sae", "xv:E:2:0:5:0:fv 5d /r rl:rm");
-    T("vgetminsh", "vx|mask|z,vx2|sae", "xv:E:0:2:5:0:t1s 5d /r rl:rm");
-    T("vmovsh", "vx|mask|z,m16", "xv:E:0:2:5:0:t1s 10 /r rl:rm");
-    T("vmovsh", "m16|mask,vx", "xv:E:0:2:5:0:t1s 11 /r rl:mr");
-    T("vmovsh", "vx|mask|z,vx*,vx", "xv:E:0:2:5:0:x 10 /r rl:rvm");
-    T("vmovsh", "vx|mask|z,vx*,vx", "xv:E:0:2:5:0:x 11 /r rl:rvm");
-    T("vmovw", "vx|mask|z,rm16", "xv:E:0:1:5:0:t1s 6e /r rl:rm");
-    T("vmovw", "rm16,vx", "xv:E:0:1:5:0:t1s 7e /r rl:mr");
-    T("vmulph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:0:5:0:fv 59 /r rl:rvm");
-    T("vmulph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:0:5:0:fv 59 /r rl:rvm");
-    T("vmulph", "vz|mask|z,vz*,vz64|b16", "xv:E:2:0:5:0:fv 59 /r rl:rvm");
-    T("vmulsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:2:5:0:t1s 59 /r rl:rvm");
-    T("vrcpph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 4c /r rl:rvm");
-    T("vrcpph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 4c /r rl:rvm");
-    T("vrcpph", "vz|mask|z,vz*,vz64|b16", "xv:E:2:1:6:0:fv 4c /r rl:rvm");
-    T("vrcpsh", "vx|mask|z,vx*,vx2|sae", "xv:E:0:1:6:0:t1s 4d /r rl:rvm");
-    T("vreduceph", "vx|mask|z,vx16|b16,imm8", "xv:E:0:0:3:0:fv 56 /r ib rl:rmi");
-    T("vreduceph", "vy|mask|z,vy32|b16,imm8", "xv:E:1:0:3:0:fv 56 /r ib rl:rmi");
-    T("vreduceph", "vz|mask|z,vz64|b16|sae,imm8", "xv:E:2:0:3:0:fv 56 /r ib rl:rmi");
-    T("vreducesh", "vx|mask|z,vx*,vx2|sae,imm8", "xv:E:0:0:3:0:t1s 57 /r ib rl:rmvi");
-    T("vendscaleph", "vx|mask|z,vx16|b16,imm8", "xv:E:0:0:3:0:fv 08 /r ib rl:rmi");
-    T("vendscaleph", "vy|mask|z,vy32|b16,imm8", "xv:E:1:0:3:0:fv 08 /r ib rl:rmi");
-    T("vendscaleph", "vz|mask|z,vz64|b16|sae,imm8", "xv:E:2:0:3:0:fv 08 /r ib rl:rmi");
-    T("vendscalesh", "vx|mask|z,vx*,vx2|sae,imm8", "xv:E:0:0:3:0:t1s 0a /r ib rl:rvmi");
-    T("vrsqrtph", "vx|mask|z,vx16|b16,imm8", "xv:E:0:1:6:0:fv 4e /r ib rl:rmi");
-    T("vrsqrtph", "vy|mask|z,vy32|b16,imm8", "xv:E:1:1:6:0:fv 4e /r ib rl:rmi");
-    T("vrsqrtph", "vz|mask|z,vz64|b16|sae,imm8", "xv:E:2:1:6:0:fv 4e /r ib rl:rmi");
-    T("vrsqrtsh", "vx|mask|z,vx*,vx2|sae,imm8", "xv:E:0:1:6:0:t1s 4f /r ib rl:rvmi");
-    T("vscalefph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:1:6:0:fv 2c /r rl:rvm");
-    T("vscalefph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:1:6:0:fv 2c /r rl:rvm");
-    T("vscalefph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:1:6:0:fv 2c /r rl:rvm");
-    T("vscalefsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:1:6:0:t1s 2d /r rl:rvm");
-    T("vsqrtph", "vx|mask|z,vx16|b16", "xv:E:0:0:5:0:fv 51 /r rl:rm");
-    T("vsqrtph", "vy|mask|z,vy32|b16", "xv:E:1:0:5:0:fv 51 /r rl:rm");
-    T("vsqrtph", "vz|mask|z,vz64|b16|er", "xv:E:2:0:5:0:fv 51 /r rl:rm");
-    T("vsqrtsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:2:5:0:t1s 51 /r rl:rvm");
-    T("vsubph", "vx|mask|z,vx*,vx16|b16", "xv:E:0:0:5:0:fv 5c /r rl:rvm");
-    T("vsubph", "vy|mask|z,vy*,vy32|b16", "xv:E:1:0:5:0:fv 5c /r rl:rvm");
-    T("vsubph", "vz|mask|z,vz*,vz64|b16|er", "xv:E:2:0:5:0:fv 5c /r rl:rvm");
-    T("vsubsh", "vx|mask|z,vx*,vx2|er", "xv:E:0:2:5:0:t1s 5c /r rl:rvm");
-    T("vucomish", "vx,vx2|sae", "xv:E:0:0:5:0:t1s 2e /r rl:rm");
-    tab_lv(14);
-    T("vbcstnebf16ps", "vx,m16", "xv:V:0:2:2:0:x b1 /r rl:rm late sf");
-    T("vbcstnebf16ps", "vy,m16", "xv:V:1:2:2:0:x b1 /r rl:rm late sf");
-    T("vbcstnesh2ps", "vx,m16", "xv:V:0:1:2:0:x b1 /r rl:rm late sf");
-    T("vbcstnesh2ps", "vy,m16", "xv:V:1:1:2:0:x b1 /r rl:rm late sf");
-    T("vcvtneebf162ps", "vx,m128", "xv:V:0:2:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneebf162ps", "vy,m256", "xv:V:1:2:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneeph2ps", "vx,m128", "xv:V:0:1:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneeph2ps", "vy,m256", "xv:V:1:1:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneobf162ps", "vx,m128", "xv:V:0:3:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneobf162ps", "vy,m256", "xv:V:1:3:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneoph2ps", "vx,m128", "xv:V:0:0:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneoph2ps", "vy,m256", "xv:V:1:0:2:0:x b0 /r rl:rm late sf");
-    T("vcvtneps2bf16", "vx,vx16", "xv:V:0:2:2:0:x 72 /r rl:rm late sf");
-    T("vcvtneps2bf16", "vy,vy32", "xv:V:1:2:2:0:x 72 /r rl:rm late sf");
-    T("vpdpbssd", "vx,vx,vx16", "xv:V:0:3:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbssd", "vy,vy,vy32", "xv:V:1:3:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbssds", "vx,vx,vx16", "xv:V:0:3:2:0:x 51 /r rl:rvm late sf");
-    T("vpdpbssds", "vy,vy,vy32", "xv:V:1:3:2:0:x 51 /r rl:rvm late sf");
-    T("vpdpbsud", "vx,vx,vx16", "xv:V:0:2:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbsud", "vy,vy,vy32", "xv:V:1:2:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbsuds", "vx,vx,vx16", "xv:V:0:2:2:0:x 51 /r rl:rvm late sf");
-    T("vpdpbsuds", "vy,vy,vy32", "xv:V:1:2:2:0:x 51 /r rl:rvm late sf");
-    T("vpdpbuud", "vx,vx,vx16", "xv:V:0:0:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbuud", "vy,vy,vy32", "xv:V:1:0:2:0:x 50 /r rl:rvm late sf");
-    T("vpdpbuuds", "vx,vx,vx16", "xv:V:0:0:2:0:x 51 /r rl:rvm late sf");
-    T("vpdpbuuds", "vy,vy,vy32", "xv:V:1:0:2:0:x 51 /r rl:rvm late sf");
-    T("vpmadd52huq", "vx,vx,vx16", "xv:V:0:1:2:1:x b5 /r rl:rvm late sf");
-    T("vpmadd52huq", "vy,vy,vy32", "xv:V:1:1:2:1:x b5 /r rl:rvm late sf");
-    T("vpmadd52luq", "vx,vx,vx16", "xv:V:0:1:2:1:x b4 /r rl:rvm late sf");
-    T("vpmadd52luq", "vy,vy,vy32", "xv:V:1:1:2:1:x b4 /r rl:rvm late sf");
-    tab_lv(14);
-    T("llwpcb", "r32", "xv:X:0:0:9:0:x 12 /0 rl:m");
-    T("slwpcb", "r32", "xv:X:0:0:9:0:x 12 /1 rl:m");
-    T("lwpval", "r32,rm32,imm32", "xv:X:0:0:10:0:x 12 /1 id rl:vmi");
-    T("lwpins", "r32,rm32,imm32", "xv:X:0:0:10:0:x 12 /0 id rl:vmi");
-    T("vfrczpd", "vx,vx16*", "xv:X:0:0:9:0:x 81 /r rl:rm");
-    T("vfrczpd", "vy,vy32*", "xv:X:1:0:9:0:x 81 /r rl:rm");
-    T("vfrczps", "vx,vx16*", "xv:X:0:0:9:0:x 80 /r rl:rm");
-    T("vfrczps", "vy,vy32*", "xv:X:1:0:9:0:x 80 /r rl:rm");
-    T("vfrczsd", "vx,vx8*", "xv:X:0:0:9:0:x 83 /r rl:rm");
-    T("vfrczss", "vx,vx4*", "xv:X:0:0:9:0:x 82 /r rl:rm");
-    T("vpcmov", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x a2 /r is4 rl:rvms");
-    T("vpcmov", "vy,vy*,vy32,vy", "xv:X:1:0:8:0:x a2 /r is4 rl:rvms");
-    T("vpcmov", "vx,vx*,vx,vx16", "xv:X:0:0:8:1:x a2 /r is4 rl:rvsm");
-    T("vpcmov", "vy,vy*,vy,vy32", "xv:X:1:0:8:1:x a2 /r is4 rl:rvsm");
-    T("vpcomb", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x cc /r ib rl:rvmi");
-    T("vpcomd", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x ce /r ib rl:rvmi");
-    T("vpcomq", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x cf /r ib rl:rvmi");
-    T("vpcomub", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x ec /r ib rl:rvmi");
-    T("vpcomud", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x ee /r ib rl:rvmi");
-    T("vpcomuq", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x ef /r ib rl:rvmi");
-    T("vpcomuw", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x ed /r ib rl:rvmi");
-    T("vpcomw", "vx,vx*,vx16,imm8", "xv:X:0:0:8:0:x cd /r ib rl:rvmi");
-    T("vphaddbd", "vx,vx16*", "xv:X:0:0:9:0:x c2 /r rl:rm");
-    T("vphaddbq", "vx,vx16*", "xv:X:0:0:9:0:x c3 /r rl:rm");
-    T("vphaddbw", "vx,vx16*", "xv:X:0:0:9:0:x c1 /r rl:rm");
-    T("vphadddq", "vx,vx16*", "xv:X:0:0:9:0:x cb /r rl:rm");
-    T("vphaddubd", "vx,vx16*", "xv:X:0:0:9:0:x d2 /r rl:rm");
-    T("vphaddubq", "vx,vx16*", "xv:X:0:0:9:0:x d3 /r rl:rm");
-    T("vphaddubw", "vx,vx16*", "xv:X:0:0:9:0:x d1 /r rl:rm");
-    T("vphaddudq", "vx,vx16*", "xv:X:0:0:9:0:x db /r rl:rm");
-    T("vphadduwd", "vx,vx16*", "xv:X:0:0:9:0:x d6 /r rl:rm");
-    T("vphadduwq", "vx,vx16*", "xv:X:0:0:9:0:x d7 /r rl:rm");
-    T("vphaddwd", "vx,vx16*", "xv:X:0:0:9:0:x c6 /r rl:rm");
-    T("vphaddwq", "vx,vx16*", "xv:X:0:0:9:0:x c7 /r rl:rm");
-    T("vphsubbw", "vx,vx16*", "xv:X:0:0:9:0:x e1 /r rl:rm");
-    T("vphsubdq", "vx,vx16*", "xv:X:0:0:9:0:x e3 /r rl:rm");
-    T("vphsubwd", "vx,vx16*", "xv:X:0:0:9:0:x e2 /r rl:rm");
-    T("vpmacsdd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 9e /r is4 rl:rvms");
-    T("vpmacsdqh", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 9f /r is4 rl:rvms");
-    T("vpmacsdql", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 97 /r is4 rl:rvms");
-    T("vpmacssdd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 8e /r is4 rl:rvms");
-    T("vpmacssdqh", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 8f /r is4 rl:rvms");
-    T("vpmacssdql", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 87 /r is4 rl:rvms");
-    T("vpmacsswd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 86 /r is4 rl:rvms");
-    T("vpmacssww", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 85 /r is4 rl:rvms");
-    T("vpmacswd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 96 /r is4 rl:rvms");
-    T("vpmacsww", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x 95 /r is4 rl:rvms");
-    T("vpmadcsswd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x a6 /r is4 rl:rvms");
-    T("vpmadcswd", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x b6 /r is4 rl:rvms");
-    T("vpperm", "vx,vx*,vx,vx16", "xv:X:0:0:8:1:x a3 /r is4 rl:rvsm");
-    T("vpperm", "vx,vx*,vx16,vx", "xv:X:0:0:8:0:x a3 /r is4 rl:rvms");
-    T("vprotb", "vx,vx16*,vx", "xv:X:0:0:9:0:x 90 /r rl:rmv");
-    T("vprotb", "vx,vx*,vx16", "xv:X:0:0:9:1:x 90 /r rl:rvm");
-    T("vprotb", "vx,vx16*,imm8", "xv:X:0:0:8:0:x c0 /r ib rl:rmi");
-    T("vprotd", "vx,vx16*,vx", "xv:X:0:0:9:0:x 92 /r rl:rmv");
-    T("vprotd", "vx,vx*,vx16", "xv:X:0:0:9:1:x 92 /r rl:rvm");
-    T("vprotd", "vx,vx16*,imm8", "xv:X:0:0:8:0:x c2 /r ib rl:rmi");
-    T("vprotq", "vx,vx16*,vx", "xv:X:0:0:9:0:x 93 /r rl:rmv");
-    T("vprotq", "vx,vx*,vx16", "xv:X:0:0:9:1:x 93 /r rl:rvm");
-    T("vprotq", "vx,vx16*,imm8", "xv:X:0:0:8:0:x c3 /r ib rl:rmi");
-    T("vprotw", "vx,vx16*,vx", "xv:X:0:0:9:0:x 91 /r rl:rmv");
-    T("vprotw", "vx,vx*,vx16", "xv:X:0:0:9:1:x 91 /r rl:rvm");
-    T("vprotw", "vx,vx16*,imm8", "xv:X:0:0:8:0:x c1 /r ib rl:rmi");
-    T("vpshab", "vx,vx16*,vx", "xv:X:0:0:9:0:x 98 /r rl:rmv");
-    T("vpshab", "vx,vx*,vx16", "xv:X:0:0:9:1:x 98 /r rl:rvm");
-    T("vpshad", "vx,vx16*,vx", "xv:X:0:0:9:0:x 9a /r rl:rmv");
-    T("vpshad", "vx,vx*,vx16", "xv:X:0:0:9:1:x 9a /r rl:rvm");
-    T("vpshaq", "vx,vx16*,vx", "xv:X:0:0:9:0:x 9b /r rl:rmv");
-    T("vpshaq", "vx,vx*,vx16", "xv:X:0:0:9:1:x 9b /r rl:rvm");
-    T("vpshaw", "vx,vx16*,vx", "xv:X:0:0:9:0:x 99 /r rl:rmv");
-    T("vpshaw", "vx,vx*,vx16", "xv:X:0:0:9:1:x 99 /r rl:rvm");
-    T("vpshlb", "vx,vx16*,vx", "xv:X:0:0:9:0:x 94 /r rl:rmv");
-    T("vpshlb", "vx,vx*,vx16", "xv:X:0:0:9:1:x 94 /r rl:rvm");
-    T("vpshld", "vx,vx16*,vx", "xv:X:0:0:9:0:x 96 /r rl:rmv");
-    T("vpshld", "vx,vx*,vx16", "xv:X:0:0:9:1:x 96 /r rl:rvm");
-    T("vpshlq", "vx,vx16*,vx", "xv:X:0:0:9:0:x 97 /r rl:rmv");
-    T("vpshlq", "vx,vx*,vx16", "xv:X:0:0:9:1:x 97 /r rl:rvm");
-    T("vpshlw", "vx,vx16*,vx", "xv:X:0:0:9:0:x 95 /r rl:rmv");
-    T("vpshlw", "vx,vx*,vx16", "xv:X:0:0:9:1:x 95 /r rl:rvm");
-    T("bextr", "r32,rm32,imm32", "xv:X:0:0:10:0:x 10 /r id rl:rmi");
-    T("blci", "r32,rm32", "xv:X:0:0:9:0:x 02 /6 rl:vm");
-    T("blcic", "r32,rm32", "xv:X:0:0:9:0:x 01 /5 rl:vm");
-    T("blsic", "r32,rm32", "xv:X:0:0:9:0:x 01 /6 rl:vm");
-    T("blcfill", "r32,rm32", "xv:X:0:0:9:0:x 01 /1 rl:vm");
-    T("blsfill", "r32,rm32", "xv:X:0:0:9:0:x 01 /2 rl:vm");
-    T("blcmsk", "r32,rm32", "xv:X:0:0:9:0:x 02 /1 rl:vm");
-    T("blcs", "r32,rm32", "xv:X:0:0:9:0:x 01 /3 rl:vm");
-    T("tzmsk", "r32,rm32", "xv:X:0:0:9:0:x 01 /4 rl:vm");
-    T("t1mskc", "r32,rm32", "xv:X:0:0:9:0:x 01 /7 rl:vm");
-}
+const unsigned char gen_blob[] = {
+    244,36,35,49,52,10,118,97,101,115,101,110,99,9,118,120,44,118,120,42,44,118,120,49,
+    54,9,120,118,58,86,58,48,58,49,58,50,58,48,58,120,32,100,99,32,47,114,32,114,
+    108,58,114,118,109,48,0,79,108,97,115,116,52,0,10,27,100,52,0,47,100,101,100,0,
+    11,30,101,48,0,15,100,0,14,27,102,52,0,35,105,109,100,0,15,44,0,0,20,98,
+    44,0,2,43,0,164,107,101,121,103,101,110,97,115,115,105,100,0,118,49,54,44,105,109,
+    109,56,57,0,23,51,101,0,34,105,98,60,0,22,105,48,1,162,121,44,118,121,42,44,
+    118,121,51,50,51,0,31,49,48,1,16,15,52,0,8,15,48,1,2,15,48,0,8,15,
+    48,1,6,15,52,0,8,10,48,1,79,100,100,112,100,95,1,3,17,49,47,0,47,53,
+    56,47,0,0,15,94,0,1,15,47,0,5,31,115,94,0,1,0,96,0,15,47,0,6,
+    14,94,0,15,47,0,6,23,115,188,0,5,181,1,31,51,46,0,6,7,140,0,20,52,
+    46,0,31,50,46,0,6,47,117,98,27,1,11,47,100,48,50,0,3,15,30,1,7,15,
+    50,0,2,15,33,1,2,4,196,0,15,50,0,5,14,100,0,15,50,0,4,31,110,224,
+    1,13,31,52,47,0,0,15,224,1,8,13,47,0,15,224,1,11,15,47,0,1,15,224,
+    1,8,12,47,0,31,110,189,0,12,31,53,48,0,1,15,190,0,8,14,48,0,15,191,
+    0,11,15,48,0,2,15,192,0,8,9,48,0,60,98,108,101,126,1,15,93,4,2,17,
+    48,246,3,3,93,4,16,118,94,4,5,58,0,6,107,0,7,58,0,0,206,0,15,58,
+    0,11,9,213,0,15,116,0,3,1,158,4,15,58,0,2,15,116,0,13,15,58,0,3,
+    27,118,233,0,44,118,120,115,0,17,52,125,5,51,105,115,52,58,0,24,115,58,0,7,
+    117,0,44,118,121,115,0,15,58,0,7,10,233,0,15,116,0,0,31,97,58,0,8,15,
+    116,0,11,15,58,0,0,130,114,111,97,100,99,97,115,116,72,4,20,109,0,2,6,96,
+    6,21,49,68,4,0,255,1,8,47,0,22,121,47,0,6,139,5,15,47,0,4,1,15,
+    1,35,109,54,162,4,7,47,0,31,57,47,0,1,65,102,49,50,56,49,0,0,8,0,
+    12,50,0,1,197,0,3,50,0,143,99,109,112,101,113,95,111,115,83,3,11,32,99,50,
+    51,0,53,112,49,48,199,2,8,56,0,15,91,3,7,15,56,0,4,15,109,0,18,31,
+    48,53,0,0,15,106,0,14,10,53,0,47,108,116,218,0,21,47,48,49,56,0,2,15,
+    112,0,15,11,56,0,15,109,0,34,15,106,0,33,31,101,218,0,22,31,50,56,0,2,
+    15,112,0,15,11,56,0,15,109,0,34,15,106,0,32,111,117,110,111,114,100,95,35,2,
+    20,31,51,58,0,4,15,116,0,15,14,58,0,15,114,0,37,15,112,0,32,95,110,101,
+    113,95,117,227,0,20,4,107,4,11,57,0,15,114,0,15,12,57,0,15,111,0,35,15,
+    108,0,33,79,108,116,95,117,157,2,20,31,53,57,0,3,15,114,0,15,12,57,0,15,
+    111,0,35,15,108,0,34,31,101,222,0,22,31,54,57,0,3,15,114,0,15,12,57,0,
+    15,111,0,35,15,108,0,32,15,124,3,24,31,55,56,0,2,15,112,0,15,12,56,0,
+    15,110,0,35,15,108,0,32,15,117,3,24,31,56,56,0,2,15,112,0,15,9,56,0,
+    47,110,103,42,2,23,31,57,57,0,3,15,114,0,15,12,57,0,15,111,0,35,15,108,
+    0,34,15,230,3,23,31,97,57,0,3,15,114,0,15,12,57,0,15,111,0,35,15,108,
+    0,32,127,102,97,108,115,101,95,111,47,2,20,4,247,10,13,59,0,15,118,0,15,14,
+    59,0,15,115,0,37,15,112,0,32,0,79,6,15,228,0,21,31,99,57,0,3,15,114,
+    0,15,9,57,0,31,103,184,8,23,31,100,56,0,2,15,112,0,15,11,56,0,15,109,
+    0,34,15,106,0,33,15,108,10,23,31,101,56,0,2,15,112,0,15,11,56,0,15,109,
+    0,34,15,106,0,32,79,116,114,117,101,58,5,22,31,102,58,0,4,15,116,0,15,13,
+    58,0,15,113,0,36,15,110,0,32,0,240,11,15,224,0,19,29,49,40,12,15,222,0,
+    19,11,56,0,15,91,4,22,29,49,190,11,15,112,0,20,15,84,11,0,15,228,13,20,
+    15,84,11,0,15,230,13,20,14,228,10,15,115,0,20,14,228,10,15,114,0,20,14,120,
+    10,15,87,1,20,14,120,10,15,88,1,20,14,12,10,15,114,0,20,14,12,10,15,114,
+    0,20,13,160,9,15,85,1,20,13,160,9,15,84,1,20,13,52,9,15,112,0,20,13,
+    52,9,15,112,0,20,14,52,9,15,82,1,20,14,52,9,15,82,1,20,14,200,8,15,
+    114,0,20,14,200,8,15,114,0,20,15,92,8,1,15,87,1,20,15,92,8,1,15,90,
+    1,20,14,236,7,15,116,0,20,14,236,7,15,114,0,20,13,236,7,15,89,1,20,13,
+    236,7,15,88,1,20,13,130,7,15,112,0,20,13,130,7,15,112,0,20,15,24,7,0,
+    15,83,1,20,15,24,7,0,15,84,1,20,9,58,0,15,57,22,10,8,56,0,8,139,
+    21,3,56,0,15,195,21,6,15,56,0,8,2,252,1,15,15,23,10,15,28,20,8,15,
+    23,23,10,15,28,20,5,15,109,0,17,13,28,20,15,106,0,17,15,28,20,1,15,109,
+    0,18,15,28,20,0,15,112,0,18,12,231,19,15,109,0,33,15,106,0,33,1,34,4,
+    15,109,0,18,15,28,20,0,15,112,0,18,12,231,19,15,109,0,33,15,106,0,32,4,
+    226,19,15,111,0,18,15,28,20,2,15,116,0,18,15,228,19,0,15,114,0,36,15,112,
+    0,32,3,227,19,15,113,0,18,15,28,20,1,15,114,0,18,13,230,19,15,111,0,34,
+    15,108,0,33,2,227,19,15,111,0,18,15,28,20,1,15,114,0,18,13,230,19,15,111,
+    0,34,15,108,0,34,1,215,5,15,111,0,18,15,28,20,1,15,114,0,18,13,230,19,
+    15,111,0,34,15,108,0,32,15,124,3,24,15,28,20,0,15,112,0,18,13,230,19,15,
+    110,0,34,15,108,0,32,15,117,3,24,15,28,20,0,15,112,0,18,15,28,20,1,15,
+    113,0,18,15,28,20,1,15,114,0,18,13,230,19,15,111,0,34,15,108,0,34,15,230,
+    3,23,15,28,20,1,15,114,0,18,13,230,19,15,111,0,34,15,108,0,32,5,225,19,
+    15,113,0,18,15,28,20,3,15,118,0,18,15,228,19,0,15,115,0,36,15,112,0,32,
+    3,227,19,15,113,0,18,15,28,20,1,15,114,0,18,15,28,20,0,15,113,0,18,15,
+    28,20,0,15,112,0,18,12,231,19,15,109,0,33,15,106,0,33,15,108,10,23,15,28,
+    20,0,15,112,0,18,12,231,19,15,109,0,33,15,106,0,32,4,226,19,15,111,0,18,
+    15,28,20,2,15,116,0,18,14,229,19,15,113,0,35,15,110,0,32,2,228,19,15,2,
+    13,18,15,28,20,0,15,2,13,18,15,28,20,0,15,112,0,18,15,28,20,0,15,112,
+    0,18,15,28,20,2,15,114,0,18,15,28,20,2,15,116,0,18,15,28,20,1,15,115,
+    0,18,15,28,20,1,15,114,0,18,15,28,20,1,15,114,0,18,15,28,20,1,15,114,
+    0,18,15,28,20,1,15,114,0,18,15,28,20,1,15,114,0,18,15,28,20,0,15,113,
+    0,18,15,28,20,0,15,112,0,18,15,28,20,0,15,112,0,18,15,28,20,0,15,112,
+    0,18,15,28,20,1,15,113,0,18,15,28,20,1,15,114,0,18,15,28,20,1,15,114,
+    0,18,15,28,20,1,15,114,0,18,15,28,20,3,15,116,0,18,15,28,20,3,15,118,
+    0,18,15,28,20,1,15,116,0,18,15,28,20,1,15,114,0,18,15,28,20,0,15,113,
+    0,18,15,28,20,0,15,112,0,18,15,28,20,0,15,112,0,18,15,28,20,0,15,112,
+    0,18,15,28,20,2,15,114,0,18,15,28,20,2,15,116,0,18,10,28,20,15,225,41,
+    7,10,56,0,12,28,20,15,223,41,7,15,56,0,10,1,252,1,15,108,45,10,15,227,
+    19,4,15,52,0,17,15,173,19,0,15,55,0,18,11,132,7,15,52,0,32,0,68,3,
+    15,55,0,18,11,127,7,15,52,0,31,3,149,18,15,57,0,18,14,122,7,15,55,0,
+    31,2,34,18,15,56,0,18,12,118,7,15,53,0,32,1,177,17,15,56,0,18,12,113,
+    7,15,53,0,33,0,52,3,15,56,0,18,12,108,7,15,53,0,31,15,181,1,23,12,
+    103,7,15,53,0,31,15,178,1,23,15,95,16,0,15,56,0,18,12,42,7,15,53,0,
+    33,15,234,1,22,12,37,7,15,53,0,31,4,66,15,15,58,0,18,14,32,7,15,55,
+    0,31,2,207,14,15,56,0,18,14,206,14,15,55,0,18,11,225,6,15,52,0,32,15,
+    30,5,22,11,220,6,15,52,0,31,3,182,13,15,57,0,18,13,215,6,15,54,0,31,
+    1,69,13,15,99,6,18,14,68,13,15,55,0,18,15,11,13,1,15,57,0,18,15,208,
+    12,0,15,56,0,18,15,150,12,0,15,56,0,18,15,92,12,0,15,56,0,18,14,34,
+    12,15,55,0,18,14,233,11,15,55,0,18,15,176,11,0,15,56,0,18,15,118,11,0,
+    15,56,0,18,15,60,11,2,15,58,0,18,15,0,11,0,15,56,0,18,14,198,10,15,
+    55,0,18,14,141,10,15,55,0,18,15,84,10,1,15,57,0,18,9,70,3,9,50,0,
+    9,24,10,10,55,0,15,224,9,2,7,85,10,5,55,0,4,30,55,15,224,9,5,15,
+    52,0,16,15,224,9,1,15,55,0,17,12,224,9,15,52,0,31,1,35,2,15,55,0,
+    17,12,224,9,15,52,0,30,4,224,9,15,57,0,17,15,224,9,0,15,55,0,30,3,
+    224,9,15,56,0,17,13,224,9,15,53,0,31,2,224,9,15,56,0,17,13,224,9,15,
+    53,0,32,1,250,2,15,56,0,17,13,224,9,15,53,0,30,15,181,1,23,13,224,9,
+    15,53,0,30,15,178,1,23,15,224,9,1,15,56,0,17,13,224,9,15,53,0,32,15,
+    234,1,22,13,224,9,15,53,0,30,5,224,9,15,58,0,17,15,224,9,0,15,55,0,
+    30,3,224,9,15,56,0,17,15,224,9,0,15,55,0,17,12,224,9,15,52,0,31,15,
+    30,5,22,12,224,9,15,52,0,30,4,224,9,15,57,0,17,14,224,9,15,54,0,30,
+    2,224,9,15,99,6,17,15,224,9,0,15,55,0,17,15,224,9,2,15,57,0,17,15,
+    224,9,1,15,56,0,17,15,224,9,1,15,56,0,17,15,224,9,1,15,56,0,17,15,
+    224,9,0,15,55,0,17,15,224,9,0,15,55,0,17,15,224,9,1,15,56,0,17,15,
+    224,9,1,15,56,0,17,15,224,9,3,15,58,0,17,15,224,9,1,15,56,0,17,15,
+    224,9,0,15,55,0,17,15,224,9,0,15,55,0,17,15,224,9,2,15,57,0,17,10,
+    224,9,8,50,0,9,224,9,10,55,0,9,224,9,52,111,109,105,24,10,13,67,40,21,
+    50,14,66,0,97,0,0,42,0,3,98,0,5,32,65,4,25,20,10,42,0,84,118,116,
+    100,113,50,163,40,13,133,0,47,101,54,44,0,2,23,121,28,21,0,163,60,15,45,0,
+    7,3,133,0,15,146,63,0,8,194,67,6,45,0,0,213,20,15,143,63,0,11,45,0,
+    82,112,100,50,100,113,90,0,12,23,11,12,133,0,5,43,0,6,87,61,15,45,0,2,
+    59,32,115,102,91,0,5,74,62,15,91,0,15,37,50,53,13,1,15,91,0,11,4,16,
+    1,12,190,1,25,53,224,61,7,43,0,8,182,0,15,45,0,0,14,91,0,7,0,63,
+    15,91,0,13,7,182,0,15,91,0,9,21,115,108,1,15,184,65,0,12,153,1,2,45,
+    0,10,198,1,15,45,0,8,13,121,2,5,242,1,12,182,0,2,44,0,10,121,2,15,
+    45,0,5,112,115,100,50,115,105,9,114,15,64,14,111,13,21,50,155,69,6,45,0,15,
+    191,3,1,5,125,68,5,93,0,1,187,3,86,118,116,115,105,50,158,13,23,114,61,64,
+    5,98,0,7,50,0,4,70,1,9,53,0,15,52,0,24,5,154,0,8,105,0,4,113,
+    3,15,53,0,14,15,52,0,21,23,115,157,0,15,82,69,1,13,3,1,22,115,97,1,
+    13,46,0,12,97,1,15,174,3,1,4,19,2,12,83,3,15,175,3,3,15,46,0,0,
+    4,187,0,15,176,3,1,15,93,0,16,15,251,2,0,15,93,0,2,15,252,2,1,5,
+    22,1,11,207,2,15,253,2,3,15,46,0,6,15,165,2,11,5,116,72,4,46,0,15,
+    114,1,10,8,46,0,43,100,105,194,67,13,180,3,9,108,72,3,47,0,15,107,69,8,
+    13,47,0,15,106,69,11,15,47,0,1,15,105,69,8,12,47,0,15,9,72,11,13,46,
+    0,15,9,72,10,10,46,0,15,137,47,11,3,45,68,28,49,117,7,31,100,164,27,9,
+    5,55,0,1,171,71,14,55,0,15,130,69,12,14,55,0,99,101,120,116,114,97,99,11,
+    68,1,10,69,31,121,58,0,2,2,66,68,2,58,0,38,109,114,57,0,48,112,115,9,
+    41,4,63,44,118,120,168,0,2,43,49,55,55,0,31,104,55,74,14,25,55,254,74,4,
+    48,0,15,47,2,7,15,48,0,0,15,24,73,10,15,48,0,3,15,22,73,7,11,48,
+    0,15,220,73,14,25,55,138,75,4,48,0,15,192,0,8,14,48,0,15,192,0,11,15,
+    48,0,2,15,192,0,8,9,48,0,85,105,110,115,101,114,250,69,1,52,0,10,100,2,
+    7,243,1,1,100,70,8,45,2,2,61,0,8,159,0,31,52,246,1,2,29,50,213,2,
+    95,108,100,100,113,117,21,9,5,21,102,120,74,16,109,42,0,16,113,42,0,31,121,228,
+    8,2,11,42,0,1,84,0,15,42,0,18,103,109,120,99,115,114,9,158,6,4,15,4,
+    65,97,101,32,47,0,14,163,109,10,118,109,97,115,107,109,111,118,170,0,14,60,6,17,
+    102,205,2,3,84,0,3,45,0,4,13,1,11,63,6,2,69,71,6,39,5,0,123,1,
+    7,50,0,0,122,1,11,20,6,15,50,0,11,0,94,0,0,102,0,8,149,0,3,50,
+    0,4,116,4,49,109,118,114,71,6,7,53,0,33,50,53,208,3,8,169,6,15,53,0,
+    12,3,218,2,15,206,0,3,9,73,2,7,50,0,15,206,0,7,15,50,0,4,15,206,
+    0,8,4,43,12,57,109,118,114,50,0,15,203,0,7,11,50,0,31,120,140,6,12,9,
+    196,78,3,47,0,15,140,6,8,13,47,0,15,140,6,11,15,47,0,1,15,140,6,8,
+    12,47,0,15,140,6,11,13,46,0,15,140,6,10,10,46,0,31,105,16,77,13,10,171,
+    1,2,47,0,15,24,1,8,13,47,0,15,24,1,11,15,47,0,1,15,24,1,8,12,
+    47,0,15,24,1,11,13,46,0,15,24,1,10,10,46,0,52,111,118,97,25,1,14,21,
+    1,24,50,102,75,5,43,0,11,47,76,3,43,0,4,98,75,16,109,134,2,3,43,0,
+    15,150,12,3,15,86,0,2,12,75,76,15,86,0,5,15,223,14,6,14,86,0,0,43,
+    0,9,172,0,5,43,0,15,86,0,1,15,8,15,3,15,86,0,2,10,172,0,15,86,
+    0,5,1,86,1,8,69,12,4,213,0,21,54,38,9,2,84,0,20,100,66,8,13,74,
+    7,5,166,4,2,82,0,3,25,11,13,52,16,5,40,0,3,73,11,3,43,0,0,99,
+    4,12,83,0,20,100,116,11,19,109,248,4,107,111,118,100,100,117,112,89,0,4,90,2,
+    17,49,18,17,7,170,0,1,43,0,10,42,1,15,44,0,6,47,113,97,87,2,5,24,
+    54,16,17,5,43,0,15,87,2,2,21,55,222,4,3,3,1,0,43,0,15,87,2,3,
+    12,86,0,2,43,0,15,87,2,2,12,86,0,1,129,0,15,86,0,19,2,43,0,15,
+    86,0,20,3,72,7,14,202,12,14,86,0,0,43,0,9,2,1,5,221,1,13,2,1,
+    1,244,7,15,242,12,1,14,2,1,0,43,0,9,172,0,15,86,0,5,3,74,8,15,
+    86,0,17,2,43,0,15,86,0,18,40,104,108,23,5,12,135,3,6,50,2,3,138,4,
+    22,104,163,5,5,196,79,6,11,2,21,49,47,14,7,47,0,63,109,54,52,54,2,0,
+    2,118,11,7,136,0,6,135,0,7,89,0,5,136,0,14,89,0,27,115,89,0,5,43,
+    0,11,89,0,23,108,90,0,15,46,0,0,12,89,0,31,108,225,0,11,12,16,1,0,
+    47,0,15,225,0,4,27,51,136,0,15,225,0,11,14,89,0,15,225,0,6,11,89,0,
+    83,109,115,107,112,100,6,15,13,51,7,8,99,10,10,44,0,14,20,19,15,44,0,0,
+    27,115,88,0,5,254,6,15,44,0,7,13,117,5,12,44,0,68,110,116,100,113,95,9,
+    13,205,16,11,189,1,68,110,116,113,113,89,9,13,156,16,13,44,0,0,88,0,15,44,
+    0,23,1,252,4,15,69,10,2,8,58,19,1,45,0,6,16,10,13,84,7,4,194,16,
+    5,89,0,6,10,10,13,42,7,14,44,0,5,54,11,13,0,7,15,44,0,2,10,88,
+    0,15,44,0,5,8,138,8,13,47,6,9,64,87,5,45,0,7,146,2,14,42,0,8,
+    41,0,15,86,0,4,1,77,13,5,225,10,1,45,0,10,189,2,14,42,0,3,41,0,
+    21,104,219,6,14,131,5,6,157,3,3,131,0,2,45,0,15,4,5,3,13,45,0,31,
+    108,90,0,9,11,10,7,3,45,0,15,90,0,4,12,45,0,15,80,4,0,5,44,0,
+    13,96,1,12,78,85,14,42,0,15,86,0,16,13,96,1,16,115,41,14,15,42,0,10,
+    2,41,0,31,117,58,10,7,12,129,0,2,43,0,15,227,7,2,15,86,0,2,15,141,
+    7,3,15,86,0,2,15,141,7,3,14,86,0,15,58,10,6,14,86,0,15,58,10,6,
+    15,86,0,2,15,58,10,3,15,86,0,2,15,58,10,3,10,86,0,111,112,115,97,100,
+    98,119,2,19,15,13,174,26,39,109,117,96,6,15,228,12,2,5,6,87,1,64,2,2,
+    47,0,15,228,12,8,13,47,0,15,228,12,11,15,47,0,1,15,228,12,8,12,47,0,
+    15,228,12,11,13,46,0,15,228,12,10,9,46,0,47,111,114,23,1,12,9,167,7,2,
+    46,0,15,22,1,8,12,46,0,15,21,1,11,15,46,0,0,15,20,1,8,9,46,0,
+    94,112,97,98,115,98,97,3,3,160,88,8,130,22,0,42,0,3,50,2,15,42,0,0,
+    8,30,24,0,42,0,15,181,3,0,3,42,0,8,153,12,115,112,97,99,107,115,115,119,
+    129,0,15,58,1,3,20,54,46,8,3,176,0,0,50,0,25,100,187,2,13,50,0,5,
+    149,23,4,50,0,31,117,100,0,13,5,117,18,6,50,0,15,100,0,5,3,99,7,11,
+    100,0,47,100,100,97,0,10,25,102,115,18,0,47,0,15,194,0,10,25,102,64,15,0,
+    47,0,15,93,2,10,25,102,19,23,0,47,0,3,198,13,15,47,0,3,25,100,199,93,
+    0,47,0,4,3,2,15,48,0,3,29,101,189,0,4,9,2,15,48,0,4,13,190,0,
+    31,117,97,0,11,10,140,97,2,49,0,15,98,0,10,10,137,97,127,112,97,108,105,103,
+    110,114,206,4,14,24,48,38,98,1,206,4,63,112,97,110,67,96,11,11,230,1,63,110,
+    100,110,47,0,10,9,15,18,79,112,97,118,103,88,1,11,9,107,7,0,47,0,15,87,
+    1,11,10,9,3,2,41,93,9,97,0,15,98,93,1,2,15,94,8,40,93,2,58,0,
+    15,253,5,15,17,48,86,2,9,47,1,0,163,34,68,115,116,114,105,221,3,15,56,0,
+    2,24,54,153,22,8,55,0,31,109,55,0,11,8,55,25,4,55,0,31,105,110,0,15,
+    1,22,1,15,55,0,0,15,110,0,12,8,218,6,5,165,0,31,113,176,1,10,26,55,
+    56,3,1,49,0,15,178,1,10,25,55,112,96,2,49,0,15,215,24,11,10,156,5,1,
+    49,0,15,203,3,4,3,135,4,9,133,6,0,49,0,47,103,116,234,4,11,13,196,0,
+    47,103,116,77,5,11,13,196,0,47,103,116,196,0,10,29,54,196,0,47,103,116,196,0,
+    10,26,51,125,5,79,101,114,109,105,100,8,6,2,50,0,2,88,97,14,50,0,15,86,
+    101,7,15,50,0,5,15,34,2,8,17,48,249,0,8,34,2,9,104,0,15,127,97,5,
+    15,54,0,4,15,193,7,2,5,158,0,10,0,5,5,50,0,15,208,0,8,15,50,0,
+    4,15,208,0,9,1,250,1,15,154,0,2,15,208,0,9,15,54,0,1,25,50,219,26,
+    15,59,0,6,1,9,2,9,64,4,0,208,28,19,98,146,15,15,203,28,3,7,111,0,
+    1,203,28,3,51,0,17,109,203,24,15,50,0,23,31,119,101,0,3,3,132,37,14,164,
+    1,15,51,0,7,3,102,0,7,51,0,8,102,0,17,109,117,5,15,51,0,24,5,136,
+    21,15,52,0,3,7,51,1,2,52,0,0,59,29,15,137,8,10,20,48,216,11,2,10,
+    2,0,48,0,15,60,3,11,9,168,17,1,48,0,15,108,7,5,3,49,0,10,119,6,
+    16,104,89,24,63,111,115,117,11,10,6,2,109,31,4,225,9,0,59,29,15,95,0,11,
+    10,96,4,0,48,0,15,192,0,11,10,95,4,0,48,0,15,192,0,12,10,95,4,69,
+    105,110,115,114,34,5,26,109,165,39,5,91,29,13,194,31,10,55,0,31,114,56,0,37,
+    9,42,3,15,56,0,14,5,215,0,0,102,2,15,201,2,2,8,157,3,15,56,0,0,
+    31,114,57,0,38,13,169,0,15,56,0,10,8,3,37,15,225,0,3,13,72,14,10,56,
+    0,1,20,3,15,57,0,20,16,109,18,3,15,15,11,11,10,83,2,0,49,0,15,37,
+    2,14,10,23,7,0,248,27,15,71,7,4,3,180,6,10,128,5,0,48,0,15,188,9,
+    11,10,162,11,11,134,28,15,96,0,0,10,176,6,79,109,97,120,117,66,11,11,13,96,
+    0,4,161,3,15,96,0,4,14,48,0,15,144,0,11,10,218,10,0,0,28,15,32,1,
+    11,9,174,107,1,48,0,15,32,1,11,9,140,38,1,48,0,15,144,0,11,10,248,8,
+    63,109,105,110,32,1,12,13,96,0,15,32,1,12,14,48,0,15,144,0,11,10,41,12,
+    2,81,22,4,234,6,13,141,0,8,227,32,0,44,0,36,115,120,36,5,14,203,21,8,
+    226,17,3,44,0,3,138,0,7,220,23,3,44,0,9,122,5,2,44,0,3,122,9,13,
+    11,105,2,89,3,9,44,0,4,85,3,14,132,0,5,2,6,6,44,0,3,88,0,14,
+    132,0,5,73,3,5,44,0,4,141,14,14,88,0,5,168,3,3,44,0,31,122,8,1,
+    7,28,51,8,1,31,122,8,1,7,28,51,8,1,31,122,8,1,7,28,51,8,1,31,
+    122,8,1,7,28,51,8,1,31,122,8,1,7,28,51,8,1,31,122,8,1,7,26,51,
+    8,1,63,117,108,104,157,2,5,3,45,3,11,173,4,79,117,108,104,114,223,4,12,11,
+    159,2,63,117,108,104,98,0,11,11,66,5,63,117,108,108,144,15,11,14,48,0,15,47,
+    3,10,2,35,39,8,48,0,31,117,179,16,11,29,102,243,0,15,48,0,5,3,91,2,
+    10,128,4,25,111,29,16,13,238,0,10,30,1,13,27,21,13,141,0,10,131,8,79,115,
+    104,117,102,13,5,10,26,48,238,0,0,48,0,15,123,12,5,3,7,14,13,11,15,0,
+    52,0,4,179,1,11,53,0,5,24,29,15,53,0,2,4,184,1,11,53,0,5,184,38,
+    14,53,0,63,105,103,110,206,0,11,10,91,1,0,48,0,15,124,2,11,10,171,5,0,
+    48,0,15,225,9,11,10,123,5,39,115,108,235,1,15,45,1,2,67,51,32,47,55,195,
+    0,2,34,8,47,115,114,51,0,16,26,51,51,0,15,225,2,12,26,102,102,11,8,47,
+    0,15,97,0,2,76,49,32,47,54,97,0,15,180,8,11,10,151,11,8,47,0,15,97,
+    0,2,31,50,97,0,0,15,66,3,11,10,199,11,8,47,0,15,35,1,5,11,97,0,
+    47,114,97,52,4,11,11,35,1,7,47,0,15,35,1,5,28,52,97,0,15,35,1,10,
+    27,101,35,1,7,47,0,15,35,1,5,12,97,0,15,198,4,12,12,194,0,15,229,1,
+    15,29,50,121,2,15,97,0,10,12,194,0,15,229,1,15,13,97,0,15,218,21,11,11,
+    229,1,7,47,0,15,229,1,5,10,97,0,38,116,101,106,119,13,186,23,9,183,8,2,
+    42,0,12,67,27,15,42,0,1,63,115,117,98,28,23,11,11,81,4,15,49,14,6,3,
+    47,0,11,80,4,15,48,14,6,3,47,0,11,79,4,20,117,11,8,15,47,0,4,11,
+    12,6,21,117,31,25,15,149,2,4,13,189,0,15,233,10,12,13,190,0,15,28,23,13,
+    13,97,0,15,28,23,13,10,98,0,111,117,110,112,99,107,104,83,1,11,26,54,100,0,
+    2,51,0,15,100,13,11,31,54,102,0,1,15,196,7,11,26,54,138,1,2,51,0,31,
+    113,52,0,12,10,8,13,1,52,0,31,108,205,0,12,10,110,7,2,51,0,15,205,0,
+    12,10,249,3,2,51,0,15,153,0,12,10,203,3,2,51,0,15,205,0,13,10,53,14,
+    31,120,150,8,12,9,115,13,37,114,99,178,48,15,1,28,0,8,153,10,3,42,0,15,
+    115,55,4,11,42,0,15,226,28,11,9,78,4,54,114,115,113,151,46,15,132,0,0,8,
+    73,11,5,44,0,15,134,0,4,13,44,0,15,136,0,11,9,108,1,54,114,111,117,183,
+    119,15,236,20,5,7,73,49,1,215,8,5,53,0,15,235,20,9,15,53,0,3,15,86,
+    21,12,8,192,47,9,53,0,15,106,0,9,15,53,0,2,15,29,68,7,5,56,0,2,
+    105,119,7,14,17,2,57,0,15,44,48,14,2,84,9,8,57,0,0,28,10,15,195,98,
+    17,13,196,21,4,57,0,15,196,98,13,15,57,0,3,15,25,79,16,15,57,0,6,15,
+    26,79,13,14,57,0,0,133,2,15,62,34,6,24,53,38,14,4,43,0,15,227,56,4,
+    13,43,0,15,7,3,7,15,43,0,1,15,6,3,4,12,43,0,15,157,32,11,9,164,
+    4,15,52,3,15,10,47,0,31,116,156,49,10,1,99,63,0,39,0,15,119,51,13,25,
+    53,194,4,15,118,51,14,14,47,0,15,200,32,11,15,47,0,1,15,201,32,8,12,47,
+    0,15,64,1,11,13,46,0,15,63,1,10,9,46,0,0,236,8,14,243,1,5,177,12,
+    8,210,32,4,43,0,15,25,9,3,14,43,0,15,40,33,6,2,173,30,11,43,0,15,
+    86,0,4,8,43,0,31,117,80,62,11,8,129,0,2,43,0,15,81,62,6,9,43,0,
+    1,173,7,15,29,2,11,2,241,24,4,52,1,6,50,0,15,32,2,7,15,50,0,2,
+    15,35,2,10,15,50,0,5,15,38,2,7,15,50,0,0,15,194,36,12,2,82,26,14,
+    50,0,15,200,0,8,15,50,0,1,15,200,0,11,15,50,0,4,15,200,0,8,9,50,
+    0,31,120,112,36,14,9,246,24,3,47,0,15,170,3,8,13,47,0,15,170,3,11,15,
+    47,0,1,15,170,3,8,9,47,0,140,122,101,114,111,97,108,108,9,38,0,17,55,11,
+    67,18,45,33,0,83,117,112,112,101,114,35,0,6,120,0,5,35,0,48,112,99,108,101,
+    18,31,113,115,9,7,3,255,32,1,54,1,8,228,74,2,58,0,31,104,58,0,22,6,
+    239,68,4,116,0,15,180,10,7,9,58,0,7,140,75,4,116,0,15,58,0,21,12,116,
+    0,11,55,0,15,171,39,3,14,155,25,9,36,1,15,252,1,1,0,58,0,47,102,118,
+    37,1,14,15,59,0,16,15,38,1,5,15,59,0,15,15,39,1,6,15,59,0,16,15,
+    40,1,2,15,150,30,10,5,61,0,8,41,1,16,102,34,26,37,49,51,199,65,15,144,
+    5,2,25,57,36,13,8,51,0,1,154,55,15,152,5,1,15,51,0,4,4,255,55,12,
+    102,0,31,49,51,0,10,15,102,0,2,15,51,0,4,47,51,49,204,0,30,3,51,0,
+    15,204,0,25,0,51,0,15,204,0,28,3,51,0,15,204,0,25,63,50,49,51,204,0,
+    10,31,97,51,0,6,15,204,0,6,15,51,0,4,15,204,0,9,15,51,0,7,15,204,
+    0,6,15,51,0,0,47,49,50,204,0,30,3,51,0,15,204,0,25,0,51,0,15,204,
+    0,28,3,51,0,15,204,0,25,63,50,51,49,204,0,10,31,98,51,0,6,15,204,0,
+    6,15,51,0,4,15,204,0,9,15,51,0,7,15,204,0,6,15,51,0,0,47,51,50,
+    204,0,30,3,51,0,15,204,0,25,0,51,0,15,204,0,28,3,51,0,15,204,0,25,
+    63,115,117,98,203,4,14,9,192,24,11,54,0,15,2,4,7,15,54,0,6,15,5,4,
+    10,15,54,0,9,15,8,4,7,15,54,0,2,15,215,4,14,15,54,0,9,15,216,0,
+    28,15,221,4,14,15,54,0,9,15,216,0,28,15,227,4,14,15,54,0,9,15,26,4,
+    7,15,54,0,6,15,29,4,10,15,54,0,9,15,32,4,7,15,230,1,3,15,239,4,
+    13,15,54,0,9,15,216,0,28,15,245,4,14,15,54,0,9,15,216,0,28,15,251,4,
+    14,15,54,0,9,15,50,4,7,15,54,0,6,15,53,4,10,15,54,0,9,15,56,4,
+    7,15,190,2,3,15,7,5,13,15,54,0,9,15,216,0,28,15,13,5,14,15,54,0,
+    9,15,216,0,22,15,13,5,17,9,150,22,8,51,0,15,50,4,7,15,51,0,3,15,
+    47,4,10,15,51,0,6,15,44,4,7,14,51,0,15,1,5,14,15,51,0,6,15,204,
+    0,25,15,251,4,14,15,51,0,6,15,204,0,25,15,245,4,14,15,51,0,6,15,26,
+    4,7,15,51,0,3,15,23,4,10,15,51,0,6,15,20,4,7,15,203,1,0,15,233,
+    4,13,15,51,0,6,15,204,0,25,15,227,4,14,15,51,0,6,15,204,0,25,15,221,
+    4,14,15,51,0,6,15,2,4,7,15,51,0,3,15,255,3,10,15,51,0,6,15,252,
+    3,7,15,151,2,0,15,209,4,13,15,51,0,6,15,204,0,25,15,203,4,14,15,51,
+    0,6,15,204,0,25,15,163,14,17,9,103,17,11,54,0,15,2,4,7,15,54,0,6,
+    15,5,4,10,15,54,0,9,15,8,4,7,15,54,0,2,15,215,4,14,15,54,0,9,
+    15,216,0,28,15,221,4,14,15,54,0,9,15,216,0,28,15,227,4,14,15,54,0,9,
+    15,26,4,7,15,54,0,6,15,29,4,10,15,54,0,9,15,32,4,7,15,230,1,3,
+    15,239,4,13,15,54,0,9,15,216,0,28,15,245,4,14,15,54,0,9,15,216,0,28,
+    15,251,4,14,15,54,0,9,15,50,4,7,15,54,0,6,15,53,4,10,15,54,0,9,
+    15,56,4,7,15,190,2,3,15,7,5,13,15,54,0,9,15,216,0,28,15,13,5,14,
+    15,54,0,9,15,216,0,21,31,110,177,19,18,9,195,25,9,52,0,15,52,4,7,15,
+    52,0,4,15,50,4,10,15,52,0,7,15,48,4,7,15,52,0,0,15,6,5,14,15,
+    52,0,7,15,208,0,26,15,2,5,14,15,52,0,7,15,208,0,26,15,254,4,14,15,
+    52,0,7,15,36,4,7,15,52,0,4,15,34,4,10,15,52,0,7,15,32,4,7,15,
+    212,1,1,15,246,4,13,15,52,0,7,15,208,0,26,15,242,4,14,15,52,0,7,15,
+    208,0,26,15,238,4,14,15,52,0,7,15,20,4,7,15,52,0,4,15,18,4,10,15,
+    52,0,7,15,16,4,7,15,164,2,1,15,230,4,13,15,52,0,7,15,208,0,26,15,
+    226,4,14,15,52,0,7,15,208,0,23,15,185,14,17,9,195,49,9,52,0,15,16,4,
+    7,15,52,0,4,15,16,4,10,15,52,0,7,15,16,4,7,15,52,0,0,15,224,4,
+    14,15,52,0,7,15,208,0,26,15,224,4,14,15,52,0,7,15,208,0,26,15,224,4,
+    14,15,52,0,7,15,16,4,7,15,52,0,4,15,16,4,10,15,52,0,7,15,16,4,
+    7,15,212,1,1,15,224,4,13,15,52,0,7,15,208,0,26,15,224,4,14,15,52,0,
+    7,15,208,0,26,15,224,4,14,15,52,0,7,15,16,4,7,15,52,0,4,15,16,4,
+    10,15,52,0,7,15,16,4,7,15,164,2,1,15,224,4,13,15,52,0,7,15,208,0,
+    26,15,224,4,14,15,52,0,7,15,208,0,21,3,35,9,4,123,34,15,64,51,1,25,
+    57,96,42,5,50,0,6,153,0,9,70,51,1,164,3,14,50,0,47,51,49,100,0,29,
+    0,50,0,15,100,0,27,63,50,49,51,100,0,9,31,97,50,0,3,15,100,0,8,15,
+    50,0,0,47,49,50,100,0,29,0,50,0,15,100,0,27,63,50,51,49,100,0,9,31,
+    98,50,0,3,15,100,0,8,15,50,0,0,47,51,50,100,0,29,0,50,0,15,100,0,
+    24,2,155,6,15,244,1,10,9,224,45,5,50,0,15,244,1,9,14,50,0,15,88,2,
+    13,15,50,0,3,15,100,0,27,15,88,2,13,15,50,0,3,15,244,1,9,15,250,0,
+    0,15,88,2,12,15,50,0,3,15,100,0,27,15,88,2,13,15,50,0,3,15,244,1,
+    9,15,94,1,0,15,88,2,12,15,50,0,3,15,100,0,23,4,212,13,15,245,1,10,
+    9,170,46,6,51,0,15,246,1,9,15,51,0,0,15,91,2,13,15,51,0,4,15,102,
+    0,28,15,93,2,13,15,51,0,4,15,250,1,9,15,255,0,1,15,95,2,12,15,51,
+    0,4,15,102,0,28,15,97,2,13,15,51,0,4,15,254,1,9,15,101,1,1,15,99,
+    2,12,15,51,0,4,15,102,0,25,15,189,4,16,9,19,48,6,51,0,15,254,1,9,
+    15,51,0,0,15,100,2,13,15,51,0,4,15,102,0,28,15,100,2,13,15,51,0,4,
+    15,254,1,9,15,255,0,1,15,100,2,12,15,51,0,4,15,102,0,28,15,100,2,13,
+    15,51,0,4,15,254,1,9,15,101,1,1,15,100,2,12,15,51,0,4,15,102,0,22,
+    0,113,103,20,104,81,13,5,218,9,7,183,53,8,29,50,6,45,0,13,90,0,15,44,
+    0,2,79,115,50,112,104,221,98,11,7,13,169,1,220,68,7,54,0,15,222,69,7,12,
+    53,0,1,22,8,11,185,48,14,246,74,2,158,52,9,246,74,5,57,0,7,32,40,14,
+    87,168,15,57,0,9,4,114,0,13,187,41,0,106,1,11,57,0,20,115,193,8,8,114,
+    0,13,205,40,15,57,0,10,10,43,49,15,228,0,0,2,69,50,14,171,0,15,59,169,
+    13,15,57,0,9,15,228,0,11,10,57,0,9,171,0,15,228,0,11,15,57,0,4,10,
+    242,50,15,227,0,0,14,89,170,13,56,0,10,157,2,3,112,0,10,56,0,6,112,0,
+    9,41,51,15,112,0,0,14,85,170,13,56,0,10,154,3,3,112,0,10,56,0,6,112,
+    0,12,80,49,15,116,0,0,2,43,95,15,116,0,0,12,93,49,15,202,1,0,15,60,
+    0,12,15,205,1,10,11,60,0,12,180,0,15,208,1,10,15,60,0,9,15,183,2,13,
+    2,90,49,15,180,0,3,15,186,2,13,15,60,0,12,15,240,0,11,10,60,0,12,180,
+    0,15,240,0,11,15,60,0,1,2,186,24,15,224,1,15,2,117,80,10,180,0,6,60,
+    0,15,240,0,11,15,60,0,11,15,240,0,11,10,60,0,12,180,0,15,240,0,11,15,
+    60,0,8,15,224,1,14,2,54,80,15,180,0,2,15,224,1,14,15,60,0,11,15,240,
+    0,11,10,60,0,12,180,0,15,240,0,11,15,60,0,4,15,104,6,15,15,129,3,1,
+    15,186,3,17,15,57,0,9,15,132,5,11,15,123,3,1,15,180,3,17,15,57,0,6,
+    15,104,6,14,15,117,3,1,15,174,3,17,15,57,0,9,15,228,0,11,15,111,3,4,
+    15,104,6,15,15,57,0,4,15,104,6,14,15,104,3,4,15,104,6,14,15,40,3,4,
+    15,104,6,14,15,232,2,4,15,104,6,14,15,168,2,0,1,107,12,15,169,2,14,31,
+    55,216,8,0,5,58,0,15,198,1,10,15,58,0,10,15,199,1,10,11,58,0,10,174,
+    0,15,200,1,10,15,58,0,7,15,173,2,13,31,55,220,8,0,5,58,0,15,232,0,
+    11,15,58,0,9,15,232,0,11,15,222,8,0,13,116,0,15,232,0,3,15,58,0,5,
+    15,177,2,13,31,55,25,9,0,13,57,0,15,178,2,1,11,57,0,7,114,0,15,179,
+    2,12,31,55,27,9,0,13,57,0,15,180,2,1,11,57,0,3,114,0,15,93,5,17,
+    2,84,109,12,115,0,15,94,5,17,15,58,0,10,15,204,1,11,15,38,5,0,13,116,
+    0,15,204,1,3,15,58,0,6,15,180,2,14,15,40,5,0,5,58,0,15,232,0,11,
+    15,58,0,9,15,232,0,11,15,42,5,0,13,116,0,15,232,0,3,15,58,0,5,15,
+    180,2,14,15,101,5,0,13,57,0,15,180,2,2,15,102,5,0,2,57,0,15,180,2,
+    13,15,103,5,0,13,57,0,15,180,2,2,14,104,5,5,50,95,15,95,54,10,15,50,
+    95,1,3,98,93,15,129,25,3,15,98,93,1,15,42,0,4,15,98,93,0,15,42,0,
+    4,15,98,93,3,15,253,57,7,15,98,93,5,15,50,0,8,15,98,93,0,15,50,0,
+    5,15,48,93,3,4,148,93,15,100,0,8,11,148,93,1,98,93,15,47,0,7,15,98,
+    93,2,15,47,0,8,15,98,93,1,15,47,0,8,15,98,93,1,15,47,0,7,15,98,
+    93,3,15,48,0,7,15,98,93,3,15,48,0,8,15,98,93,3,15,145,0,8,15,98,
+    93,3,15,49,0,8,15,98,93,3,15,254,2,12,15,98,93,5,15,104,0,8,15,98,
+    93,1,15,47,0,8,15,98,93,1,15,40,1,8,15,98,93,1,15,47,0,8,15,98,
+    93,4,15,133,5,10,15,98,93,9,15,47,1,13,15,98,93,3,0,134,92,15,165,0,
+    7,15,134,92,4,15,49,0,8,15,134,92,3,15,49,0,8,15,134,92,3,15,221,3,
+    8,15,134,92,3,15,220,3,8,15,134,92,3,15,49,0,8,15,134,92,3,15,49,0,
+    8,15,134,92,3,15,196,0,7,11,134,92,3,120,89,15,48,0,7,15,120,89,3,15,
+    48,0,8,15,120,89,3,15,49,0,8,11,120,89,2,24,75,15,48,0,8,15,73,89,
+    2,15,48,0,8,15,73,89,3,15,49,0,8,10,34,1,6,87,87,15,51,0,8,12,
+    87,87,2,187,87,15,104,5,8,12,187,87,1,136,87,15,182,1,8,15,136,87,2,15,
+    226,3,8,15,136,87,2,15,96,0,8,15,136,87,2,15,160,4,8,15,136,87,2,15,
+    96,0,8,15,136,87,2,15,48,0,8,15,136,87,2,15,48,0,8,15,136,87,2,15,
+    32,1,8,15,136,87,2,15,96,0,8,15,136,87,2,15,32,1,8,15,136,87,2,15,
+    96,0,8,15,136,87,2,15,48,0,8,15,136,87,8,13,191,105,15,136,87,4,15,29,
+    25,3,15,137,87,4,15,10,192,2,15,137,87,1,3,231,128,15,43,0,17,1,168,4,
+    15,144,192,0,15,180,87,0,2,44,0,15,87,0,0,15,223,87,3,15,219,0,4,15,
+    224,87,3,15,219,0,3,14,224,87,2,44,0,15,132,0,0,15,11,88,3,15,132,0,
+    4,15,12,88,3,15,45,0,3,15,13,88,4,15,177,0,2,15,13,88,1,15,140,1,
+    4,15,56,88,4,15,140,1,2,15,56,88,0,15,140,1,5,15,99,88,4,15,219,0,
+    4,15,100,88,3,15,219,0,3,14,100,88,15,140,1,5,15,143,88,4,15,132,0,4,
+    12,144,88,15,237,10,5,15,108,87,2,5,143,88,15,23,6,8,14,143,88,15,7,4,
+    5,15,242,88,6,15,48,0,11,15,192,88,2,15,151,4,8,15,192,88,2,15,193,0,
+    7,15,192,88,4,15,216,6,8,10,193,0,0,250,79,15,190,0,8,15,144,88,2,15,
+    93,0,8,15,144,88,2,15,127,1,8,15,144,88,2,2,77,14,15,205,77,2,15,144,
+    88,7,15,53,0,0,15,144,88,15,15,53,0,0,15,144,88,14,15,206,0,8,15,144,
+    88,2,15,48,0,8,15,144,88,2,15,48,0,8,15,144,88,2,2,48,0,15,45,1,
+    2,14,144,88,8,126,2,9,112,3,15,93,88,8,15,97,0,8,15,93,88,4,15,97,
+    0,8,15,93,88,1,15,97,0,8,15,93,88,4,15,97,0,8,15,93,88,1,15,35,
+    1,11,15,93,88,1,15,97,0,7,15,93,88,2,15,35,1,11,15,93,88,1,15,97,
+    0,8,15,93,88,1,15,35,1,11,13,93,88,15,24,2,15,11,117,90,1,97,88,15,
+    148,0,7,15,144,88,2,15,245,0,11,15,144,88,1,15,97,0,8,15,144,88,1,15,
+    245,0,11,15,144,88,1,15,97,0,8,15,144,88,1,15,35,1,11,11,97,0,1,60,
+    88,15,251,4,8,15,60,88,1,15,47,0,8,15,60,88,1,15,47,0,8,15,60,88,
+    1,15,47,0,8,15,60,88,2,15,232,5,8,15,60,88,2,15,48,0,8,15,60,88,
+    3,15,215,6,8,15,60,88,3,15,49,0,8,15,60,88,5,15,105,15,8,15,60,88,
+    5,15,51,0,8,15,60,88,5,15,51,0,8,15,60,88,6,15,52,0,8,15,60,88,
+    5,15,51,0,8,15,60,88,5,15,51,0,8,15,60,88,5,15,51,0,8,15,60,88,
+    6,15,52,0,8,15,60,88,0,15,42,2,8,10,152,130,5,47,122,15,66,132,4,8,
+    47,122,11,70,205,14,62,132,15,69,205,9,14,121,10,15,68,205,9,15,46,0,0,15,
+    67,205,2,31,105,67,205,8,9,37,142,2,120,19,15,16,138,15,2,140,17,9,120,19,
+    4,58,0,15,178,19,13,15,58,0,0,4,167,0,1,199,91,8,109,0,2,162,0,2,
+    229,27,5,162,0,9,46,0,14,94,1,15,46,0,7,21,121,92,0,6,254,0,15,46,
+    0,9,14,94,1,15,46,0,4,1,78,91,30,109,81,50,2,134,29,15,47,0,3,15,
+    185,0,0,15,46,0,6,0,185,1,13,116,2,15,47,0,9,15,186,0,0,15,46,0,
+    3,2,250,123,8,253,130,3,21,2,15,233,0,3,3,25,2,15,46,0,23,15,250,13,
+    2,15,47,0,9,14,186,0,15,46,0,4,2,176,142,8,159,127,3,47,0,15,233,0,
+    3,13,104,143,15,46,0,13,15,48,14,2,15,47,0,9,15,186,0,0,9,46,0,63,
+    101,114,109,121,17,11,10,132,12,63,101,114,109,110,91,8,0,100,27,2,64,21,11,89,
+    112,15,245,112,11,10,235,128,0,48,0,5,152,143,15,99,0,3,13,77,12,0,188,112,
+    4,78,4,15,199,27,11,13,77,90,3,139,141,2,62,0,15,231,42,8,2,18,19,7,
+    178,42,2,208,139,9,118,0,15,13,140,5,2,174,19,11,238,108,2,47,139,4,212,4,
+    15,239,127,1,28,56,5,21,4,51,0,2,111,0,15,243,5,1,15,51,0,3,5,102,
+    84,12,102,0,0,78,1,15,51,0,6,15,102,0,3,15,51,0,7,5,139,128,8,41,
+    126,5,153,0,7,53,139,9,51,0,2,58,128,0,179,1,13,204,0,15,51,0,2,5,
+    162,129,12,102,0,1,153,0,15,51,0,5,15,102,0,3,15,51,0,0,54,115,108,108,
+    149,1,15,227,104,2,10,46,23,0,48,0,15,178,104,6,0,96,0,15,48,0,0,15,
+    131,16,11,15,96,0,2,15,48,0,3,15,96,0,1,47,114,97,192,0,12,11,85,16,
+    2,48,0,15,144,0,8,12,48,0,15,32,1,13,10,115,17,0,48,0,15,32,1,11,
+    14,48,0,15,144,0,11,15,96,0,2,15,32,1,8,9,48,0,85,103,97,116,104,101,
+    18,207,43,115,120,33,133,3,246,48,6,217,19,20,118,51,0,4,247,194,15,51,0,5,
+    6,223,19,5,51,0,4,16,37,2,51,0,13,121,2,15,102,0,6,0,51,0,31,121,
+    51,0,3,15,102,0,2,2,208,9,43,115,120,148,110,3,245,49,15,102,0,2,15,51,
+    0,11,15,102,0,5,1,153,0,11,114,23,15,102,0,16,1,51,0,13,135,6,10,102,
+    0,19,112,103,0,4,101,1,15,153,0,3,6,31,22,6,51,0,3,121,121,15,51,0,
+    5,6,251,21,10,102,0,15,204,0,8,15,102,0,9,15,204,0,4,15,102,0,2,2,
+    247,2,15,49,2,5,15,102,0,2,15,51,0,11,15,102,0,5,15,100,2,8,15,102,
+    0,5,15,100,2,8,8,102,0,1,183,31,0,101,25,1,4,0,9,102,96,2,250,0,
+    9,130,18,16,98,76,7,2,47,0,0,248,115,31,114,47,0,0,6,154,25,67,118,10,
+    98,108,36,151,15,89,0,2,1,86,17,1,48,16,0,41,0,63,109,115,107,43,0,10,
+    1,134,146,2,43,0,6,130,0,15,41,0,1,1,91,90,0,41,0,38,122,104,125,0,
+    15,171,0,2,6,45,23,111,118,10,109,117,108,120,8,1,2,20,51,46,0,8,38,5,
+    79,112,100,101,112,46,0,11,8,148,4,0,63,120,15,46,0,2,31,50,46,0,1,51,
+    114,111,114,138,0,12,91,117,19,51,109,8,2,189,147,6,30,9,40,115,97,50,0,7,
+    234,0,5,96,0,8,149,1,36,115,104,234,0,11,46,0,4,236,2,11,46,0,15,92,
+    0,4,5,234,0,8,46,0,18,107,236,35,33,107,44,3,0,12,220,14,2,250,219,3,
+    231,0,0,43,0,31,100,43,0,2,1,212,5,12,43,0,29,113,43,0,2,50,95,15,
+    43,0,0,31,119,43,0,2,15,129,0,0,31,110,172,0,9,8,29,16,0,43,0,15,
+    172,0,8,12,43,0,0,246,22,15,87,0,5,8,78,3,1,44,0,15,88,0,8,13,
+    44,0,15,5,1,8,13,44,0,15,6,1,8,12,44,0,15,87,0,8,12,219,0,15,
+    86,0,8,9,43,0,32,109,111,126,35,0,40,0,22,49,95,2,2,41,0,7,178,4,
+    3,40,0,0,35,124,3,80,0,7,39,0,7,246,134,5,79,0,9,174,2,3,40,0,
+    7,164,27,6,40,0,13,63,99,14,39,0,1,90,30,14,119,0,7,198,27,3,140,11,
+    0,198,0,9,142,141,11,120,5,3,40,0,1,29,124,9,80,0,9,109,5,3,199,0,
+    1,80,0,9,71,3,15,160,0,3,3,42,141,5,80,0,5,40,0,11,160,0,3,188,
+    1,9,141,103,15,160,0,1,18,113,21,139,5,80,0,5,40,0,11,160,0,3,225,1,
+    7,45,5,15,182,1,3,3,65,125,9,80,0,15,183,1,1,1,80,0,9,125,5,15,
+    240,0,3,2,40,0,14,176,98,14,40,0,10,24,1,5,40,0,8,24,1,32,110,111,
+    73,17,6,166,2,6,223,1,2,67,96,6,39,0,3,223,1,12,182,1,12,39,0,3,
+    102,1,12,61,1,12,39,0,3,61,1,12,156,0,9,39,0,16,111,85,124,15,30,4,
+    5,8,8,6,32,107,111,102,123,15,28,4,5,11,42,0,15,195,3,8,11,42,0,15,
+    194,3,8,11,42,0,0,187,102,15,71,1,4,6,238,95,5,42,0,15,74,1,4,15,
+    42,0,0,15,77,1,4,15,42,0,0,15,80,1,4,9,42,0,100,115,104,105,102,116,
+    108,84,1,15,52,20,1,2,198,31,6,47,7,3,51,0,4,93,1,15,51,0,2,11,
+    155,132,3,51,0,4,102,1,12,51,0,0,191,0,15,51,0,4,4,111,1,15,51,0,
+    2,15,153,0,2,5,32,2,15,153,0,2,11,251,7,3,51,0,15,204,0,10,11,175,
+    17,3,51,0,15,204,0,10,15,51,0,3,15,204,0,10,12,153,0,15,62,2,9,7,
+    160,18,1,40,0,15,60,2,5,12,40,0,15,58,2,5,12,40,0,15,56,2,5,8,
+    40,0,1,188,23,0,84,24,15,140,3,5,8,19,26,2,46,0,15,41,7,9,14,46,
+    0,0,125,24,15,106,3,5,9,46,0,47,120,110,20,4,10,8,120,10,1,44,0,15,
+    22,4,8,13,44,0,15,178,0,8,13,44,0,15,26,4,8,10,44,0,15,175,0,10,
+    8,173,16,0,43,0,15,174,0,8,12,43,0,15,173,0,8,12,43,0,15,172,0,8,
+    9,46,17,234,103,102,50,112,56,97,102,102,105,110,101,105,110,118,37,136,15,200,2,2,
+    29,99,8,45,14,67,0,15,130,20,8,15,67,0,14,15,131,0,17,13,92,44,11,64,
+    0,15,128,0,13,15,64,0,3,32,109,117,38,5,15,215,17,7,2,183,0,9,57,1,
+    2,51,0,15,170,17,7,9,51,0,63,35,49,53,238,238,5,21,69,103,0,47,102,118,
+    191,237,2,12,101,0,21,69,101,0,15,49,0,4,15,188,238,1,10,102,0,12,241,237,
+    15,37,238,4,10,106,0,15,86,239,16,10,102,0,15,39,238,0,15,98,0,11,15,136,
+    239,20,10,102,0,12,137,239,15,141,238,4,10,106,0,12,53,0,1,103,1,130,122,44,
+    118,122,42,44,118,122,99,24,17,69,18,16,15,103,1,14,15,53,0,9,15,50,1,2,
+    15,49,0,9,15,1,1,6,15,53,0,9,10,60,43,15,66,108,8,2,56,1,15,30,
+    107,20,15,59,0,16,15,68,108,19,15,59,0,1,15,69,108,20,15,59,0,2,15,70,
+    108,21,15,61,0,0,15,71,108,21,2,44,2,15,71,108,34,15,59,0,2,15,71,108,
+    19,15,59,0,1,15,71,108,20,15,59,0,2,15,71,108,21,15,61,0,0,15,41,1,
+    7,15,137,2,1,15,41,1,20,15,59,0,16,15,41,1,5,15,59,0,15,15,41,1,
+    6,15,59,0,16,15,41,1,2,6,56,0,7,41,1,13,61,0,8,41,1,4,61,60,
+    16,124,120,25,37,124,122,146,2,36,124,98,124,0,4,190,9,47,102,118,225,242,4,5,
+    59,0,3,164,1,6,59,0,4,26,8,15,59,0,5,21,122,59,0,3,182,0,0,59,
+    0,54,124,101,114,184,0,15,62,0,6,0,168,22,14,180,0,4,89,2,4,34,10,15,
+    59,0,5,15,180,0,0,6,148,2,15,59,0,11,15,180,0,0,39,51,50,180,0,15,
+    62,0,7,1,92,57,10,180,0,21,56,57,0,2,16,16,95,49,58,116,49,115,141,243,
+    4,10,58,0,6,39,1,4,41,117,15,58,0,0,0,41,54,15,221,1,3,9,74,3,
+    7,115,4,2,233,50,9,33,2,3,69,0,15,51,1,2,15,143,3,3,15,69,0,7,
+    15,61,1,2,15,171,2,3,15,69,0,4,0,55,5,15,172,2,1,13,207,0,1,56,
+    2,15,69,0,7,15,182,2,2,13,207,0,15,69,0,12,15,192,2,2,13,207,0,15,
+    69,0,5,4,179,243,15,123,3,19,15,191,243,3,15,124,3,19,15,60,0,2,15,189,
+    0,2,14,122,3,15,7,244,3,15,123,3,19,15,19,244,3,15,124,3,19,15,60,0,
+    2,15,64,2,2,14,122,3,12,60,0,15,103,1,24,15,227,245,2,15,102,1,19,15,
+    59,0,1,15,101,1,20,15,42,246,2,15,100,1,19,15,54,246,2,15,99,1,19,15,
+    59,0,1,15,98,1,20,9,59,0,1,176,37,1,100,34,7,180,0,15,100,1,0,0,
+    242,0,43,102,118,64,56,6,61,0,7,182,0,15,102,1,0,15,61,0,12,7,184,0,
+    15,104,1,0,15,61,0,9,10,107,1,13,106,1,5,179,10,15,61,0,5,14,183,0,
+    15,188,11,0,15,61,0,5,14,183,0,6,110,1,15,61,0,5,5,206,244,72,51,50,
+    120,50,128,0,2,175,63,6,120,0,47,116,50,8,245,5,2,58,0,6,125,0,4,58,
+    0,4,117,0,15,58,0,10,23,52,116,0,4,157,34,7,117,0,26,52,75,245,12,59,
+    0,5,117,0,6,59,0,5,118,0,15,59,0,9,24,56,59,0,3,224,34,7,59,0,
+    56,56,32,49,255,179,6,59,0,41,54,52,37,1,12,177,0,17,49,236,0,15,118,0,
+    3,2,59,0,15,177,0,6,15,59,0,12,9,236,0,11,177,0,17,49,236,0,15,177,
+    0,2,18,105,156,1,7,147,2,7,215,6,3,156,1,9,15,38,12,58,0,15,16,2,
+    10,15,58,0,10,15,16,2,10,15,58,0,7,15,16,2,14,9,24,42,12,59,0,15,
+    16,2,11,15,59,0,7,15,16,2,14,9,15,182,6,59,0,15,16,2,17,15,118,0,
+    4,15,16,2,17,15,59,0,7,15,16,2,14,15,177,0,3,1,159,43,5,56,0,12,
+    18,5,0,245,9,15,170,3,3,0,56,0,6,112,0,12,13,5,15,56,0,11,7,67,
+    2,10,111,0,15,22,44,5,9,109,0,4,53,0,4,108,0,15,53,0,6,8,122,5,
+    3,68,31,7,231,2,0,162,0,15,223,44,7,13,56,0,5,112,2,15,56,0,10,6,
+    18,1,12,104,5,15,56,0,11,7,143,3,10,167,0,15,132,45,10,15,71,1,3,15,
+    53,0,11,15,71,1,4,13,53,0,5,254,249,17,107,49,0,15,114,7,3,3,96,8,
+    15,32,230,5,7,62,0,15,115,7,1,15,62,0,23,6,116,7,77,124,115,97,101,224,
+    8,15,160,230,8,12,190,0,15,227,8,0,15,62,0,16,14,122,7,15,62,0,25,6,
+    123,7,8,190,0,15,66,0,13,0,244,2,8,190,0,22,56,61,0,8,205,13,15,62,
+    0,5,11,252,0,7,57,1,8,209,13,15,62,0,4,3,155,233,15,251,1,39,11,65,
+    0,15,254,1,31,11,65,0,15,1,2,35,3,70,214,15,4,2,39,11,65,0,15,7,
+    2,31,11,65,0,15,10,2,35,3,184,204,15,13,2,39,3,25,195,15,16,2,37,2,
+    178,249,15,13,2,24,15,106,253,0,15,10,2,24,15,62,0,8,15,7,2,20,15,206,
+    233,0,15,4,2,24,15,62,0,8,15,1,2,16,15,62,0,8,15,254,1,20,15,77,
+    215,0,15,251,1,24,15,171,205,0,15,248,1,24,15,145,255,3,15,251,1,39,11,65,
+    0,15,254,1,31,11,65,0,15,1,2,35,3,46,219,15,4,2,39,11,65,0,15,7,
+    2,31,11,65,0,15,10,2,35,3,46,209,15,13,2,39,3,143,199,15,16,2,38,1,
+    230,245,15,13,2,24,12,124,236,15,10,2,27,15,62,0,8,15,7,2,20,15,252,236,
+    0,15,4,2,24,15,62,0,8,15,1,2,16,15,62,0,8,15,254,1,20,15,234,218,
+    0,15,251,1,24,15,72,209,0,15,248,1,24,15,163,238,0,15,251,1,42,15,8,4,
+    31,15,65,0,11,15,1,2,35,15,8,4,31,15,65,0,11,15,7,2,31,15,8,4,
+    35,14,69,0,15,13,2,43,15,8,4,31,14,210,205,15,16,2,28,15,166,239,0,15,
+    16,2,27,15,65,0,11,15,16,2,20,15,44,240,3,15,16,2,24,15,65,0,11,15,
+    16,2,16,15,65,0,11,15,16,2,20,15,151,222,3,15,16,2,24,15,248,212,3,15,
+    16,2,24,15,231,241,2,15,18,2,45,10,67,0,15,20,2,34,10,67,0,15,22,2,
+    38,2,58,239,15,24,2,42,10,67,0,15,26,2,34,10,67,0,15,28,2,38,2,55,
+    223,15,30,2,42,2,154,213,15,32,2,37,0,181,242,15,28,2,27,13,244,242,15,24,
+    2,27,15,63,0,9,15,20,2,20,15,118,243,1,15,16,2,24,15,63,0,9,15,12,
+    2,16,15,63,0,9,15,8,2,20,15,76,226,1,15,4,2,24,15,171,216,1,15,0,
+    2,24,15,36,245,1,15,3,2,43,11,66,0,15,6,2,32,11,66,0,15,9,2,36,
+    3,98,232,15,12,2,40,11,66,0,15,15,2,32,11,66,0,15,18,2,36,3,239,221,
+    15,21,2,40,3,81,212,15,24,2,38,15,89,16,30,13,46,246,15,18,2,27,15,63,
+    0,9,15,15,2,20,15,176,246,1,15,12,2,24,15,63,0,9,15,9,2,16,15,63,
+    0,9,15,6,2,20,15,247,229,1,15,3,2,24,15,86,220,1,15,0,2,24,15,94,
+    248,1,15,3,2,43,11,66,0,15,6,2,32,11,66,0,15,9,2,36,3,62,234,15,
+    12,2,40,11,66,0,15,15,2,32,11,66,0,15,18,2,36,3,238,224,15,21,2,40,
+    3,80,215,15,24,2,39,15,105,16,29,13,104,249,15,18,2,27,15,63,0,9,15,15,
+    2,20,15,234,249,1,15,12,2,24,15,63,0,9,15,9,2,16,15,63,0,9,15,6,
+    2,20,15,162,233,1,15,3,2,24,15,1,224,1,15,0,2,24,15,152,251,1,15,3,
+    2,43,15,24,4,31,15,66,0,12,15,9,2,36,15,24,4,31,15,66,0,12,15,15,
+    2,32,15,24,4,35,15,70,0,0,15,21,2,44,15,24,4,31,12,105,221,15,21,2,
+    28,13,164,252,15,18,2,27,15,63,0,9,15,15,2,20,15,38,253,1,15,12,2,24,
+    15,63,0,9,15,9,2,16,15,63,0,9,15,6,2,20,15,78,237,1,15,3,2,24,
+    15,173,227,1,15,0,2,24,15,211,254,0,15,2,2,43,15,100,16,30,15,65,0,11,
+    15,6,2,36,15,96,16,30,15,65,0,11,15,10,2,32,15,92,16,34,14,69,0,15,
+    14,2,44,15,88,16,30,14,199,229,15,16,2,28,13,20,247,15,16,2,29,15,65,0,
+    11,15,16,2,20,15,69,0,0,15,16,2,27,15,65,0,11,15,16,2,16,15,65,0,
+    11,15,16,2,20,14,69,0,15,16,2,28,15,65,0,0,15,16,2,27,12,27,227,15,
+    14,2,28,12,167,231,15,12,2,28,15,63,0,9,15,10,2,20,13,67,0,15,8,2,
+    27,15,63,0,9,15,6,2,16,15,63,0,9,15,4,2,20,15,202,242,1,15,2,2,
+    24,15,41,233,1,15,0,2,24,14,114,250,15,56,10,29,15,66,0,12,15,6,2,32,
+    15,56,10,35,15,70,0,1,15,12,2,43,15,56,10,31,15,66,0,12,15,18,2,36,
+    15,56,10,31,15,66,0,1,15,24,2,42,15,104,18,29,12,82,235,15,18,2,28,15,
+    63,0,9,15,15,2,20,13,67,0,15,12,2,27,15,63,0,9,15,9,2,16,15,63,
+    0,9,15,6,2,20,15,117,246,1,15,3,2,24,15,212,236,1,15,0,2,24,14,24,
+    254,15,24,4,29,15,66,0,12,15,6,2,32,15,24,4,35,15,70,0,1,15,12,2,
+    43,15,24,4,31,15,66,0,12,15,18,2,36,15,24,4,31,15,66,0,1,15,24,2,
+    40,1,219,234,15,23,2,28,14,253,238,15,22,2,28,15,65,0,11,15,21,2,20,15,
+    69,0,0,15,20,2,27,15,65,0,11,15,19,2,16,15,65,0,11,15,18,2,20,15,
+    42,250,3,15,17,2,24,15,139,240,3,15,16,2,24,14,65,0,15,251,42,31,15,68,
+    0,14,15,22,2,34,15,1,43,35,15,72,0,3,15,28,2,45,15,7,43,31,15,68,
+    0,14,15,34,2,38,15,13,43,31,15,68,0,3,15,40,2,40,2,189,242,15,38,2,
+    28,9,227,238,14,66,0,15,36,2,16,15,66,0,12,15,34,2,20,15,70,0,1,15,
+    32,2,27,15,66,0,12,15,30,2,16,15,66,0,12,15,28,2,20,15,70,0,0,15,
+    26,2,28,15,66,0,1,15,24,2,27,11,185,240,15,20,2,28,11,164,244,15,16,2,
+    28,15,62,0,8,15,12,2,20,12,66,0,15,8,2,27,15,62,0,8,15,4,2,16,
+    15,62,0,8,15,0,2,20,15,194,255,0,15,252,1,24,15,32,246,0,15,248,1,24,
+    11,62,0,15,32,41,31,15,65,0,11,15,254,1,31,15,32,41,35,15,69,0,0,15,
+    4,2,42,15,32,41,31,15,65,0,11,15,10,2,35,15,32,41,31,15,65,0,0,15,
+    16,2,41,15,111,14,29,11,65,248,15,10,2,28,15,62,0,8,15,7,2,20,12,66,
+    0,15,4,2,27,15,62,0,8,15,1,2,16,15,62,0,8,15,254,1,20,12,127,249,
+    15,251,1,27,15,189,249,0,15,248,1,24,11,62,0,15,8,4,31,15,65,0,11,15,
+    254,1,31,15,8,4,35,15,69,0,0,15,4,2,42,15,8,4,31,15,65,0,11,15,
+    10,2,35,15,8,4,31,15,65,0,0,15,16,2,40,0,91,248,15,15,2,28,13,222,
+    251,15,14,2,28,15,64,0,10,15,13,2,20,14,68,0,15,12,2,27,15,64,0,10,
+    15,11,2,16,15,64,0,10,15,10,2,20,14,38,253,15,9,2,27,15,102,253,2,15,
+    8,2,24,13,64,0,15,170,26,31,15,67,0,13,15,14,2,33,15,174,26,35,15,71,
+    0,2,15,20,2,44,15,178,26,31,15,67,0,13,15,26,2,37,15,182,26,31,15,67,
+    0,2,15,32,2,40,1,40,253,15,30,2,27,7,218,75,15,65,0,1,15,28,2,15,
+    15,65,0,12,15,26,2,19,15,69,0,1,15,24,2,26,15,65,0,12,15,22,2,15,
+    15,65,0,12,15,20,2,19,15,69,0,0,15,18,2,27,15,65,0,1,15,16,2,26,
+    10,65,0,0,169,55,15,46,4,28,7,175,77,15,65,0,1,15,16,2,16,15,65,0,
+    11,15,16,2,20,15,69,0,0,15,16,2,27,15,65,0,11,15,16,2,16,15,65,0,
+    11,15,16,2,20,14,69,0,15,16,2,28,15,65,0,0,15,16,2,27,11,120,57,15,
+    16,2,31,13,242,53,15,16,2,29,15,65,0,11,15,16,2,20,15,69,0,0,15,16,
+    2,27,15,65,0,11,15,16,2,16,15,65,0,11,15,16,2,20,14,69,0,15,16,2,
+    28,15,65,0,0,15,16,2,27,14,128,55,31,95,50,6,29,15,214,51,0,15,52,6,
+    29,15,67,0,13,15,22,2,20,15,71,0,2,15,24,2,27,15,67,0,13,15,26,2,
+    16,15,67,0,13,15,28,2,20,15,71,0,1,15,30,2,28,15,67,0,2,15,32,2,
+    27,12,112,53,15,240,28,30,30,49,220,49,15,30,2,29,15,66,0,12,15,29,2,20,
+    15,70,0,1,15,28,2,27,15,66,0,12,15,27,2,16,15,66,0,12,15,26,2,20,
+    15,70,0,0,15,25,2,28,15,66,0,1,15,24,2,27,12,112,51,15,135,12,30,30,
+    49,220,47,15,74,6,29,15,66,0,12,15,24,2,20,15,70,0,1,15,24,2,27,15,
+    66,0,12,15,24,2,16,15,66,0,12,15,24,2,20,15,70,0,0,15,24,2,28,15,
+    66,0,1,15,24,2,27,12,112,49,15,24,2,31,14,220,45,15,24,2,29,15,66,0,
+    12,15,24,2,20,15,70,0,1,15,24,2,27,15,66,0,12,15,24,2,16,15,66,0,
+    12,15,24,2,20,15,70,0,0,15,24,2,28,15,66,0,1,15,24,2,27,12,112,47,
+    15,102,8,30,13,226,43,15,70,6,29,15,65,0,11,15,21,2,20,15,69,0,0,15,
+    20,2,27,15,65,0,11,15,19,2,16,15,65,0,11,15,18,2,20,14,69,0,15,17,
+    2,28,15,65,0,0,15,16,2,27,13,112,45,15,16,2,29,13,226,43,15,16,2,29,
+    15,65,0,11,15,16,2,20,15,69,0,0,15,16,2,27,15,65,0,11,15,16,2,16,
+    15,65,0,11,15,16,2,20,14,69,0,15,16,2,28,15,65,0,0,15,16,2,27,12,
+    112,45,15,56,6,31,14,220,41,15,56,6,29,15,66,0,12,15,19,2,20,15,70,0,
+    1,15,20,2,27,15,66,0,12,15,21,2,16,15,66,0,12,15,22,2,20,15,70,0,
+    0,15,23,2,28,15,66,0,1,15,24,2,27,12,112,43,15,24,2,31,14,220,39,15,
+    24,2,29,15,66,0,12,15,24,2,20,15,70,0,1,15,24,2,27,15,66,0,12,15,
+    24,2,16,15,66,0,12,15,24,2,20,15,70,0,0,15,24,2,28,15,66,0,1,15,
+    24,2,27,14,112,41,15,235,22,31,15,192,37,1,15,70,6,29,15,68,0,14,15,30,
+    2,20,15,72,0,3,15,32,2,27,15,68,0,14,15,34,2,16,15,68,0,14,15,36,
+    2,20,15,72,0,2,15,38,2,28,15,68,0,3,15,40,2,27,14,96,39,15,38,2,
+    29,14,204,37,15,36,2,29,15,66,0,12,15,34,2,20,15,70,0,1,15,32,2,27,
+    15,66,0,12,15,30,2,16,15,66,0,12,15,28,2,20,15,70,0,0,15,26,2,28,
+    15,66,0,1,15,24,2,27,11,96,39,15,8,23,31,13,218,35,15,86,6,29,15,65,
+    0,11,15,21,2,20,15,69,0,0,15,20,2,27,15,65,0,11,15,19,2,16,15,65,
+    0,11,15,18,2,20,14,69,0,15,17,2,28,15,65,0,0,15,16,2,27,11,104,37,
+    15,16,2,31,13,226,33,15,16,2,29,15,65,0,11,15,16,2,20,15,69,0,0,15,
+    16,2,27,15,65,0,11,15,16,2,16,15,65,0,11,15,16,2,20,14,69,0,15,16,
+    2,28,15,65,0,0,15,16,2,27,13,112,35,15,162,14,31,15,206,31,0,15,58,6,
+    29,15,67,0,13,15,22,2,20,15,71,0,2,15,24,2,27,15,67,0,13,15,26,2,
+    16,15,67,0,13,15,28,2,20,15,71,0,1,15,30,2,28,15,67,0,2,15,32,2,
+    27,9,67,0,15,25,2,3,11,218,105,9,148,1,8,80,105,11,65,0,6,23,2,11,
+    214,105,15,65,0,21,10,21,2,11,214,105,15,69,0,10,15,19,2,2,9,199,0,11,
+    142,1,15,65,0,8,6,17,2,9,199,0,15,65,0,23,10,15,2,9,199,0,15,69,
+    0,11,15,13,2,2,9,198,0,12,18,2,12,65,0,15,11,2,1,9,65,0,12,16,
+    2,9,65,0,8,59,225,8,69,2,2,125,1,0,53,0,24,50,108,225,9,64,225,8,
+    48,0,2,230,0,15,48,0,1,64,112,114,101,115,8,4,0,201,99,4,168,0,6,102,
+    0,4,39,99,20,56,210,99,42,109,114,54,0,52,50,53,54,165,1,6,94,2,15,54,
+    0,14,52,53,49,50,154,1,6,79,2,15,54,0,13,15,128,98,5,1,13,137,15,52,
+    0,5,7,153,104,10,160,0,15,52,0,8,7,144,104,10,158,0,15,52,0,5,31,115,
+    62,1,6,2,116,1,15,54,0,6,15,62,1,4,15,54,0,12,15,62,1,4,15,54,
+    0,11,15,190,99,9,15,52,0,6,15,62,1,4,15,52,0,10,15,62,1,4,14,52,
+    0,66,118,116,100,113,26,197,6,154,0,24,56,57,6,2,26,3,69,104,118,32,101,169,
+    121,0,180,2,5,56,0,7,91,100,8,114,6,4,242,153,15,57,0,7,6,163,0,3,
+    87,4,7,187,112,15,60,0,10,10,71,1,15,142,108,5,8,195,102,6,57,0,7,76,
+    1,15,140,108,5,15,57,0,3,7,81,1,15,105,113,8,11,60,0,49,112,100,50,94,
+    117,10,174,0,6,98,8,2,183,4,30,102,231,0,13,57,0,11,88,8,15,57,0,13,
+    6,231,0,14,203,114,15,60,0,9,15,92,1,0,15,155,110,1,8,90,104,15,57,0,
+    1,15,153,110,6,15,57,0,3,15,174,0,9,15,60,0,9,1,241,136,15,174,0,14,
+    2,221,174,13,57,0,11,10,2,15,174,0,0,15,57,0,4,11,10,2,15,174,0,3,
+    15,60,0,0,2,204,246,15,175,0,5,2,177,0,0,58,0,8,162,104,15,58,0,2,
+    11,176,0,15,58,0,14,15,95,1,9,15,61,0,10,15,96,1,20,15,58,0,4,15,
+    97,1,16,15,58,0,4,15,98,1,19,12,61,0,3,151,188,7,199,4,10,98,5,63,
+    104,118,109,204,188,5,9,196,4,10,100,5,15,54,0,8,10,193,4,9,175,11,15,58,
+    0,6,31,115,17,4,1,8,113,106,15,74,4,5,2,57,0,15,191,4,6,15,57,0,
+    13,15,191,4,9,15,60,0,9,15,26,6,9,2,247,4,31,104,155,3,0,2,56,0,
+    15,26,6,6,15,57,0,13,14,26,6,13,63,12,15,61,0,4,0,54,190,6,118,0,
+    15,89,118,0,1,149,1,15,115,190,8,6,122,0,15,81,118,0,15,61,0,12,7,104,
+    3,15,168,11,0,15,65,0,15,53,109,54,52,164,10,15,186,0,29,7,251,8,15,186,
+    0,31,7,2,9,15,186,0,32,11,38,4,9,35,2,2,91,2,31,104,16,5,0,2,
+    56,0,15,35,2,6,15,57,0,13,15,61,8,9,15,60,0,9,15,133,5,1,15,62,
+    8,0,13,93,4,3,58,0,15,63,8,15,15,58,0,5,15,64,8,18,15,61,0,1,
+    15,95,1,19,15,57,0,4,15,96,1,16,15,58,0,4,15,97,1,19,11,61,0,29,
+    113,75,10,10,52,6,2,59,0,15,123,8,0,3,57,0,15,51,6,6,15,57,0,13,
+    15,50,6,9,15,60,0,10,15,240,8,9,5,28,7,12,24,5,13,57,0,15,146,7,
+    5,15,57,0,4,15,145,7,18,12,60,0,51,115,100,50,241,144,14,173,123,0,117,12,
+    88,102,54,52,32,50,14,180,3,52,0,13,85,118,15,234,123,4,9,75,159,2,60,0,
+    31,117,113,0,14,12,1,2,37,115,105,17,198,53,124,101,114,144,144,8,55,0,23,115,
+    89,158,4,107,0,10,54,0,5,35,114,8,160,0,15,53,0,2,3,101,15,12,107,0,
+    6,205,15,15,54,0,13,7,107,0,2,39,2,15,53,0,3,18,115,160,0,9,71,1,
+    15,79,18,4,14,72,1,22,115,184,1,15,43,125,1,62,102,51,50,184,1,23,115,124,
+    1,15,53,0,5,12,124,1,15,110,12,14,5,59,9,12,9,3,15,111,12,14,15,58,
+    0,14,14,210,2,15,190,20,1,15,62,0,1,15,100,10,20,11,236,7,15,197,11,24,
+    15,58,0,4,14,50,4,15,178,0,1,15,62,0,1,15,200,11,21,9,35,115,15,59,
+    0,2,15,201,11,6,15,59,0,5,15,103,1,10,15,63,0,11,15,104,1,20,15,59,
+    0,5,15,105,1,16,15,59,0,5,15,106,1,20,13,63,0,15,43,11,12,2,11,3,
+    15,41,5,0,15,44,11,14,15,58,0,14,14,172,7,7,178,0,15,62,0,10,15,173,
+    7,19,13,85,2,15,13,9,22,15,58,0,4,15,49,11,10,15,62,0,10,15,16,9,
+    21,15,158,1,0,15,17,9,21,15,59,0,5,15,102,1,10,15,63,0,11,15,103,1,
+    19,15,58,0,5,15,104,1,16,15,59,0,5,15,105,1,20,12,63,0,10,188,7,11,
+    202,24,5,189,7,8,245,187,3,54,0,8,130,7,15,55,0,4,14,109,0,9,113,6,
+    15,165,6,0,1,114,6,13,109,0,10,115,6,15,55,0,4,12,109,0,31,117,61,20,
+    21,12,124,2,4,57,0,15,62,20,15,15,58,0,5,15,63,20,18,15,61,0,2,15,
+    64,20,9,2,90,1,15,250,5,0,4,58,0,15,241,2,6,15,58,0,14,15,2,12,
+    9,15,61,0,7,15,83,11,22,15,58,0,5,15,84,11,15,15,58,0,5,15,85,11,
+    18,15,61,0,2,15,86,11,9,5,127,20,15,58,0,15,15,245,20,5,15,58,0,5,
+    15,246,20,18,13,61,0,15,180,10,18,6,75,14,3,215,9,12,55,0,15,181,10,2,
+    15,54,0,3,15,182,10,14,15,55,0,14,15,183,10,2,10,54,0,36,100,98,34,178,
+    13,190,131,15,112,135,2,31,109,164,192,0,6,68,0,13,199,131,15,111,135,2,15,68,
+    0,11,13,208,131,15,110,135,2,15,68,0,2,47,105,118,56,133,24,9,5,142,3,59,
+    0,15,56,133,20,15,59,0,1,15,26,138,23,13,62,0,15,59,133,23,15,59,0,1,
+    15,59,133,20,15,59,0,1,15,26,138,23,12,62,0,15,26,138,23,13,58,0,15,26,
+    138,22,9,58,0,63,101,120,112,109,4,4,11,81,21,2,230,30,8,128,6,1,59,0,
+    15,89,5,2,13,140,21,15,59,0,0,12,141,135,6,68,129,9,115,29,15,54,0,3,
+    6,245,127,5,63,129,9,115,29,15,54,0,3,6,243,127,41,53,49,244,127,15,54,0,
+    10,15,113,29,6,15,160,0,17,15,17,30,2,15,158,0,12,15,15,30,2,15,52,0,
+    0,9,53,129,11,62,1,3,7,29,15,54,0,3,15,62,1,6,15,54,0,10,15,62,
+    1,6,15,54,0,10,15,113,29,6,15,160,0,17,15,17,30,2,15,158,0,12,15,15,
+    30,2,10,52,0,1,51,170,3,133,134,15,114,22,11,4,177,130,7,117,21,15,63,0,
+    5,31,122,79,5,0,15,63,0,13,15,54,22,12,0,26,134,15,64,0,21,15,127,0,
+    1,15,64,0,12,0,250,170,15,191,0,13,2,153,202,15,63,0,4,8,184,22,15,127,
+    0,1,4,138,135,15,64,0,0,2,65,133,15,125,1,9,6,46,132,15,63,0,16,14,
+    127,0,15,63,0,15,15,125,1,10,2,210,135,15,64,0,21,15,127,0,1,15,64,0,
+    12,8,43,135,15,191,0,5,15,61,1,8,31,52,125,1,11,7,86,136,14,64,0,3,
+    111,135,15,250,2,13,13,51,173,15,63,0,5,15,59,2,3,15,63,0,11,15,250,2,
+    15,15,64,0,22,15,250,2,4,15,64,0,9,15,250,2,16,2,179,192,15,63,0,5,
+    15,250,2,15,15,64,0,6,15,250,2,19,15,190,0,6,15,250,2,19,15,63,0,11,
+    15,250,2,15,15,64,0,22,15,250,2,4,15,64,0,9,15,250,2,16,15,61,1,9,
+    15,250,2,17,15,64,0,5,35,112,115,97,15,15,131,11,0,1,246,135,1,96,156,15,
+    56,0,2,1,2,164,15,56,0,22,124,102,105,120,117,112,105,109,10,143,15,165,146,13,
+    2,77,143,8,123,11,8,73,0,15,169,146,24,15,73,0,11,15,83,11,3,15,121,28,
+    1,15,77,0,13,15,98,11,5,15,83,148,3,15,73,0,11,15,87,148,24,15,73,0,
+    11,15,126,11,3,15,88,29,3,15,77,0,10,15,141,11,2,12,186,40,3,117,2,0,
+    89,11,1,157,143,15,73,0,2,15,156,11,1,15,73,0,1,3,162,11,14,73,0,8,
+    243,240,9,7,25,15,90,145,4,6,71,163,0,229,11,8,63,0,15,92,145,18,15,63,
+    0,7,15,94,145,1,9,142,13,15,66,0,11,15,99,145,21,15,63,0,7,15,101,145,
+    18,15,63,0,7,15,103,145,1,11,192,0,15,66,0,8,14,135,26,8,158,13,6,175,
+    11,15,40,233,4,13,254,0,8,162,13,6,175,10,15,208,232,3,15,252,1,22,30,97,
+    187,0,4,122,236,15,252,1,17,15,63,0,7,15,252,1,21,15,66,0,4,15,252,1,
+    21,15,63,0,7,15,252,1,18,15,63,0,7,15,252,1,21,15,66,0,3,15,252,1,
+    21,15,92,234,4,15,252,1,20,15,4,234,3,15,252,1,22,31,98,187,0,0,3,214,
+    236,15,252,1,17,15,63,0,7,15,252,1,21,15,66,0,4,15,252,1,21,15,63,0,
+    7,15,252,1,18,15,63,0,7,15,252,1,21,15,66,0,3,15,252,1,21,15,144,235,
+    4,15,252,1,20,15,62,0,0,7,10,242,15,247,5,18,9,239,181,11,66,0,15,250,
+    5,19,15,66,0,9,15,253,5,22,15,69,0,6,15,0,6,22,15,66,0,9,15,3,
+    6,19,15,66,0,9,15,6,6,22,15,69,0,2,15,141,5,26,15,66,0,9,15,144,
+    5,19,15,66,0,9,15,147,5,22,15,69,0,6,15,150,5,22,15,66,0,9,15,153,
+    5,19,15,66,0,9,15,156,5,22,15,69,0,3,15,35,5,25,15,66,0,9,15,38,
+    5,19,15,66,0,9,15,41,5,22,15,69,0,6,15,44,5,22,15,66,0,9,15,47,
+    5,19,15,66,0,9,15,50,5,22,11,69,0,15,179,4,29,9,177,35,8,63,0,15,
+    176,4,19,15,63,0,6,15,173,4,22,15,66,0,3,15,170,4,22,15,63,0,6,15,
+    167,4,19,15,63,0,6,15,164,4,22,15,66,0,2,15,170,10,22,15,122,241,3,15,
+    170,10,21,15,240,240,2,15,29,5,23,14,187,0,15,26,5,26,15,63,0,6,15,23,
+    5,22,15,66,0,3,15,20,5,22,15,63,0,6,15,17,5,19,15,63,0,6,15,14,
+    5,22,15,66,0,2,15,170,10,22,15,224,242,7,15,170,10,17,15,36,242,2,15,135,
+    5,23,15,187,0,0,15,132,5,25,15,63,0,6,15,129,5,22,15,66,0,3,15,126,
+    5,22,15,63,0,6,15,123,5,19,15,63,0,6,15,120,5,22,15,66,0,2,15,170,
+    10,22,15,20,244,7,15,170,10,17,14,62,0,15,161,16,29,9,203,175,11,66,0,15,
+    250,5,19,15,66,0,9,15,253,5,22,15,69,0,6,15,0,6,22,15,66,0,9,15,
+    3,6,19,15,66,0,9,15,6,6,22,15,69,0,2,15,141,5,26,15,66,0,9,15,
+    144,5,19,15,66,0,9,15,147,5,22,15,69,0,6,15,150,5,22,15,66,0,9,15,
+    153,5,19,15,66,0,9,15,156,5,22,15,69,0,3,15,35,5,25,15,66,0,9,15,
+    38,5,19,15,66,0,9,15,41,5,22,15,69,0,6,15,44,5,22,15,66,0,9,15,
+    47,5,19,15,66,0,9,15,50,5,22,10,69,0,4,13,248,15,180,4,23,9,70,177,
+    9,64,0,15,178,4,19,15,64,0,7,15,176,4,22,15,67,0,4,15,174,4,22,15,
+    64,0,7,15,172,4,19,15,64,0,7,15,170,4,22,15,67,0,3,15,177,10,22,15,
+    210,249,4,15,178,10,21,15,69,249,3,15,38,5,23,15,190,0,0,15,36,5,26,15,
+    64,0,7,15,34,5,22,15,67,0,4,15,32,5,22,15,64,0,7,15,30,5,19,15,
+    64,0,7,15,28,5,22,15,67,0,3,15,185,10,22,15,61,251,8,15,186,10,17,15,
+    125,250,3,15,152,5,23,15,190,0,1,15,150,5,25,15,64,0,7,15,148,5,22,15,
+    67,0,4,15,146,5,22,15,64,0,7,15,144,5,19,15,64,0,7,15,142,5,22,15,
+    67,0,3,15,193,10,22,15,117,252,8,15,194,10,17,15,232,251,3,15,12,6,23,9,
+    70,39,9,64,0,15,12,6,19,15,64,0,7,15,12,6,22,15,67,0,4,15,12,6,
+    22,15,64,0,7,15,12,6,19,15,64,0,7,15,12,6,22,15,67,0,3,15,12,6,
+    22,15,122,253,4,15,12,6,21,15,237,252,3,15,12,6,23,15,190,0,0,15,12,6,
+    26,15,64,0,7,15,12,6,22,15,67,0,4,15,12,6,22,15,64,0,7,15,12,6,
+    19,15,64,0,7,15,12,6,22,15,67,0,3,15,12,6,22,15,229,254,8,15,12,6,
+    17,15,37,254,3,15,12,6,23,15,190,0,1,15,12,6,25,15,64,0,7,15,12,6,
+    22,15,67,0,4,15,12,6,22,15,64,0,7,15,12,6,19,15,64,0,7,15,12,6,
+    22,15,67,0,3,15,12,6,22,15,234,255,4,15,12,6,21,10,63,0,16,112,181,188,
+    10,156,78,15,181,35,9,2,212,234,7,208,212,15,65,0,0,15,173,35,10,15,65,0,
+    17,15,82,182,10,15,65,0,6,8,119,75,15,153,35,9,15,65,0,17,15,145,35,10,
+    15,65,0,17,15,228,183,10,15,65,0,5,9,123,76,31,56,121,35,4,2,148,240,15,
+    61,0,0,8,0,1,14,190,1,2,253,1,13,61,0,8,101,210,3,61,0,0,160,207,
+    15,126,6,0,1,41,49,3,86,44,8,53,210,13,54,0,8,254,45,15,54,0,5,2,
+    43,3,2,217,207,14,0,46,15,54,0,2,5,223,2,2,65,209,15,225,6,0,15,54,
+    0,4,5,162,0,13,93,192,15,54,0,9,5,162,0,31,122,50,175,1,15,54,0,0,
+    49,112,102,48,219,0,0,211,0,1,60,0,14,216,0,35,99,54,213,207,10,53,0,33,
+    115,9,102,0,13,53,0,3,35,78,15,53,0,1,1,221,83,16,115,101,2,15,106,0,
+    4,31,55,53,0,2,15,106,0,12,15,53,0,0,31,49,212,0,17,1,6,108,10,53,
+    0,15,212,0,15,13,53,0,15,212,0,17,15,53,0,0,15,212,0,15,10,53,0,2,
+    30,213,15,236,2,11,8,73,71,8,238,212,13,182,2,9,236,2,15,54,0,4,6,74,
+    2,15,236,2,2,15,54,0,1,15,236,2,15,15,54,0,13,15,236,2,3,15,54,0,
+    4,5,216,0,15,236,2,3,9,54,0,65,101,116,101,120,48,82,15,224,61,8,3,171,
+    7,6,159,207,9,57,0,15,222,61,8,15,57,0,11,15,182,51,19,15,61,0,1,15,
+    133,57,9,5,151,7,15,57,0,4,15,6,73,8,15,57,0,11,15,42,52,19,15,61,
+    0,0,15,9,8,1,9,9,82,4,60,2,25,52,219,228,3,61,0,15,7,8,0,11,
+    61,0,2,215,1,13,61,0,49,109,97,110,165,125,13,217,1,15,10,8,3,28,50,197,
+    6,7,67,0,13,227,1,15,12,8,3,15,67,0,9,15,237,1,2,15,18,8,3,15,
+    71,0,6,15,247,1,1,15,20,8,3,15,67,0,9,13,1,2,15,22,8,3,15,67,
+    0,9,15,11,2,2,15,28,8,3,15,71,0,5,15,21,2,4,15,37,8,4,24,50,
+    232,7,2,58,201,3,71,0,15,31,2,3,15,47,8,4,14,71,0,2,74,222,12,15,
+    187,13,82,222,10,215,51,13,83,222,9,70,0,10,194,44,10,70,0,8,221,51,15,70,
+    0,8,8,21,185,1,70,0,10,53,58,8,164,51,2,11,254,14,70,0,11,32,185,15,
+    210,0,6,2,236,50,15,140,0,5,11,43,185,15,210,0,6,15,70,0,14,13,24,1,
+    15,210,0,1,2,249,50,15,210,0,4,12,163,186,15,164,1,11,14,247,223,9,70,0,
+    15,164,1,20,15,70,0,9,15,164,1,23,2,113,243,15,70,0,0,15,164,1,26,15,
+    140,0,6,15,164,1,26,15,70,0,9,15,164,1,23,15,210,0,5,1,162,4,5,62,
+    254,15,132,3,4,8,195,208,1,60,0,63,109,97,120,162,60,24,10,135,231,2,59,0,
+    15,162,60,20,15,59,0,1,15,79,49,6,6,245,0,15,63,0,6,15,163,60,23,15,
+    59,0,1,15,163,60,20,15,59,0,1,15,37,49,6,4,181,0,15,63,0,7,15,23,
+    49,5,4,180,0,7,165,60,13,59,0,15,9,49,4,4,59,0,7,166,60,10,59,0,
+    31,105,33,197,25,9,219,21,3,59,0,15,224,1,20,15,59,0,1,15,224,1,24,13,
+    63,0,15,224,1,23,15,59,0,1,15,224,1,20,15,59,0,1,15,224,1,24,12,63,
+    0,15,224,1,24,13,59,0,15,224,1,23,10,59,0,61,111,118,97,105,9,12,217,1,
+    23,109,212,244,7,52,0,9,141,8,12,210,1,15,52,0,4,9,126,8,12,199,1,15,
+    52,0,4,15,202,60,2,0,2,0,7,106,253,0,211,89,15,152,0,0,10,150,0,15,
+    48,0,4,15,194,60,2,15,48,0,7,15,109,91,3,5,194,0,15,50,0,1,15,105,
+    91,2,15,50,0,10,15,101,91,2,15,50,0,7,12,94,10,12,230,2,15,90,1,1,
+    12,79,10,12,223,2,15,52,0,4,15,194,1,2,15,52,0,12,15,194,1,0,2,50,
+    0,15,98,1,1,15,136,62,3,15,48,0,10,15,194,1,0,15,48,0,9,15,194,1,
+    1,7,194,0,15,50,0,1,15,194,1,0,15,50,0,12,15,194,1,0,15,50,0,7,
+    1,80,69,8,20,69,2,83,73,1,39,19,5,162,21,2,81,1,33,100,9,53,224,10,
+    124,2,3,63,69,5,148,231,3,86,0,63,100,117,112,25,88,3,2,74,4,88,100,117,
+    112,32,49,244,13,5,52,0,15,25,2,2,15,53,0,13,15,26,2,2,15,53,0,8,
+    58,113,97,51,102,197,10,122,4,2,42,1,24,54,49,96,6,54,0,15,124,4,6,15,
+    54,0,10,15,126,4,6,15,54,0,10,0,58,6,15,130,4,2,2,54,0,20,55,54,
+    0,4,118,1,3,162,0,3,8,18,13,136,4,15,54,0,10,4,115,18,13,142,4,15,
+    54,0,6,25,54,19,62,15,190,5,2,15,216,0,0,0,54,0,15,192,5,12,15,54,
+    0,4,15,194,5,12,15,54,0,4,15,68,1,6,2,54,0,15,216,0,4,15,68,1,
+    6,15,54,0,10,15,68,1,6,15,54,0,5,63,117,49,54,68,1,4,4,61,73,15,
+    216,0,1,1,54,0,15,41,3,8,15,54,0,8,15,42,3,8,15,54,0,8,15,68,
+    1,2,6,54,0,15,216,0,4,15,68,1,2,15,54,0,14,15,68,1,2,15,54,0,
+    10,15,204,3,6,4,56,80,15,216,0,2,15,204,3,6,15,54,0,14,15,68,1,2,
+    15,54,0,14,15,68,1,2,6,54,0,15,216,0,4,15,68,1,2,15,54,0,14,15,
+    68,1,2,15,54,0,10,15,204,3,6,4,118,76,15,216,0,2,15,204,3,6,15,54,
+    0,14,15,68,1,6,15,54,0,10,15,68,1,6,15,28,2,6,15,204,3,6,15,54,
+    0,14,15,68,1,6,15,54,0,6,0,143,240,15,203,3,5,15,27,2,6,9,152,66,
+    11,202,3,15,53,0,9,15,201,3,6,15,53,0,9,15,200,3,6,15,24,2,6,0,
+    159,0,15,199,3,5,15,53,0,9,15,198,3,6,15,53,0,3,40,104,108,5,16,12,
+    170,9,6,192,7,3,57,12,17,104,157,11,2,33,241,12,14,14,1,157,65,9,160,52,
+    3,49,0,1,49,229,11,2,6,6,202,65,7,140,0,6,139,0,7,93,0,3,73,104,
+    31,50,92,0,1,27,115,92,0,6,44,0,11,91,0,23,108,92,0,15,231,0,0,12,
+    90,0,31,108,231,0,13,12,24,1,0,49,0,15,231,0,6,4,234,22,4,140,0,15,
+    231,0,12,14,92,0,15,231,0,7,11,91,0,0,228,248,4,245,241,14,182,8,27,101,
+    21,1,2,46,0,2,240,241,14,174,8,15,46,0,3,63,53,49,50,166,8,2,15,46,
+    0,1,18,97,86,247,12,45,75,1,13,11,8,153,80,15,157,249,1,8,226,24,15,47,
+    0,6,15,31,75,1,15,47,0,3,3,196,13,15,191,13,3,4,96,49,5,187,0,3,
+    192,13,15,187,13,3,15,46,0,2,14,23,1,15,46,0,6,2,140,12,15,135,12,3,
+    15,46,0,2,10,138,0,15,46,0,13,10,138,0,15,46,0,7,8,127,247,10,176,2,
+    12,126,12,3,242,232,15,218,2,0,12,125,12,3,93,221,9,105,108,11,42,0,5,84,
+    0,0,98,32,15,84,0,1,20,100,140,3,3,84,0,9,33,17,15,121,82,2,23,49,
+    82,233,3,50,0,7,94,98,15,48,0,0,7,90,233,13,98,0,10,33,4,2,53,0,
+    23,120,99,0,3,148,3,15,52,0,17,5,103,0,0,46,245,0,52,0,28,104,156,13,
+    15,49,9,1,6,140,4,3,106,0,2,54,0,15,49,9,12,15,54,0,4,15,49,9,
+    12,13,54,0,31,108,162,0,18,11,213,13,3,54,0,15,162,0,13,15,54,0,3,15,
+    162,0,13,12,54,0,15,189,208,4,6,236,18,13,14,2,1,79,72,12,14,2,7,48,
+    0,12,14,2,14,86,19,10,53,0,15,14,2,1,15,52,0,16,12,14,2,31,117,131,
+    19,16,12,204,0,1,52,0,15,195,13,12,15,52,0,2,15,193,13,12,15,52,0,2,
+    15,131,19,8,12,52,1,12,152,0,12,131,19,15,48,0,2,15,131,19,8,15,48,0,
+    1,15,131,19,11,15,50,0,2,15,131,19,10,15,50,0,2,15,131,19,10,14,50,0,
+    15,131,19,15,14,90,1,15,131,19,15,15,52,0,2,15,131,19,12,15,52,0,2,15,
+    131,19,8,15,204,0,2,15,131,19,8,15,48,0,2,15,131,19,8,15,48,0,1,15,
+    131,19,11,15,50,0,2,15,131,19,10,15,50,0,2,15,131,19,10,10,50,0,18,117,
+    230,9,15,231,24,19,9,46,68,3,59,0,15,231,24,20,15,59,0,1,15,105,87,23,
+    13,62,0,15,230,24,23,15,59,0,1,15,230,24,20,15,59,0,1,15,105,87,23,12,
+    62,0,15,105,87,23,13,58,0,15,105,87,22,9,58,0,47,111,114,219,1,24,9,253,
+    11,2,58,0,15,218,1,20,15,58,0,0,15,122,222,20,12,58,0,15,213,1,23,15,
+    58,0,0,15,212,1,20,15,58,0,0,15,119,222,20,10,216,252,48,97,98,115,0,235,
+    15,187,6,3,4,131,11,24,49,116,95,3,51,0,15,186,6,4,15,51,0,9,15,185,
+    6,4,15,51,0,6,14,64,36,15,106,37,0,24,49,141,10,3,54,0,15,103,37,15,
+    15,54,0,1,13,89,35,13,96,37,13,54,0,15,155,100,11,3,69,38,24,49,69,16,
+    3,54,0,15,184,38,15,15,54,0,1,13,200,36,13,177,38,13,54,0,10,71,93,15,
+    221,1,2,8,195,103,3,51,0,15,221,1,13,15,51,0,0,15,221,1,13,10,51,0,
+    64,99,107,115,115,55,247,15,40,3,10,4,145,14,41,32,54,53,63,6,62,0,15,44,
+    3,10,15,62,0,14,15,48,3,10,15,62,0,10,26,119,51,3,12,184,234,5,62,18,
+    9,22,39,6,59,0,13,183,0,15,0,25,0,15,59,0,4,13,180,0,15,5,25,0,
+    13,59,0,31,117,107,1,17,3,227,2,5,90,14,11,62,0,15,107,1,12,15,62,0,
+    12,15,107,1,12,15,62,0,8,15,107,1,21,9,161,60,6,59,0,15,107,1,17,15,
+    59,0,4,15,107,1,17,11,59,0,1,231,251,15,174,0,16,25,102,193,55,3,56,0,
+    15,171,0,16,15,56,0,2,15,168,0,16,14,56,0,15,210,232,5,13,123,3,25,102,
+    96,50,3,59,0,15,120,3,19,15,59,0,2,15,117,3,19,14,59,0,15,180,232,5,
+    13,2,8,25,100,87,229,3,59,0,15,3,8,19,15,59,0,2,15,4,8,19,14,59,
+    0,11,87,7,15,11,2,5,29,101,155,1,11,93,7,15,12,2,5,15,57,0,3,15,
+    13,2,16,15,57,0,0,15,30,4,1,15,171,0,0,9,121,34,4,57,0,15,171,0,
+    17,15,57,0,2,15,171,0,17,13,57,0,31,117,87,1,20,10,183,241,5,58,0,15,
+    173,0,16,15,58,0,4,15,174,0,16,15,58,0,1,15,90,1,19,10,48,242,5,58,
+    0,15,174,0,17,15,58,0,3,15,174,0,17,13,58,0,15,172,0,19,31,102,56,0,
+    1,15,188,4,17,15,56,0,1,15,188,4,17,11,56,0,0,55,236,31,114,28,102,23,
+    29,48,119,246,5,67,0,15,27,102,21,15,67,0,8,15,26,102,21,15,67,0,1,31,
+    110,133,5,23,27,100,25,7,1,59,0,15,133,5,19,15,59,0,2,15,133,5,19,14,
+    59,0,15,9,239,6,14,178,0,10,156,244,3,60,0,15,179,0,20,15,60,0,2,15,
+    180,0,20,14,60,0,15,58,6,23,15,60,0,2,15,59,6,20,15,60,0,2,15,60,
+    6,20,13,60,0,15,179,0,23,13,163,1,15,178,0,23,15,59,0,1,15,177,0,20,
+    11,59,0,47,118,103,236,6,20,9,107,21,3,56,0,15,64,6,17,15,56,0,1,15,
+    63,6,17,13,56,0,15,233,6,20,11,66,11,1,56,0,15,168,0,17,15,56,0,1,
+    15,168,0,17,10,56,0,2,218,236,10,83,1,15,188,13,4,2,253,57,14,58,0,12,
+    126,60,14,195,13,15,58,0,5,12,120,60,14,202,13,15,58,0,2,15,245,61,2,15,
+    95,12,0,26,54,40,9,5,61,0,15,1,238,19,15,61,0,4,15,1,238,19,15,61,
+    0,1,10,105,3,15,195,15,7,15,61,0,5,15,111,239,19,15,61,0,4,15,111,239,
+    19,15,61,0,1,10,199,2,13,28,2,3,253,33,15,168,1,1,10,201,2,13,28,2,
+    15,58,0,11,15,28,2,9,15,58,0,3,4,149,233,11,99,18,10,23,2,74,116,49,
+    115,56,160,113,9,57,0,8,105,113,10,19,2,15,57,0,12,7,6,234,3,57,0,7,
+    138,56,15,57,0,9,5,171,0,27,114,237,30,26,120,132,111,15,53,0,4,12,169,3,
+    15,54,0,19,12,45,3,15,54,0,9,5,19,1,4,161,0,4,18,1,15,53,0,19,
+    12,42,130,15,54,0,19,12,145,3,15,54,0,9,5,123,1,4,161,0,4,122,1,15,
+    53,0,19,4,161,0,15,54,0,27,12,245,3,15,54,0,6,9,133,30,15,18,59,1,
+    6,3,248,12,56,0,15,52,237,11,15,56,0,7,15,52,237,11,15,56,0,7,15,5,
+    108,6,31,120,165,0,17,14,52,237,15,162,0,16,14,52,237,15,159,0,16,15,191,2,
+    1,9,207,21,15,160,0,2,15,84,2,1,15,54,0,6,15,233,1,10,15,54,0,3,
+    50,109,98,50,198,32,3,205,61,0,100,24,0,53,0,26,120,85,34,12,49,0,21,121,
+    49,0,0,96,0,15,49,0,16,21,122,49,0,0,47,0,15,49,0,11,34,119,50,142,
+    36,9,147,0,1,56,105,15,49,0,9,12,147,0,15,49,0,14,12,147,0,15,49,0,
+    8,8,5,7,9,68,34,4,27,60,9,183,242,9,56,0,15,85,241,11,15,56,0,7,
+    15,85,241,11,15,56,0,7,15,82,112,6,31,120,165,0,17,14,138,241,15,162,0,16,
+    14,138,241,15,53,0,4,10,149,7,14,86,4,42,49,54,249,126,9,58,0,7,164,0,
+    14,88,4,15,58,0,10,7,169,0,14,90,4,15,58,0,10,15,178,6,10,8,35,124,
+    15,54,0,4,15,243,3,0,15,54,0,6,15,125,6,10,15,54,0,16,15,41,4,0,
+    15,54,0,6,15,72,6,10,15,54,0,16,15,95,4,0,9,54,0,1,87,162,28,98,
+    160,146,14,71,12,26,55,187,9,12,55,0,12,126,9,15,55,0,20,15,252,48,5,15,
+    55,0,1,15,12,148,0,15,172,15,0,26,55,181,9,12,58,0,15,145,11,1,15,58,
+    0,19,15,142,11,1,15,58,0,8,31,113,211,150,11,3,17,11,5,122,51,15,58,0,
+    3,15,136,11,8,15,58,0,12,15,133,11,8,15,58,0,1,31,119,1,2,16,9,116,
+    250,13,55,0,15,1,2,6,15,55,0,11,15,1,2,6,13,55,0,16,103,32,9,15,
+    165,0,13,11,97,12,12,55,0,15,165,0,5,15,55,0,12,15,162,51,6,15,55,0,
+    0,15,166,2,19,11,91,12,12,58,0,15,166,2,8,15,58,0,12,15,166,2,8,15,
+    58,0,1,15,166,2,19,26,51,26,26,12,58,0,15,166,2,8,15,58,0,12,15,166,
+    2,8,15,58,0,1,15,166,2,16,10,26,253,13,55,0,15,1,2,6,15,55,0,11,
+    15,1,2,6,15,221,2,0,15,166,2,8,4,65,21,17,51,36,19,8,180,243,15,80,
+    5,14,15,59,0,24,12,173,0,15,59,0,13,15,178,2,12,3,126,67,2,140,31,15,
+    62,0,10,15,182,2,1,15,62,0,23,15,186,2,1,15,62,0,12,15,190,2,12,3,
+    5,69,15,62,0,16,15,194,2,1,15,62,0,23,15,198,2,1,15,62,0,12,31,117,
+    38,2,17,1,55,28,15,60,0,11,15,39,2,6,15,60,0,16,15,40,2,6,15,60,
+    0,5,15,41,2,20,15,63,0,16,15,42,2,9,15,63,0,16,15,43,2,9,15,63,
+    0,5,15,44,2,20,15,63,0,16,15,45,2,9,15,63,0,16,15,46,2,9,15,63,
+    0,5,15,249,4,8,2,59,0,15,182,1,8,15,254,4,8,15,60,0,25,14,46,2,
+    15,60,0,11,15,179,0,17,15,29,3,4,15,178,0,17,15,59,0,15,15,177,0,6,
+    15,59,0,2,47,103,101,184,5,24,6,140,179,13,59,0,15,184,5,13,15,59,0,8,
+    15,184,5,13,12,59,0,15,184,5,27,15,62,0,8,15,184,5,16,15,62,0,8,15,
+    184,5,16,12,62,0,15,184,5,27,15,62,0,8,15,184,5,16,15,62,0,8,15,184,
+    5,16,12,62,0,15,184,5,25,15,60,0,9,15,184,5,13,15,60,0,9,15,184,5,
+    13,13,60,0,15,184,5,27,15,63,0,9,15,184,5,16,15,63,0,9,15,184,5,16,
+    13,63,0,15,184,5,27,15,63,0,9,15,184,5,16,15,63,0,9,15,184,5,16,13,
+    63,0,15,184,5,24,15,60,0,9,15,184,5,13,15,60,0,9,15,184,5,13,12,60,
+    0,15,184,5,24,15,59,0,8,15,184,5,13,15,59,0,8,15,184,5,13,11,59,0,
+    15,22,14,9,12,66,5,6,44,183,15,26,14,14,15,59,0,24,15,184,5,13,12,59,
+    0,15,184,5,27,15,62,0,8,15,184,5,16,15,62,0,8,15,184,5,16,12,62,0,
+    15,184,5,27,15,62,0,8,15,184,5,16,15,62,0,8,15,184,5,16,12,62,0,15,
+    184,5,25,15,60,0,9,15,184,5,13,15,60,0,9,15,184,5,13,13,60,0,15,184,
+    5,27,15,63,0,9,15,184,5,16,15,63,0,9,15,184,5,16,13,63,0,15,184,5,
+    27,15,63,0,9,15,184,5,16,15,63,0,9,15,184,5,16,13,63,0,15,184,5,24,
+    15,60,0,9,15,184,5,13,15,60,0,9,15,184,5,13,12,60,0,15,184,5,24,15,
+    59,0,8,15,184,5,13,15,59,0,8,15,184,5,13,10,59,0,31,108,112,11,25,6,
+    76,197,13,59,0,15,184,5,13,15,59,0,8,15,184,5,13,12,59,0,15,184,5,27,
+    15,62,0,8,15,184,5,16,15,62,0,8,15,184,5,16,12,62,0,15,184,5,27,15,
+    62,0,8,15,184,5,16,15,62,0,8,15,184,5,16,12,62,0,15,184,5,25,15,60,
+    0,9,15,184,5,13,15,60,0,9,15,184,5,13,13,60,0,15,184,5,27,15,63,0,
+    9,15,184,5,16,15,63,0,9,15,184,5,16,13,63,0,15,184,5,27,15,63,0,9,
+    15,184,5,16,15,63,0,9,15,184,5,16,13,63,0,15,184,5,24,15,60,0,9,15,
+    184,5,13,15,60,0,9,15,184,5,13,12,60,0,15,184,5,24,15,59,0,8,15,184,
+    5,13,15,59,0,8,15,184,5,13,11,59,0,15,112,11,25,6,20,205,13,59,0,15,
+    184,5,13,15,59,0,8,15,184,5,13,12,59,0,15,184,5,27,15,62,0,8,15,184,
+    5,16,15,62,0,8,15,184,5,16,12,62,0,15,184,5,27,15,62,0,8,15,184,5,
+    16,15,62,0,8,15,184,5,16,12,62,0,15,184,5,25,15,60,0,9,15,184,5,13,
+    15,60,0,9,15,184,5,13,13,60,0,15,184,5,27,15,63,0,9,15,184,5,16,15,
+    63,0,9,15,184,5,16,13,63,0,15,184,5,27,15,63,0,9,15,184,5,16,15,63,
+    0,9,15,184,5,16,13,63,0,15,184,5,24,15,60,0,9,15,184,5,13,15,60,0,
+    9,15,184,5,13,12,60,0,15,184,5,24,15,59,0,8,15,184,5,13,15,59,0,8,
+    15,184,5,13,10,59,0,31,110,153,28,26,6,133,204,14,60,0,15,186,5,13,15,60,
+    0,9,15,187,5,13,13,60,0,15,188,5,27,15,63,0,9,15,189,5,16,15,63,0,
+    9,15,190,5,16,13,63,0,15,191,5,27,15,63,0,9,15,192,5,16,15,63,0,9,
+    15,193,5,16,13,63,0,15,194,5,25,15,61,0,10,15,195,5,13,15,61,0,10,15,
+    196,5,13,14,61,0,15,197,5,27,15,64,0,10,15,198,5,16,15,64,0,10,15,199,
+    5,16,14,64,0,15,200,5,27,15,64,0,10,15,201,5,16,15,64,0,10,15,202,5,
+    16,14,64,0,15,203,5,24,15,61,0,10,15,204,5,13,15,61,0,10,15,205,5,13,
+    13,61,0,15,206,5,24,15,60,0,9,15,207,5,13,15,60,0,9,15,208,5,13,11,
+    60,0,15,249,22,26,10,196,11,10,60,0,15,66,17,27,10,60,0,15,67,17,27,31,
+    110,252,22,29,15,63,0,9,15,69,17,30,10,63,0,15,70,17,30,31,110,255,22,29,
+    15,63,0,9,15,72,17,30,10,63,0,15,73,17,30,31,110,2,23,27,15,61,0,10,
+    15,75,17,27,11,61,0,15,76,17,27,0,61,0,15,77,17,41,11,64,0,15,78,17,
+    30,11,64,0,15,79,17,30,0,64,0,15,80,17,41,11,64,0,15,81,17,30,11,64,
+    0,15,82,17,30,0,64,0,15,83,17,38,11,61,0,15,84,17,27,11,61,0,15,85,
+    17,27,31,110,14,23,26,15,60,0,9,15,87,17,27,10,60,0,15,88,17,27,31,110,
+    17,23,26,10,76,23,10,60,0,15,202,28,27,10,60,0,15,203,28,27,31,110,20,23,
+    29,15,63,0,9,15,205,28,30,10,63,0,15,206,28,30,31,110,23,23,29,15,63,0,
+    9,15,208,28,30,10,63,0,15,209,28,30,31,110,26,23,27,15,61,0,10,15,211,28,
+    27,11,61,0,15,212,28,27,0,61,0,15,213,28,41,11,64,0,15,214,28,30,11,64,
+    0,15,215,28,30,0,64,0,15,216,28,41,11,64,0,15,217,28,30,11,64,0,15,218,
+    28,30,0,64,0,15,219,28,38,11,61,0,15,220,28,27,11,61,0,15,221,28,27,31,
+    110,38,23,26,15,60,0,9,15,223,28,27,10,60,0,15,224,28,27,31,110,41,23,26,
+    10,212,34,10,60,0,15,82,40,27,10,60,0,15,83,40,27,31,110,44,23,29,15,63,
+    0,9,15,85,40,30,10,63,0,15,86,40,30,31,110,47,23,29,15,63,0,9,15,88,
+    40,30,10,63,0,15,89,40,30,31,110,50,23,27,15,61,0,10,15,91,40,27,11,61,
+    0,15,92,40,27,0,61,0,15,93,40,41,11,64,0,15,94,40,30,11,64,0,15,95,
+    40,30,0,64,0,15,96,40,41,11,64,0,15,97,40,30,11,64,0,15,98,40,30,0,
+    64,0,15,99,40,38,11,61,0,15,100,40,27,11,61,0,15,101,40,27,31,110,62,23,
+    26,15,60,0,9,15,103,40,27,10,60,0,15,104,40,27,13,158,3,15,162,73,4,2,
+    62,0,9,28,73,10,62,0,2,179,0,15,157,73,4,15,62,0,14,2,181,0,15,152,
+    73,4,15,62,0,3,15,161,3,2,15,236,119,3,2,157,4,15,65,0,8,15,124,204,
+    4,15,65,0,23,6,163,3,15,228,119,3,15,65,0,3,15,164,3,2,15,124,121,3,
+    15,65,0,14,15,6,206,6,15,65,0,21,6,166,3,15,116,121,3,15,65,0,3,14,
+    223,5,15,65,2,5,1,51,3,15,63,0,9,15,66,2,11,15,63,0,14,15,67,2,
+    11,15,63,0,3,15,68,2,25,15,66,0,14,15,69,2,14,15,66,0,14,15,70,2,
+    14,15,66,0,3,15,71,2,25,15,66,0,14,15,72,2,14,15,66,0,14,15,73,2,
+    14,15,66,0,3,13,59,5,15,194,0,2,15,203,1,6,13,62,5,15,191,0,2,15,
+    63,0,17,15,73,2,4,15,63,0,9,15,188,0,22,15,68,3,2,15,187,0,22,15,
+    62,0,13,15,186,0,11,15,62,0,0,3,210,205,15,25,208,7,3,96,176,8,201,100,
+    8,54,0,15,219,206,11,15,54,0,5,15,219,206,11,15,54,0,4,15,101,69,9,15,
+    52,0,6,15,219,206,9,15,52,0,5,15,219,206,9,15,52,0,2,2,255,103,15,62,
+    1,1,3,220,178,15,54,0,5,15,87,209,11,15,54,0,5,15,87,209,11,15,54,0,
+    4,15,148,67,9,15,52,0,6,15,87,209,9,15,52,0,5,15,87,209,9,11,52,0,
+    91,110,102,108,105,99,63,71,15,145,76,4,21,99,145,62,1,183,8,6,59,0,15,68,
+    92,15,15,59,0,6,15,73,92,15,15,59,0,3,15,78,92,18,15,59,0,6,15,83,
+    92,15,15,59,0,6,15,88,92,15,10,59,0,43,101,114,159,78,12,74,79,4,44,78,
+    26,56,189,83,2,56,0,15,74,79,8,15,56,0,10,15,74,79,8,15,56,0,7,15,
+    118,82,15,3,147,1,26,51,236,63,2,59,0,15,184,90,19,14,59,0,47,105,50,191,
+    79,18,11,179,65,4,57,0,15,190,79,15,15,57,0,4,15,189,79,15,15,57,0,1,
+    15,188,79,21,11,180,67,4,60,0,15,187,79,18,15,60,0,4,15,186,79,18,15,60,
+    0,1,15,102,142,22,26,55,21,65,5,61,0,15,186,79,18,15,61,0,5,15,186,79,
+    18,15,61,0,2,15,90,142,21,15,61,0,5,15,109,1,19,15,61,0,4,15,110,1,
+    19,15,61,0,0,15,39,81,21,15,170,1,1,15,38,81,21,15,60,0,4,15,107,1,
+    19,15,60,0,0,15,36,81,18,15,15,3,1,15,35,81,18,15,57,0,4,15,34,81,
+    15,15,57,0,0,12,186,102,15,102,11,9,24,48,225,176,1,106,9,5,66,0,15,40,
+    135,20,15,66,0,8,13,7,6,15,102,11,3,15,66,0,8,15,182,86,12,3,175,1,
+    29,48,166,5,13,194,0,15,185,86,1,15,62,0,12,15,188,86,12,15,62,0,9,15,
+    220,135,23,24,48,243,178,7,252,0,15,219,135,23,15,66,0,8,13,56,8,15,172,13,
+    3,15,66,0,8,15,228,97,19,26,48,169,92,15,194,0,1,15,41,7,8,15,62,0,
+    5,15,44,7,19,14,62,0,15,188,2,25,8,191,132,4,250,0,15,186,2,25,15,64,
+    0,5,15,122,2,19,10,90,116,15,124,0,0,15,120,2,8,15,60,0,0,15,114,1,
+    22,15,60,0,3,15,112,1,19,14,60,0,15,43,10,1,15,111,1,4,1,64,89,11,
+    47,1,15,47,10,1,15,110,1,4,15,63,0,4,15,109,1,19,14,85,9,15,160,90,
+    15,15,59,0,6,31,116,144,9,20,13,29,4,1,57,0,15,144,9,16,15,57,0,3,
+    15,144,9,16,15,57,0,0,15,144,9,22,10,37,99,4,60,0,15,35,8,19,15,60,
+    0,3,15,34,8,19,15,60,0,0,15,144,9,23,10,237,92,5,61,0,15,36,8,19,
+    15,61,0,4,15,37,8,19,15,61,0,1,15,144,9,22,15,61,0,4,15,109,1,19,
+    15,61,0,4,15,110,1,19,15,61,0,0,15,144,9,22,15,170,1,0,15,144,9,22,
+    15,60,0,3,15,107,1,19,15,60,0,0,15,144,9,19,15,15,3,0,15,144,9,19,
+    15,57,0,3,15,144,9,16,13,57,0,15,36,94,11,4,56,0,14,106,14,15,36,94,
+    11,15,56,0,10,15,218,14,10,15,56,0,3,1,191,195,15,6,198,9,3,244,18,9,
+    254,83,5,54,0,15,200,196,13,15,54,0,3,15,200,196,13,15,54,0,3,15,200,196,
+    11,15,160,0,12,15,254,19,2,15,158,0,12,15,252,19,2,15,52,0,0,9,248,86,
+    15,68,199,3,15,54,0,3,15,68,199,13,15,54,0,3,15,68,199,13,15,162,0,12,
+    15,0,20,2,15,160,0,12,15,254,19,2,15,158,0,12,15,252,19,2,11,52,0,80,
+    116,114,98,9,114,242,121,15,103,142,3,55,56,32,49,163,10,1,215,191,4,53,0,47,
+    49,54,54,0,33,15,66,192,8,15,54,0,7,31,109,161,0,31,5,155,135,15,174,192,
+    5,7,80,147,6,54,0,4,83,123,15,63,147,4,15,53,0,3,31,119,12,1,10,71,
+    49,54,32,49,102,13,9,55,0,15,161,0,8,15,55,0,8,31,109,110,0,36,15,55,
+    0,1,2,22,118,30,99,7,14,15,161,0,7,15,51,0,5,3,37,155,9,70,153,15,
+    146,93,1,24,57,19,119,7,54,0,15,144,155,12,15,54,0,4,15,144,155,12,15,54,
+    0,1,5,139,3,15,232,153,6,15,54,0,4,15,212,156,12,15,54,0,4,15,212,156,
+    12,15,54,0,0,0,123,53,15,68,1,12,4,49,119,15,54,0,5,15,68,1,3,15,
+    54,0,4,15,232,153,12,15,54,0,1,15,68,1,15,15,54,0,4,15,44,155,12,15,
+    54,0,4,15,44,155,12,9,54,0,64,105,110,115,114,35,12,1,242,7,0,194,2,15,
+    56,4,4,24,50,212,12,2,235,26,9,59,0,30,109,106,159,15,58,0,11,5,155,130,
+    1,122,4,15,182,147,4,13,88,208,1,59,0,3,161,127,1,121,130,15,187,151,5,15,
+    58,0,3,0,227,8,15,234,0,4,3,131,119,35,49,54,243,23,15,60,0,7,0,82,
+    4,15,60,0,24,79,108,122,99,110,147,25,19,25,52,108,24,4,56,0,15,59,155,16,
+    15,56,0,2,15,141,25,15,15,56,0,0,15,138,25,18,15,56,0,3,15,146,156,16,
+    15,56,0,2,15,132,25,15,10,56,0,0,182,169,48,53,50,104,31,31,15,111,165,19,
+    10,121,20,7,63,0,15,110,165,19,15,63,0,6,15,18,12,18,15,63,0,2,31,108,
+    189,0,23,10,55,90,7,63,0,15,189,0,19,15,63,0,6,15,189,0,19,14,63,0,
+    28,117,90,119,15,2,27,5,2,173,19,15,60,0,0,15,6,27,16,15,60,0,6,15,
+    10,27,16,15,60,0,0,31,119,161,21,1,10,190,3,1,113,111,14,171,1,0,58,0,
+    15,227,111,17,15,58,0,3,15,229,111,17,12,58,0,31,120,232,113,12,4,231,0,26,
+    51,79,20,3,57,0,15,92,1,16,15,57,0,3,15,89,1,16,15,57,0,0,15,22,
+    111,15,4,41,28,10,197,13,3,60,0,15,160,28,20,15,60,0,2,15,161,28,20,14,
+    60,0,15,99,110,15,4,77,19,15,60,0,2,15,196,19,20,15,60,0,2,15,197,19,
+    20,14,60,0,15,190,109,20,10,125,16,3,57,0,15,191,109,17,15,57,0,2,15,192,
+    109,17,13,57,0,0,62,38,15,248,115,17,15,57,0,2,15,247,115,17,15,57,0,2,
+    15,246,115,17,14,57,0,15,190,2,23,10,138,18,3,60,0,15,190,2,20,15,60,0,
+    2,15,190,2,20,14,60,0,15,190,2,23,15,60,0,2,15,190,2,20,15,60,0,2,
+    15,190,2,20,14,60,0,15,48,6,19,2,6,38,12,57,0,15,209,4,17,15,57,0,
+    2,15,209,4,17,11,57,0,47,105,110,124,5,21,9,241,199,4,57,0,15,171,0,17,
+    15,57,0,2,15,171,0,17,14,57,0,15,190,2,23,10,196,99,3,60,0,15,190,2,
+    20,15,60,0,2,15,190,2,20,14,60,0,15,190,2,23,15,60,0,2,15,190,2,20,
+    15,60,0,2,15,190,2,20,14,60,0,15,124,5,20,9,90,191,4,57,0,15,124,5,
+    17,15,57,0,2,15,124,5,17,13,57,0,15,124,5,21,15,57,0,2,15,124,5,17,
+    15,57,0,2,15,124,5,17,14,57,0,15,190,2,23,10,115,117,3,60,0,15,190,2,
+    20,15,60,0,2,15,190,2,20,14,60,0,15,190,2,23,15,60,0,2,15,190,2,20,
+    15,60,0,2,15,190,2,20,14,60,0,15,124,5,20,14,161,1,15,124,5,20,15,57,
+    0,2,15,209,4,17,11,57,0,122,111,118,98,50,109,9,118,221,140,2,34,42,6,132,
+    104,11,42,0,7,140,149,15,42,0,12,7,128,149,15,42,0,4,31,100,126,0,5,6,
+    18,4,11,42,0,13,126,0,15,42,0,6,13,126,0,14,42,0,10,186,3,13,132,0,
+    8,241,137,14,48,0,14,138,0,15,48,0,11,14,144,0,15,48,0,0,15,110,142,2,
+    0,47,0,16,113,190,1,15,49,0,1,5,173,144,11,144,0,15,49,0,6,7,19,216,
+    10,146,0,15,50,0,3,10,203,2,13,36,1,8,68,148,14,48,0,14,36,1,15,48,
+    0,1,7,101,216,13,36,1,15,48,0,0,15,160,145,0,2,47,0,0,123,243,15,49,
+    0,2,7,70,217,10,145,0,15,50,0,6,7,185,216,10,147,0,15,50,0,2,17,109,
+    239,31,15,100,113,0,9,221,160,5,42,0,15,93,113,1,15,42,0,3,15,86,113,1,
+    15,42,0,0,15,226,113,5,15,42,0,2,15,219,113,2,15,42,0,2,15,212,113,2,
+    14,42,0,15,243,114,4,15,42,0,3,15,236,114,1,15,42,0,3,15,229,114,1,15,
+    42,0,0,2,32,20,14,113,115,15,42,0,2,15,106,115,2,15,42,0,2,15,99,115,
+    2,12,42,0,31,113,191,4,1,6,214,219,15,42,0,0,9,128,2,15,42,0,10,9,
+    120,2,15,42,0,3,15,191,4,12,4,254,146,4,166,2,10,48,0,14,155,3,15,48,
+    0,11,14,155,3,15,48,0,0,19,109,170,154,13,143,0,16,111,55,3,15,49,0,1,
+    5,240,4,11,144,0,15,49,0,6,5,253,3,11,145,0,15,49,0,3,15,16,30,3,
+    5,195,0,4,7,18,15,48,0,3,14,35,1,15,48,0,1,15,190,4,9,15,48,0,
+    0,15,190,4,11,15,49,0,1,15,190,4,11,15,50,0,1,15,190,4,11,13,50,0,
+    15,227,5,12,4,218,19,15,48,0,3,14,37,1,15,48,0,11,14,37,1,15,48,0,
+    0,15,7,7,11,15,49,0,1,15,7,7,10,15,49,0,1,15,7,7,11,12,50,0,
+    31,115,44,8,12,2,233,172,15,49,0,7,14,53,9,15,49,0,12,14,60,9,15,49,
+    0,1,15,40,1,10,15,50,0,3,15,41,1,9,15,50,0,3,15,42,1,10,15,51,
+    0,0,15,79,2,11,28,50,61,7,11,49,0,14,42,1,15,49,0,2,15,118,3,8,
+    15,49,0,2,15,119,3,10,15,50,0,3,15,120,3,10,15,51,0,3,15,121,3,10,
+    14,51,0,15,194,5,12,2,78,27,15,49,0,7,14,43,1,15,49,0,12,14,43,1,
+    15,49,0,1,15,197,5,10,15,50,0,3,15,198,5,9,15,50,0,3,15,199,5,9,
+    15,50,0,0,15,200,5,11,28,50,211,4,11,49,0,14,41,1,15,49,0,2,15,84,
+    2,9,15,49,0,1,15,84,2,11,15,50,0,2,15,84,2,11,15,51,0,2,15,84,
+    2,11,14,51,0,15,127,3,12,13,218,4,15,207,5,12,15,49,0,13,14,43,1,15,
+    49,0,1,15,169,4,11,15,50,0,2,15,169,4,10,15,50,0,2,15,169,4,11,13,
+    51,0,11,235,143,13,42,1,4,245,32,15,49,0,4,14,42,1,15,49,0,2,15,85,
+    2,9,15,49,0,1,15,85,2,11,15,50,0,2,15,85,2,11,15,51,0,2,15,85,
+    2,11,13,51,0,42,120,98,129,3,9,125,17,11,9,6,4,159,10,2,53,0,7,105,
+    124,11,60,130,15,53,0,8,8,74,131,11,83,123,15,54,0,5,10,38,18,11,209,18,
+    9,85,4,10,53,0,7,160,0,9,22,18,15,53,0,10,7,160,0,11,112,130,15,53,
+    0,5,10,149,3,11,57,41,9,116,1,10,53,0,9,246,245,10,160,0,15,54,0,8,
+    9,242,245,10,161,0,15,54,0,4,11,251,39,15,161,0,1,5,51,29,9,53,0,15,
+    161,0,13,15,54,0,3,15,161,0,13,14,54,0,11,77,30,15,161,0,1,8,235,189,
+    6,53,0,15,161,0,13,15,54,0,3,15,161,0,13,15,54,0,0,10,66,1,15,34,
+    3,1,10,80,33,4,53,0,15,34,3,12,15,53,0,3,15,34,3,13,12,54,0,31,
+    117,193,10,13,9,222,156,15,50,0,1,13,239,4,15,50,0,14,13,240,4,15,50,0,
+    3,15,27,6,10,15,51,0,4,15,28,6,9,15,51,0,4,15,29,6,10,15,52,0,
+    1,15,72,7,11,9,61,167,15,50,0,1,14,48,1,15,50,0,3,15,32,6,8,15,
+    50,0,3,15,33,6,10,15,51,0,4,15,34,6,10,15,52,0,4,15,35,6,10,15,
+    52,0,0,15,205,10,12,5,141,163,15,50,0,5,14,49,1,15,50,0,13,14,49,1,
+    15,50,0,2,15,208,10,10,15,51,0,4,15,209,10,9,15,51,0,4,15,210,10,9,
+    15,51,0,1,15,211,10,11,2,33,43,15,50,0,8,14,47,1,15,50,0,3,15,96,
+    2,9,15,50,0,2,15,96,2,11,15,51,0,3,15,96,2,11,15,52,0,3,15,96,
+    2,11,15,52,0,0,15,145,3,12,12,224,9,12,50,0,14,49,1,15,50,0,13,14,
+    49,1,15,50,0,2,15,193,4,11,15,51,0,3,15,193,4,10,15,51,0,3,15,193,
+    4,11,14,52,0,15,223,10,12,5,245,163,15,50,0,5,14,48,1,15,50,0,3,15,
+    97,2,9,15,50,0,2,15,97,2,11,15,51,0,3,15,97,2,11,15,52,0,3,15,
+    97,2,11,12,52,0,31,119,204,21,5,13,181,26,4,42,0,13,204,21,15,42,0,6,
+    13,204,21,14,42,0,15,204,21,12,13,174,0,15,204,21,12,15,48,0,1,15,169,20,
+    9,15,48,0,0,15,169,20,11,15,49,0,1,15,169,20,11,15,50,0,1,15,169,20,
+    11,12,50,0,31,122,135,12,16,5,193,26,4,90,1,2,53,0,15,101,9,11,15,53,
+    0,4,15,101,9,12,15,54,0,1,15,135,12,14,5,163,22,10,53,0,15,135,12,11,
+    15,53,0,4,15,135,12,11,15,53,0,1,15,135,12,14,5,116,1,10,53,0,15,69,
+    11,12,15,54,0,4,15,69,11,12,15,54,0,0,15,135,12,15,5,190,22,10,53,0,
+    15,161,0,13,15,54,0,3,15,161,0,13,14,54,0,15,135,12,15,5,29,28,10,53,
+    0,15,161,0,13,15,54,0,3,15,161,0,13,15,54,0,0,15,135,12,14,5,220,22,
+    10,53,0,15,34,3,12,15,53,0,3,15,34,3,13,10,54,0,47,117,108,106,152,16,
+    3,85,33,6,108,27,2,170,32,2,60,0,15,205,33,19,15,60,0,3,15,205,33,19,
+    14,60,0,47,104,114,123,45,21,11,8,34,4,59,0,15,122,45,17,15,59,0,4,15,
+    121,45,17,14,59,0,15,127,34,12,5,203,36,11,179,45,3,58,0,15,62,37,17,15,
+    58,0,3,15,63,37,17,14,58,0,15,173,0,20,11,178,45,2,57,0,15,172,0,17,
+    15,57,0,2,15,171,0,17,13,57,0,31,108,63,37,22,26,52,10,154,3,60,0,15,
+    63,37,19,15,60,0,3,15,63,37,19,15,60,0,0,15,114,3,22,15,60,0,3,15,
+    114,3,19,15,60,0,3,15,114,3,19,15,60,0,0,15,198,160,20,14,161,1,15,197,
+    160,20,15,57,0,2,15,82,39,17,13,57,0,123,116,105,115,104,105,102,116,252,14,15,
+    102,1,8,26,56,124,155,10,67,0,15,109,1,19,15,67,0,10,15,116,1,19,14,67,
+    0,31,117,5,158,23,29,102,196,3,1,61,0,15,7,158,19,15,61,0,4,15,9,158,
+    19,11,61,0,17,111,206,54,15,145,3,11,3,90,141,26,101,38,5,1,58,0,15,30,
+    160,19,15,58,0,1,15,28,160,19,13,58,0,15,98,1,22,15,58,0,1,15,95,1,
+    19,15,58,0,1,15,92,1,19,11,58,0,43,114,111,238,4,2,89,1,31,42,131,55,
+    0,0,129,65,16,50,126,213,2,128,55,2,127,55,2,64,0,13,69,55,8,64,0,7,
+    101,1,15,64,0,5,13,77,55,8,64,0,7,107,1,15,64,0,2,15,85,55,1,14,
+    192,0,2,65,66,15,64,0,4,13,93,55,14,192,0,15,64,0,10,13,101,55,14,192,
+    0,15,64,0,7,1,229,197,15,111,6,18,5,46,17,5,188,1,0,60,0,15,237,71,
+    20,15,60,0,2,15,237,71,20,14,60,0,15,111,6,22,15,60,0,3,15,25,73,20,
+    15,60,0,2,15,25,73,20,12,60,0,11,69,4,15,232,2,14,27,48,168,1,11,75,
+    4,15,232,2,14,15,64,0,1,15,232,2,25,13,64,0,15,232,2,28,15,64,0,1,
+    15,232,2,25,15,64,0,1,15,232,2,25,13,64,0,15,232,2,24,10,0,6,3,60,
+    0,15,232,2,20,15,60,0,2,15,232,2,20,14,60,0,15,232,2,23,15,60,0,2,
+    15,232,2,20,15,60,0,2,15,232,2,20,10,60,0,49,115,97,100,254,15,15,137,57,
+    9,10,199,74,3,50,0,0,231,58,15,129,57,6,15,50,0,2,15,121,57,10,11,50,
+    0,66,99,97,116,116,36,65,0,68,64,12,112,18,6,224,63,25,97,12,18,8,55,0,
+    4,232,194,15,187,69,2,15,55,0,7,4,118,219,15,190,69,2,15,55,0,3,16,113,
+    165,0,14,21,19,6,227,63,15,55,0,17,15,34,69,0,15,55,0,7,4,186,220,15,
+    37,69,2,15,55,0,2,0,242,23,15,74,1,12,9,235,26,8,55,0,6,74,1,11,
+    199,159,15,55,0,11,6,74,1,3,220,0,9,74,1,15,55,0,2,15,74,1,15,15,
+    55,0,6,6,19,1,15,74,1,1,15,55,0,6,4,217,196,15,74,1,3,10,55,0,
+    63,104,117,102,145,54,19,2,113,78,6,205,2,2,57,0,15,239,15,17,15,57,0,2,
+    15,237,15,17,14,57,0,15,190,6,1,15,189,6,4,13,32,79,3,64,0,15,74,82,
+    13,15,64,0,13,15,72,82,13,15,64,0,10,11,0,16,11,229,65,0,63,0,3,186,
+    78,15,62,0,6,9,191,0,9,187,0,15,62,0,17,9,189,0,9,185,0,15,62,0,
+    13,11,167,14,11,186,0,7,54,199,15,62,0,6,15,186,0,7,15,62,0,17,15,186,
+    0,7,15,62,0,10,15,199,16,3,10,46,2,0,203,23,41,32,102,76,198,3,57,0,
+    13,193,216,10,39,2,15,57,0,7,13,180,216,10,32,2,15,57,0,7,15,156,9,25,
+    25,54,92,8,13,178,0,15,156,9,14,15,64,0,1,15,156,9,25,14,64,0,3,53,
+    69,47,49,54,182,0,3,127,109,32,55,51,32,47,55,55,0,1,2,96,66,15,173,0,
+    3,15,55,0,8,2,168,0,15,164,0,3,15,55,0,4,15,204,8,1,10,59,10,2,
+    158,1,10,53,16,2,57,0,15,16,2,10,15,57,0,9,15,16,2,10,15,57,0,9,
+    15,236,10,22,31,51,144,1,0,15,236,10,25,15,64,0,4,15,236,10,22,15,64,0,
+    1,15,236,10,23,26,52,24,91,3,60,0,15,67,20,20,15,60,0,2,15,67,20,20,
+    14,60,0,15,67,20,23,15,60,0,2,15,67,20,20,15,60,0,2,15,67,20,20,14,
+    60,0,15,86,81,19,10,47,203,4,57,0,15,87,81,16,15,57,0,3,15,88,81,16,
+    14,57,0,15,237,20,15,2,12,3,5,110,28,7,57,0,15,142,5,18,15,57,0,1,
+    15,142,5,18,15,57,0,1,9,126,3,15,212,4,6,31,49,251,2,0,12,240,6,15,
+    218,4,6,15,61,0,4,9,120,3,15,224,4,6,14,61,0,47,114,97,240,6,20,27,
+    101,155,1,1,57,0,15,98,1,17,15,57,0,2,15,98,1,17,15,57,0,2,15,240,
+    6,25,31,52,235,0,0,15,240,6,25,15,64,0,1,15,240,6,25,13,64,0,15,75,
+    6,20,14,249,0,15,75,6,20,15,57,0,2,15,75,6,17,15,57,0,2,15,55,17,
+    25,15,235,0,1,15,55,17,25,15,64,0,1,15,55,17,25,13,64,0,15,75,6,24,
+    11,117,15,2,60,0,15,75,6,20,15,60,0,2,15,75,6,20,14,60,0,15,75,6,
+    23,15,60,0,2,15,75,6,20,15,60,0,2,15,75,6,20,14,60,0,15,75,6,20,
+    11,46,5,2,57,0,15,75,6,17,15,57,0,2,15,75,6,17,13,57,0,15,75,6,
+    20,31,101,57,0,1,15,233,4,18,15,57,0,1,15,233,4,18,15,171,0,12,15,75,
+    6,11,13,251,2,15,75,6,25,15,61,0,1,15,75,6,22,12,61,0,15,59,13,21,
+    28,100,110,4,15,59,13,21,15,57,0,2,15,98,1,17,15,57,0,2,15,75,6,25,
+    31,50,235,0,0,15,75,6,25,15,64,0,1,15,75,6,25,14,64,0,15,59,13,18,
+    31,51,55,0,1,15,59,13,15,15,55,0,2,15,59,13,15,13,55,0,15,240,6,20,
+    27,100,201,12,1,57,0,15,240,6,17,15,57,0,2,15,240,6,17,15,57,0,2,15,
+    59,13,25,13,144,1,15,59,13,28,15,64,0,1,15,59,13,25,13,64,0,15,240,6,
+    24,10,227,25,3,60,0,15,240,6,20,15,60,0,2,15,240,6,20,14,60,0,15,240,
+    6,23,15,60,0,2,15,240,6,20,15,60,0,2,15,240,6,20,14,60,0,15,240,6,
+    20,11,139,20,2,57,0,15,240,6,17,15,57,0,2,15,240,6,17,13,57,0,15,240,
+    6,20,28,100,126,6,15,59,13,21,15,57,0,2,15,142,5,18,15,57,0,1,15,240,
+    6,22,13,251,2,15,240,6,25,15,61,0,1,15,240,6,22,11,61,0,47,117,98,96,
+    200,20,10,53,39,2,56,0,15,193,83,17,15,56,0,1,15,191,83,17,13,56,0,15,
+    96,200,23,10,2,73,2,59,0,15,96,200,20,15,59,0,1,15,96,200,20,13,59,0,
+    15,110,35,23,10,152,33,2,59,0,15,108,35,20,15,59,0,1,15,106,35,20,13,59,
+    0,15,96,200,21,13,155,1,15,96,200,21,15,57,0,2,15,168,39,17,14,57,0,15,
+    83,40,20,10,118,78,3,57,0,15,171,0,17,15,57,0,2,15,171,0,17,13,57,0,
+    15,96,200,22,13,229,0,15,96,200,22,15,58,0,3,15,238,38,17,15,58,0,0,15,
+    154,39,20,15,232,0,0,15,155,39,20,15,58,0,3,15,174,0,17,13,58,0,15,96,
+    200,20,15,56,0,1,15,188,4,17,15,56,0,1,15,188,4,17,10,56,0,127,116,101,
+    114,110,108,111,103,132,105,4,15,241,245,4,8,215,96,2,171,5,6,71,0,15,34,104,
+    1,15,245,245,4,15,71,0,9,15,44,104,1,15,245,245,4,15,71,0,6,15,110,91,
+    4,15,147,247,4,15,71,0,9,15,118,91,1,15,151,247,4,15,71,0,9,15,126,91,
+    1,15,151,247,4,15,71,0,1,0,127,189,15,22,129,7,4,164,29,2,5,247,7,225,
+    1,10,55,0,15,211,107,5,15,55,0,12,15,209,107,5,15,55,0,1,15,241,131,12,
+    3,174,10,2,32,247,15,58,0,6,15,96,106,8,15,58,0,12,15,251,94,8,15,58,
+    0,1,15,135,185,20,15,58,0,11,15,135,185,9,15,58,0,11,15,136,93,8,15,58,
+    0,1,15,23,131,8,4,168,10,15,147,1,1,15,18,131,8,15,55,0,20,15,81,106,
+    5,15,55,0,0,31,110,167,2,7,2,94,53,15,56,0,17,10,167,0,15,56,0,23,
+    10,168,0,15,56,0,12,15,170,2,10,4,60,0,15,136,1,1,9,59,0,14,171,2,
+    15,59,0,22,14,172,2,15,59,0,11,15,173,2,10,2,51,32,15,59,0,16,14,174,
+    2,15,59,0,22,14,175,2,15,59,0,11,15,176,2,6,4,55,0,15,154,1,4,15,
+    177,2,6,15,56,0,23,14,10,2,15,56,0,2,111,117,110,112,99,107,104,174,7,20,
+    26,54,148,8,6,60,0,15,121,213,17,15,60,0,5,15,122,213,17,15,60,0,1,15,
+    51,47,4,15,118,12,0,26,54,0,12,6,63,0,15,82,216,20,15,63,0,5,15,83,
+    216,20,15,63,0,1,31,113,241,47,23,26,54,27,95,7,64,0,15,136,12,19,15,64,
+    0,7,15,141,12,19,15,64,0,2,15,94,98,20,26,54,111,9,6,60,0,15,49,2,
+    17,15,60,0,5,15,49,2,17,15,60,0,0,31,108,229,2,21,10,233,16,6,60,0,
+    15,180,0,17,15,60,0,5,15,180,0,17,15,60,0,1,15,229,2,24,10,131,22,6,
+    63,0,15,229,2,20,15,63,0,5,15,229,2,20,15,63,0,1,15,229,2,25,10,104,
+    99,7,64,0,15,229,2,20,15,64,0,6,15,229,2,20,15,64,0,1,15,229,2,21,
+    10,111,18,6,60,0,15,49,2,17,15,60,0,5,15,49,2,17,10,60,0,31,120,145,
+    51,25,10,177,96,2,59,0,15,146,51,20,15,59,0,1,15,147,51,20,13,59,0,15,
+    148,51,23,15,59,0,1,15,149,51,20,15,59,0,1,15,150,51,20,9,59,0,95,114,
+    97,110,103,101,248,124,6,15,88,13,3,29,53,8,108,5,70,0,15,190,0,2,15,87,
+    13,3,15,70,0,8,15,142,228,3,63,115,97,101,90,13,3,15,74,0,5,15,78,124,
+    5,15,3,15,3,15,70,0,8,15,69,2,2,15,2,15,3,15,70,0,8,15,176,228,
+    3,15,214,0,1,15,74,0,9,15,161,253,5,15,63,109,4,24,53,48,124,7,70,0,
+    15,172,253,4,15,191,109,4,15,70,0,0,79,99,112,49,52,246,127,2,14,136,24,8,
+    218,204,5,56,0,15,101,108,16,15,56,0,2,15,101,108,16,14,56,0,15,30,127,1,
+    14,228,25,15,56,0,2,15,181,109,16,15,56,0,2,15,181,109,16,13,56,0,15,220,
+    1,1,14,202,46,25,52,188,8,2,57,0,15,207,1,0,10,224,0,15,57,0,2,47,
+    50,56,82,1,2,6,181,255,7,86,1,24,99,122,205,2,60,0,15,230,0,1,12,60,
+    0,1,234,0,14,60,0,15,198,2,5,14,238,0,25,99,55,22,2,61,0,15,189,2,
+    4,14,242,0,11,61,0,76,101,100,117,99,237,4,15,233,4,10,7,248,116,1,235,44,
+    6,66,0,15,128,126,20,15,66,0,8,15,119,1,2,15,225,4,4,15,70,0,4,15,
+    245,129,23,15,66,0,8,15,245,129,20,15,66,0,8,15,5,2,2,15,213,4,4,15,
+    70,0,3,15,213,4,29,1,151,14,9,143,4,2,71,0,15,214,4,28,14,71,0,111,
+    110,100,115,99,97,108,36,2,25,17,48,150,11,8,210,0,7,68,0,15,166,128,21,15,
+    68,0,9,15,40,2,24,15,72,0,7,15,31,132,24,1,151,14,15,68,0,4,15,33,
+    132,21,15,68,0,9,15,46,2,24,15,72,0,6,15,48,2,28,2,209,66,15,233,1,
+    1,15,50,2,28,17,48,201,4,9,73,0,79,115,113,114,116,10,7,22,8,125,233,7,
+    58,0,15,12,7,16,15,58,0,4,15,14,7,16,15,58,0,1,15,16,7,19,15,58,
+    0,4,15,18,7,16,15,58,0,4,15,20,7,16,15,58,0,0,15,22,7,20,10,215,
+    10,3,59,0,15,24,7,19,14,59,0,15,26,7,26,9,200,7,3,62,0,15,28,7,
+    23,15,62,0,0,15,30,7,24,10,211,7,3,63,0,15,32,7,23,9,63,0,1,18,
+    3,31,102,5,137,23,25,50,96,14,6,62,0,15,83,71,20,15,62,0,4,15,139,240,
+    15,15,65,0,9,15,66,136,22,15,62,0,5,15,38,234,20,15,62,0,4,15,148,240,
+    13,15,65,0,10,15,151,240,12,6,246,1,31,50,183,1,0,15,154,240,12,6,244,1,
+    13,61,0,1,28,58,0,122,1,15,65,57,12,8,113,82,15,55,0,4,15,65,57,1,
+    15,55,0,6,15,139,58,11,15,55,0,2,31,115,139,58,14,15,55,0,6,15,213,59,
+    11,15,55,0,6,15,213,59,11,15,55,0,0,58,112,102,48,223,0,14,220,0,65,99,
+    54,32,47,105,156,6,128,1,1,54,0,8,112,0,14,109,0,15,54,0,3,17,113,108,
+    0,4,140,58,15,108,0,0,31,55,54,0,3,15,108,0,12,15,54,0,1,31,49,216,
+    0,17,1,17,163,11,54,0,15,216,0,15,14,54,0,15,216,0,17,15,54,0,1,15,
+    216,0,15,11,54,0,2,105,0,15,250,2,11,8,154,86,9,55,0,15,59,60,11,15,
+    55,0,6,15,59,60,11,15,55,0,2,15,250,2,15,15,55,0,6,15,133,61,11,15,
+    55,0,6,15,133,61,11,9,55,0,143,104,117,102,102,51,50,120,52,42,17,26,2,241,
+    90,8,76,9,7,72,0,15,72,5,2,15,45,32,4,15,72,0,3,79,54,52,120,50,
+    144,18,26,15,72,0,10,15,149,6,2,15,232,31,4,15,72,0,2,31,105,32,1,30,
+    31,52,72,0,9,15,32,1,24,15,72,0,4,15,32,1,30,15,72,0,10,15,32,1,
+    24,15,72,0,3,15,131,20,21,3,197,20,0,53,4,15,69,0,3,15,210,0,17,15,
+    69,0,14,15,207,0,17,15,69,0,11,15,124,20,18,0,209,0,2,5,10,15,69,0,
+    6,15,49,2,15,15,69,0,16,15,46,2,15,15,69,0,9,63,113,114,116,223,12,12,
+    3,11,1,2,38,20,3,203,10,4,55,0,15,220,12,8,15,55,0,9,14,123,11,15,
+    141,250,1,13,58,0,15,217,12,9,5,228,0,15,55,0,2,15,214,12,6,15,55,0,
+    11,14,229,11,15,129,250,1,12,58,0,15,129,250,23,9,15,25,1,59,0,15,130,250,
+    22,10,59,0,47,117,98,131,250,24,10,157,10,2,59,0,15,153,24,19,15,59,0,2,
+    15,211,11,15,15,62,0,6,15,137,250,23,15,59,0,1,15,205,11,10,15,59,0,11,
+    15,202,11,13,15,62,0,7,15,221,1,23,13,58,0,15,220,1,22,9,58,0,81,117,
+    99,111,109,105,118,0,14,41,14,4,108,0,24,50,89,15,2,49,0,0,109,0,12,27,
+    14,2,214,0,14,49,0,1,168,30,15,65,2,23,10,18,75,6,62,0,15,68,2,19,
+    15,62,0,5,15,224,26,19,15,62,0,2,15,71,2,22,15,62,0,5,15,74,2,19,
+    15,62,0,5,15,75,28,10,15,62,0,9,15,147,152,17,4,248,0,9,158,73,6,62,
+    0,15,116,1,20,15,62,0,4,15,116,1,20,15,62,0,1,15,116,1,23,15,62,0,
+    4,15,116,1,20,15,62,0,4,15,116,1,20,9,62,0,31,120,169,255,26,9,29,37,
+    3,59,0,15,38,5,20,15,59,0,1,15,107,1,19,14,59,0,15,35,5,23,15,59,
+    0,1,15,35,5,20,15,59,0,1,15,98,1,19,10,59,0,220,103,102,50,112,56,97,
+    102,102,105,110,101,105,110,112,116,15,121,30,13,29,99,166,165,14,79,0,15,210,10,24,
+    15,79,0,17,15,217,10,24,15,79,0,10,15,234,0,29,13,74,167,11,76,0,15,231,
+    0,25,15,76,0,13,15,228,0,25,15,76,0,3,63,109,117,108,224,74,19,2,36,1,
+    9,13,2,2,60,0,15,227,74,16,15,60,0,6,15,230,74,16,10,60,0,5,148,165,
+    9,98,96,14,85,15,22,56,138,254,9,203,165,9,103,96,14,79,18,15,55,0,8,15,
+    222,167,9,15,55,0,7,15,200,97,1,2,55,0,31,120,52,0,7,15,223,167,8,15,
+    52,0,6,15,223,167,8,15,52,0,3,9,69,100,14,59,17,47,49,54,56,0,7,15,
+    225,167,9,15,56,0,9,15,227,167,9,15,56,0,8,15,68,1,5,0,60,99,15,52,
+    0,6,15,229,167,8,15,52,0,6,15,229,167,8,10,52,0,2,185,148,11,88,242,11,
+    52,3,2,23,2,9,119,97,5,55,0,9,178,12,15,133,2,1,15,55,0,3,9,178,
+    12,15,133,2,1,15,55,0,0,12,107,56,15,233,1,2,15,56,0,3,15,166,0,6,
+    15,56,0,12,15,167,0,6,15,56,0,3,63,115,104,108,254,251,2,15,108,172,4,9,
+    197,76,3,155,56,2,66,0,13,137,4,15,112,172,4,15,66,0,7,13,143,4,15,116,
+    172,4,15,66,0,4,15,240,38,5,15,175,29,3,0,99,57,15,69,0,3,15,107,18,
+    24,15,69,0,7,15,104,18,24,15,69,0,4,15,14,39,5,15,248,6,3,15,69,0,
+    7,15,241,6,24,15,69,0,7,15,234,6,24,15,69,0,4,15,203,60,20,2,220,1,
+    6,203,53,3,58,0,15,204,60,16,15,58,0,4,15,205,60,16,15,58,0,1,15,225,
+    62,22,2,239,0,13,61,0,15,14,27,19,15,61,0,4,15,227,62,19,15,61,0,1,
+    15,228,62,22,15,61,0,4,15,130,28,19,15,61,0,4,15,230,62,19,13,61,0,31,
+    114,128,4,26,14,214,148,3,66,0,15,128,4,22,15,66,0,6,15,128,4,22,15,66,
+    0,3,15,128,4,28,13,206,21,4,69,0,15,128,4,25,15,69,0,6,15,128,4,25,
+    15,69,0,3,15,128,4,28,15,69,0,6,15,128,4,25,15,69,0,6,15,128,4,25,
+    15,69,0,3,15,128,4,21,11,188,69,3,58,0,15,128,4,17,15,58,0,3,15,128,
+    4,17,15,58,0,0,15,128,4,23,11,93,68,3,61,0,15,128,4,20,15,61,0,3,
+    15,128,4,20,15,61,0,0,15,128,4,23,15,61,0,3,15,128,4,20,15,61,0,3,
+    15,128,4,20,10,61,0,79,100,112,98,117,74,142,23,2,92,44,13,61,0,15,110,1,
+    19,15,61,0,4,15,110,1,19,15,61,0,2,15,181,33,22,10,212,22,6,62,0,15,
+    185,0,20,15,62,0,4,15,186,0,20,12,62,0,28,119,122,181,15,185,0,9,10,28,
+    3,4,61,0,15,184,0,20,15,61,0,3,15,183,0,20,15,61,0,1,15,113,1,23,
+    12,102,2,3,62,0,15,185,0,20,15,62,0,4,15,186,0,20,10,62,0,76,111,112,
+    99,110,134,255,15,98,16,0,25,53,33,108,4,53,0,15,44,13,8,15,53,0,7,15,
+    42,13,8,15,53,0,4,15,40,13,11,15,53,0,7,15,37,13,8,15,53,0,7,15,
+    34,13,8,15,53,0,4,12,198,27,14,239,1,9,159,110,4,52,0,15,61,1,10,15,
+    52,0,4,15,60,1,10,15,52,0,1,12,76,74,13,107,5,15,52,0,3,15,58,1,
+    10,15,52,0,4,15,57,1,10,11,52,0,1,73,93,63,105,116,113,167,63,17,26,56,
+    101,18,15,59,0,1,15,171,63,5,15,59,0,16,15,135,2,5,10,59,0,32,52,102,
+    180,154,12,155,169,20,109,55,0,17,51,55,0,1,81,72,23,57,195,57,48,32,115,102,
+    59,0,31,110,60,0,21,30,97,60,0,0,59,0,0,83,26,15,59,0,0,0,244,26,
+    6,119,0,7,147,47,8,119,0,15,60,0,17,29,97,60,0,15,83,4,1,15,178,0,
+    2,8,77,4,8,59,0,15,58,0,16,7,65,5,1,58,0,223,99,118,116,110,101,50,
+    112,115,50,98,102,49,54,73,5,12,2,72,0,3,144,78,6,166,1,11,67,0,15,78,
+    5,10,15,67,0,19,15,83,5,10,15,67,0,9,15,200,0,19,5,195,62,15,66,0,
+    9,15,199,0,10,15,66,0,18,15,198,0,10,15,66,0,4,32,100,112,60,0,15,6,
+    25,14,5,62,0,10,17,7,6,62,0,11,190,0,8,62,0,7,190,0,15,62,0,5,
+    11,186,0,8,62,0,7,186,0,11,141,7,129,50,105,110,116,101,114,115,101,115,187,15,
+    177,64,2,5,186,1,11,46,62,12,58,0,0,88,4,10,178,0,15,58,0,21,0,178,
+    0,10,174,0,15,58,0,4,0,27,4,29,104,101,1,54,50,124,98,11,5,51,48,58,
+    53,232,0,15,58,0,1,11,97,1,7,58,0,0,42,26,15,58,0,9,11,93,1,1,
+    58,0,9,139,31,15,61,0,5,31,115,177,0,1,8,81,31,0,57,0,1,81,31,9,
+    58,0,48,99,109,112,119,0,5,240,5,5,233,0,11,190,35,3,122,14,29,99,73,15,
+    11,65,0,6,240,0,11,186,35,15,65,0,21,7,247,0,12,45,49,15,69,0,11,0,
+    1,1,11,199,0,12,222,48,0,241,1,3,30,41,14,66,0,0,40,32,0,68,1,4,
+    58,0,13,234,1,21,50,126,6,2,205,3,59,100,113,50,38,2,12,141,28,4,172,1,
+    5,204,5,9,57,0,15,135,35,8,15,57,0,11,15,137,35,11,15,60,0,4,47,112,
+    100,174,0,1,8,232,13,19,53,21,8,8,194,54,6,57,0,15,221,36,8,15,57,0,
+    11,15,223,36,11,15,60,0,5,44,104,50,206,120,8,126,3,0,56,0,0,197,119,14,
+    230,0,2,56,0,9,48,120,8,125,3,15,57,0,13,9,51,120,11,124,3,15,60,0,
+    9,11,75,31,30,52,43,4,0,210,119,15,230,0,0,10,73,31,8,230,0,4,8,2,
+    15,57,0,8,9,65,120,4,51,3,10,10,2,15,62,0,5,47,115,120,94,1,9,18,
+    54,233,0,5,168,130,11,57,0,15,95,1,8,15,58,0,12,14,96,1,9,41,50,15,
+    62,0,7,6,143,170,14,97,1,2,153,1,0,234,0,30,55,154,1,6,146,170,14,97,
+    1,15,57,0,14,14,97,1,12,15,2,15,61,0,4,12,17,116,15,17,2,0,72,104,
+    118,32,55,201,126,7,57,0,15,17,2,11,15,57,0,8,15,176,0,9,15,61,0,10,
+    15,95,1,20,15,58,0,4,15,96,1,16,15,58,0,4,15,97,1,20,15,62,0,0,
+    12,128,14,15,157,7,2,6,48,180,9,57,0,11,204,4,15,156,7,0,15,57,0,4,
+    11,204,4,15,155,7,3,15,60,0,0,15,173,0,9,2,231,0,15,56,0,6,15,172,
+    0,6,15,56,0,12,15,171,0,9,15,59,0,7,31,115,211,6,11,5,57,0,31,49,
+    57,0,3,15,48,55,8,15,57,0,11,15,211,6,9,15,60,0,6,31,113,129,7,2,
+    6,211,6,0,146,1,2,94,6,11,161,3,3,57,0,15,211,6,6,15,57,0,13,15,
+    211,6,9,15,60,0,6,63,115,100,50,164,9,0,10,47,41,0,59,0,1,164,9,9,
+    116,72,0,61,0,36,104,50,246,40,5,219,8,15,219,9,0,15,55,0,1,19,105,228,
+    177,15,14,10,3,6,35,53,6,50,0,14,96,12,11,17,9,0,167,5,1,45,179,9,
+    183,18,2,62,0,31,117,113,0,12,12,204,3,34,115,105,23,1,5,87,175,15,167,0,
+    3,13,218,0,8,55,0,0,109,131,10,54,0,3,10,42,13,54,0,23,115,54,0,10,
+    114,42,2,191,3,1,214,0,9,54,54,63,99,118,116,142,8,13,2,167,0,15,25,8,
+    0,15,143,8,14,15,58,0,14,15,48,7,10,15,62,0,10,15,210,5,15,1,142,1,
+    11,27,8,15,50,7,19,15,58,0,9,15,148,8,10,15,63,0,11,12,53,7,9,101,
+    1,6,191,6,8,72,156,8,58,0,15,102,1,6,15,59,0,15,15,103,1,10,15,63,
+    0,11,15,104,1,20,15,59,0,5,15,105,1,16,15,59,0,5,15,106,1,21,15,64,
+    0,1,15,62,7,19,8,176,59,7,58,0,15,63,7,16,15,58,0,4,14,149,6,13,
+    104,1,15,62,0,4,15,66,7,19,15,57,0,3,15,67,7,16,15,57,0,3,15,175,
+    0,10,15,61,0,7,10,118,5,15,170,5,2,6,20,59,6,52,0,8,58,5,15,53,
+    0,2,12,202,1,31,117,130,14,13,0,81,6,2,163,0,11,110,3,4,58,0,15,176,
+    7,6,15,58,0,14,15,224,62,6,15,58,0,7,15,175,7,3,10,174,0,2,240,27,
+    15,58,0,4,15,174,0,10,15,58,0,10,15,174,0,10,15,58,0,3,7,97,6,63,
+    124,101,114,154,6,7,6,253,11,3,46,6,1,58,0,3,113,48,0,58,0,15,157,6,
+    5,14,57,0,31,119,32,1,1,6,231,2,6,90,1,11,180,7,3,57,0,15,231,2,
+    6,15,57,0,13,15,43,10,9,15,60,0,6,15,173,0,12,2,33,1,15,56,0,6,
+    15,172,0,6,15,56,0,12,15,171,0,9,15,59,0,3,63,100,105,118,204,19,0,15,
+    242,4,4,25,53,94,173,3,59,0,15,236,21,0,15,206,19,1,15,59,0,1,15,229,
+    21,0,15,207,19,4,12,62,0,15,207,19,23,9,58,0,32,102,99,97,24,31,99,242,
+    0,4,8,108,3,0,196,9,5,166,70,15,63,0,0,15,169,23,12,15,63,0,13,15,
+    84,52,13,15,66,0,5,15,191,0,19,31,50,62,0,13,15,160,23,12,15,62,0,12,
+    15,189,0,13,15,65,0,5,2,255,0,15,187,1,0,8,2,4,2,250,0,6,149,71,
+    10,127,0,15,61,0,12,2,122,0,15,61,0,0,127,99,109,117,108,99,112,99,248,1,
+    22,28,100,186,0,4,63,0,15,248,1,19,15,63,0,6,15,248,1,22,11,66,0,15,
+    191,0,19,5,121,1,15,62,0,5,15,248,1,19,15,62,0,5,15,248,1,22,15,255,
+    0,1,15,247,1,22,27,100,247,1,15,60,0,15,6,246,1,12,60,0,0,249,23,76,
+    117,98,49,51,141,5,14,228,4,2,93,19,78,102,118,32,57,245,2,6,67,0,15,236,
+    4,10,15,67,0,19,15,244,4,13,15,70,0,12,63,50,49,51,204,0,23,31,97,67,
+    0,9,15,204,0,19,15,67,0,10,15,204,0,22,15,70,0,4,47,51,49,204,0,23,
+    31,98,67,0,9,15,204,0,19,15,67,0,10,15,204,0,22,12,70,0,111,115,117,98,
+    97,100,100,100,2,27,11,167,2,9,67,0,15,100,2,20,15,67,0,9,15,100,2,23,
+    15,70,0,2,15,100,2,27,15,67,0,9,15,100,2,20,15,67,0,9,15,100,2,23,
+    15,70,0,3,15,100,2,26,15,67,0,9,15,100,2,20,15,67,0,9,15,100,2,23,
+    10,110,93,0,170,2,15,97,2,27,11,105,144,15,94,2,30,15,64,0,6,15,91,2,
+    23,14,67,0,15,88,2,27,15,64,0,6,15,85,2,20,15,64,0,6,15,82,2,23,
+    15,67,0,0,15,79,2,26,15,64,0,6,15,76,2,20,15,64,0,6,15,73,2,23,
+    9,67,0,1,243,4,15,73,2,27,9,95,62,8,64,0,15,73,2,20,15,64,0,6,
+    15,73,2,23,14,67,0,15,73,2,27,15,64,0,6,15,73,2,20,15,64,0,6,15,
+    73,2,23,15,67,0,0,15,73,2,26,15,64,0,6,15,73,2,20,15,64,0,6,15,
+    73,2,23,12,42,192,1,201,1,15,135,13,12,2,62,0,1,161,198,11,133,185,2,69,
+    1,15,63,0,22,31,97,63,0,0,47,51,49,63,0,22,26,98,63,0,1,102,38,15,
+    190,0,26,10,36,96,1,64,0,15,191,0,26,15,64,0,1,15,192,0,25,11,63,192,
+    15,212,10,30,11,154,183,15,209,10,30,15,64,0,6,15,198,3,23,14,67,0,15,198,
+    3,27,15,64,0,6,15,198,3,20,15,64,0,6,15,198,3,23,15,67,0,0,15,198,
+    3,26,15,64,0,6,15,198,3,20,15,64,0,6,15,198,3,23,9,67,0,1,158,8,
+    15,73,2,27,10,78,17,15,73,2,31,15,64,0,6,15,73,2,23,14,67,0,15,73,
+    2,27,15,64,0,6,15,73,2,20,15,64,0,6,15,73,2,23,15,67,0,0,15,73,
+    2,26,15,64,0,6,15,73,2,20,15,64,0,6,15,73,2,23,11,104,193,2,201,1,
+    15,81,5,23,11,88,154,2,69,1,15,80,5,23,15,63,0,0,15,79,5,25,10,63,
+    0,31,110,190,0,30,10,163,45,1,64,0,15,191,0,26,15,64,0,1,15,192,0,25,
+    9,64,0,121,102,112,99,108,97,115,115,167,40,2,57,2,15,164,40,3,28,54,121,91,
+    15,65,0,0,3,58,2,15,164,40,3,15,65,0,17,3,59,2,15,160,40,3,15,65,
+    0,5,9,163,40,12,32,77,4,155,40,24,54,171,91,1,119,66,65,101,116,101,120,36,
+    41,15,2,27,8,3,183,2,24,52,42,62,6,57,0,15,2,27,8,15,57,0,11,15,
+    2,27,12,15,61,0,7,11,236,1,9,210,26,6,233,1,2,33,79,6,57,0,79,109,
+    97,110,116,233,0,2,15,234,1,3,9,104,112,3,43,1,4,67,0,13,243,0,15,236,
+    1,3,15,67,0,9,15,253,0,2,15,242,1,3,15,71,0,5,15,7,1,1,15,248,
+    1,4,2,129,108,12,67,0,31,120,248,1,10,6,64,24,8,156,42,6,57,0,15,170,
+    29,15,15,57,0,4,15,169,29,19,15,61,0,0,15,248,1,9,7,181,24,12,57,0,
+    47,105,110,232,0,20,8,219,25,6,57,0,7,70,31,15,232,0,5,15,57,0,3,15,
+    232,0,20,14,61,0,15,232,0,20,8,57,0,0,127,174,8,54,0,28,109,46,27,1,
+    125,34,8,215,163,2,50,0,15,130,171,2,5,48,0,8,126,145,12,98,0,2,100,5,
+    10,53,0,7,88,168,1,94,5,15,52,0,20,9,18,56,0,128,166,7,51,0,23,114,
+    202,0,6,120,32,24,54,86,77,1,50,0,0,40,0,9,147,68,5,68,29,4,43,0,
+    1,197,0,47,117,108,177,27,24,9,249,12,3,59,0,15,177,27,20,15,59,0,1,15,
+    32,8,2,14,16,2,12,59,0,15,174,27,23,9,58,0,44,114,99,215,5,15,21,9,
+    8,6,68,101,7,59,0,15,16,9,19,15,59,0,2,15,235,0,10,15,59,0,7,15,
+    235,0,2,15,221,5,3,10,177,93,2,68,99,15,221,5,23,15,134,99,5,15,220,5,
+    23,15,66,0,8,15,219,5,24,15,200,99,5,15,8,1,4,15,222,5,4,9,129,99,
+    100,109,118,105,10,118,101,41,98,15,19,1,23,13,37,98,8,68,0,15,21,1,20,15,
+    68,0,10,15,23,1,24,15,72,0,6,15,25,1,28,15,104,98,4,15,22,1,15,6,
+    163,2,8,169,75,9,65,0,15,19,1,11,15,65,0,16,15,16,1,15,15,69,0,12,
+    15,13,1,18,7,51,3,13,88,77,3,112,95,15,38,4,22,15,174,95,2,15,41,4,
+    22,15,62,0,5,15,55,13,22,15,236,95,2,15,247,11,21,11,175,95,15,6,2,5,
+    14,5,6,13,174,86,15,251,8,19,15,55,0,1,15,226,45,18,14,229,86,15,0,6,
+    22,13,170,86,15,235,6,23,13,187,85,15,235,6,23,15,59,0,1,15,156,34,23,13,
+    188,85,15,238,0,22,15,188,85,0,15,99,53,7,12,139,85,181,35,49,52,10,118,98,
+    99,115,116,110,101,247,56,4,53,9,23,86,223,175,22,98,142,1,81,32,108,97,116,101,
+    186,58,10,56,0,22,121,56,0,4,225,56,15,56,0,10,16,115,175,50,11,111,0,4,
+    30,78,15,55,0,15,9,110,0,15,55,0,10,1,19,58,1,166,0,5,112,0,2,218,
+    226,9,224,0,6,19,10,15,58,0,6,21,121,222,226,9,226,0,15,58,0,7,1,145,
+    51,12,114,0,5,172,0,15,56,0,14,10,112,0,15,56,0,15,31,111,228,0,4,2,
+    129,57,15,58,0,19,10,116,0,15,58,0,16,15,228,0,2,0,88,1,15,56,0,19,
+    10,112,0,15,56,0,15,6,95,60,5,53,63,8,199,1,6,203,59,15,57,0,6,6,
+    51,63,8,198,1,15,57,0,2,0,211,67,2,149,67,8,165,63,8,83,1,8,127,68,
+    15,56,0,0,0,108,0,9,111,0,15,56,0,18,3,216,40,15,113,0,3,7,220,4,
+    15,57,0,1,15,114,0,7,15,57,0,7,1,116,209,12,113,0,4,25,1,15,170,0,
+    8,1,112,209,12,112,0,15,56,0,18,15,226,0,1,5,57,0,15,169,0,9,15,226,
+    0,1,15,57,0,15,31,117,226,0,2,4,109,2,15,170,0,7,1,56,0,13,112,0,
+    15,56,0,18,15,226,0,1,5,57,0,15,169,0,9,15,226,0,1,15,57,0,12,8,
+    248,222,12,116,0,4,43,82,8,110,222,15,59,0,3,13,118,0,15,59,0,18,2,177,
+    222,15,118,0,6,7,14,89,15,59,0,3,15,118,0,7,15,59,0,1,0,174,6,81,
+    108,108,119,112,99,2,231,0,51,0,17,88,88,1,21,57,92,187,17,48,226,14,47,10,
+    115,37,0,10,18,49,37,0,97,108,119,112,118,97,108,15,46,4,107,226,8,48,0,16,
+    49,5,0,4,49,0,32,105,100,52,0,0,46,10,32,108,119,245,225,15,54,0,17,23,
+    48,54,0,81,118,102,114,99,122,193,58,2,92,139,12,151,0,24,56,238,8,4,44,0,
+    3,37,144,2,44,0,0,7,2,15,44,0,5,3,110,2,15,88,0,1,8,235,16,4,
+    44,0,15,88,0,5,12,44,0,5,4,94,14,87,0,8,84,20,1,43,0,4,254,93,
+    14,43,0,9,88,83,72,99,109,111,118,228,165,3,171,16,2,49,0,17,56,49,0,2,
+    6,105,51,105,115,52,254,1,21,115,55,0,6,233,165,3,65,85,2,190,0,15,55,0,
+    13,4,110,0,5,163,2,4,110,0,0,104,2,11,55,0,22,115,165,0,4,110,0,5,
+    159,2,4,110,0,15,55,0,6,17,111,4,252,14,172,79,8,222,0,2,160,109,9,136,
+    77,32,99,111,240,129,15,56,0,13,13,42,89,0,56,0,5,241,228,15,56,0,7,13,
+    238,12,0,56,0,1,18,216,15,57,0,11,31,101,169,0,2,4,74,5,15,57,0,9,
+    15,170,0,2,4,40,4,15,57,0,9,15,171,0,3,9,20,168,15,57,0,3,1,212,
+    12,12,57,0,15,56,0,15,2,175,110,9,56,0,65,104,97,100,100,171,141,15,79,3,
+    3,2,211,64,4,205,2,1,45,0,6,4,148,13,45,0,9,252,182,1,45,0,3,148,
+    0,15,45,0,1,9,171,185,0,45,0,7,94,148,13,45,0,8,140,54,1,45,0,2,
+    96,142,15,46,0,3,6,121,149,6,46,0,15,92,0,7,6,151,147,6,46,0,15,183,
+    0,7,6,71,144,5,46,0,15,184,0,8,30,100,184,0,1,64,126,15,46,0,4,5,
+    36,41,6,46,0,15,92,0,8,5,238,38,4,46,0,15,91,0,8,2,151,102,9,45,
+    0,15,110,1,8,10,90,0,0,4,144,15,17,1,7,6,72,152,4,45,0,15,16,1,
+    8,26,101,108,1,0,162,139,15,180,0,7,6,32,156,2,190,34,33,99,115,92,83,15,
+    75,5,9,2,231,30,10,20,5,1,57,0,23,113,161,57,15,58,0,3,2,140,3,15,
+    58,0,0,31,108,58,0,13,2,133,19,13,58,0,15,174,0,15,31,56,174,0,4,15,
+    175,0,16,2,181,74,15,59,0,2,15,176,0,13,31,56,176,0,5,4,139,1,15,58,
+    0,7,2,181,20,15,58,0,0,10,123,4,15,58,0,0,2,202,26,13,58,0,15,115,
+    0,14,2,207,45,15,57,0,0,15,114,0,13,31,57,114,0,2,31,100,231,0,17,2,
+    119,45,15,59,0,0,15,58,0,14,2,229,44,10,58,0,0,224,243,15,147,7,13,2,
+    171,84,9,92,7,10,55,0,15,168,0,3,10,55,0,1,110,0,33,114,111,227,79,3,
+    208,148,8,52,0,2,84,3,7,55,238,25,118,47,0,6,9,85,4,47,0,0,154,0,
+    6,47,0,1,116,31,10,94,0,15,98,6,2,13,221,168,33,114,111,55,79,15,146,0,
+    7,6,230,3,3,146,0,9,102,1,13,146,0,10,2,74,10,94,0,15,146,0,2,8,
+    149,71,4,146,0,7,200,154,15,146,0,0,6,165,4,3,146,0,9,203,7,13,146,0,
+    10,103,81,10,94,0,15,146,0,2,8,154,86,4,146,0,6,97,5,15,146,0,1,6,
+    100,5,3,146,0,13,56,176,9,146,0,10,106,83,10,94,0,15,146,0,2,13,21,253,
+    63,115,104,97,72,2,11,6,54,58,0,146,0,6,47,0,15,146,0,4,11,184,146,17,
+    104,86,163,15,94,0,7,6,56,57,3,94,0,15,20,2,11,11,203,149,17,104,73,162,
+    15,94,0,7,6,149,7,3,94,0,15,224,1,11,11,120,149,17,104,41,159,15,94,0,
+    7,6,139,64,3,94,0,15,172,1,11,11,180,146,17,104,9,100,15,94,0,7,6,149,
+    82,2,94,0,4,47,0,15,94,0,4,11,114,178,17,104,131,158,15,94,0,7,6,38,
+    8,3,94,0,15,120,1,11,11,153,161,17,104,209,156,15,94,0,7,6,87,8,3,94,
+    0,15,120,1,11,11,66,168,17,104,177,153,15,94,0,7,6,119,82,3,94,0,15,120,
+    1,11,8,44,106,16,98,183,244,15,226,14,14,2,219,4,1,226,14,0,37,3,50,98,
+    108,99,91,61,0,52,0,12,142,0,17,48,122,172,1,12,15,1,41,0,31,99,42,0,
+    7,19,49,43,118,1,42,0,31,115,42,0,12,7,84,0,54,102,105,108,204,15,15,44,
+    0,1,1,246,15,2,86,0,15,44,0,14,22,50,88,0,63,109,115,107,215,0,10,6,
+    87,0,22,99,22,16,15,84,0,1,19,51,41,0,47,116,122,83,0,10,1,212,161,3,
+    42,0,79,49,109,115,107,1,1,11,16,55,43,0,48,118,109,10,
+};
+const unsigned long gen_blob_raw = 213571;
+
+void gen_tab(void) { tab_blob(gen_blob, sizeof gen_blob, gen_blob_raw); }

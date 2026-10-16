@@ -1,7 +1,9 @@
+/* More NEON: dup, ins, umov, movi and friends, orr/bic immediate, fmov vector forms, pairwise and extend/narrow. */
 #include "a64_simd.h"
 
 static int lg(int es) { return es == 8 ? 0 : es == 16 ? 1 : es == 32 ? 2 : 3; }
 
+/* Encodes the imm5 field for an element index. */
 static int elem_imm5(Ctx *c, const VReg *v, int *out)
 {
     if (v->es > 64) { err("%s: bad element size", c->mn); return 0; }
@@ -12,16 +14,19 @@ static int elem_imm5(Ctx *c, const VReg *v, int *out)
     return 1;
 }
 
+/* True if operand i is a vector element (v0.s[1]). */
 static int is_elem(Ctx *c, int i, VReg *v)
 {
     return i < c->n && a64_p_vec(c->tok[i], v) && !v->scalar && v->lane >= 0;
 }
 
+/* True if operand i is a vector with an arrangement. */
 static int is_arr(Ctx *c, int i, VReg *v)
 {
     return i < c->n && a64_p_vec(c->tok[i], v) && !v->scalar && v->has_arr && v->lane < 0;
 }
 
+/* dup from element or general register. */
 int h_dup(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -53,6 +58,7 @@ int h_dup(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ins from general register or element. */
 int h_ins(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -76,6 +82,7 @@ int h_ins(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* umov and smov. */
 int h_umov(Ctx *c, const MnEnt *e)
 {
     int sg = e->a;
@@ -102,6 +109,7 @@ int h_umov(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* mov aliases for vectors. */
 int h_vmov(Ctx *c, const MnEnt *e)
 {
     VReg a, b;
@@ -128,6 +136,7 @@ int h_vmov(Ctx *c, const MnEnt *e)
     return PASS;
 }
 
+/* Reads an optional lsl or msl shift after an immediate. */
 static int imm_shift(Ctx *c, int i, int *kind, i64 *sh)
 {
     *kind = 0;
@@ -151,11 +160,13 @@ static int imm_shift(Ctx *c, int i, int *kind, i64 *sh)
     return 1;
 }
 
+/* Builds the movi-style instruction word. */
 static u32 imm_enc(u32 q, u32 op, u32 cmode, u32 imm8, u32 rd)
 {
     return 0x0f000400u | (q << 30) | (op << 29) | ((imm8 >> 5) << 16) | (cmode << 12) | ((imm8 & 31) << 5) | rd;
 }
 
+/* Finds a shift that makes an immediate fit 8 bits. */
 static int fit_shift(i64 *imm, int *sh, int step, int max, int *auto_ok)
 {
     *auto_ok = 0;
@@ -171,6 +182,7 @@ static int fit_shift(i64 *imm, int *sh, int step, int max, int *auto_ok)
     return 0;
 }
 
+/* movi and mvni. */
 int h_movi(Ctx *c, const MnEnt *e)
 {
     int inv = e->a;
@@ -243,6 +255,7 @@ int h_movi(Ctx *c, const MnEnt *e)
     return 0;
 }
 
+/* orr and bic with immediate. */
 int h_orrbic(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -269,6 +282,7 @@ int h_orrbic(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fmov vector immediate and element forms. */
 int h_vfmov(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -302,6 +316,7 @@ int h_vfmov(Ctx *c, const MnEnt *e)
     return PASS;
 }
 
+/* addp, faddp, fmaxp ... pairwise operations. */
 int h_pairwise(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -334,6 +349,7 @@ int h_pairwise(Ctx *c, const MnEnt *e)
     return 0;
 }
 
+/* Extend and narrow (xtn, sxtl, uxtl, sqxtn ...). */
 int h_xtl(Ctx *c, const MnEnt *e)
 {
     int u = e->a;

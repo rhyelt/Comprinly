@@ -1,3 +1,4 @@
+/* Preprocessor: NASM compatible single and multi line macros, conditionals, %rep, includes, contexts, string functions and the built-in predefined names. Turns the source into a flat list of lines for the assembler. */
 #include "cly.h"
 #include <time.h>
 #include <dirent.h>
@@ -71,6 +72,7 @@ static PP P;
 static char **name_pool;
 static int name_pool_n;
 
+/* Returns a shared copy of a string so equal names can be compared by pointer. */
 static const char *intern(const char *s)
 {
     for (int i = 0; i < name_pool_n; i++) if (!strcmp(name_pool[i], s)) return name_pool[i];
@@ -79,6 +81,7 @@ static const char *intern(const char *s)
     return name_pool[name_pool_n++];
 }
 
+/* Lower-case copy of a string. */
 static char *lower(const char *s)
 {
     char *r = xstrdup(s);
@@ -86,6 +89,7 @@ static char *lower(const char *s)
     return r;
 }
 
+/* Removes leading and trailing blanks in place and returns the new start. */
 static char *trim(char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -94,6 +98,7 @@ static char *trim(char *s)
     return s;
 }
 
+/* Length of a quote character at p (1 for plain, more for curly). 0 if none. */
 static int qlen_at(const char *p, char *kind)
 {
     unsigned char c = (unsigned char)p[0];
@@ -106,6 +111,7 @@ static int qlen_at(const char *p, char *kind)
     return 0;
 }
 
+/* Skips over a quoted string starting at p. */
 static const char *skip_quoted(const char *p)
 {
     char k;
@@ -122,6 +128,7 @@ static const char *skip_quoted(const char *p)
     return p;
 }
 
+/* Cuts a ; comment off the end of a line, ignoring semicolons inside quotes. */
 static void strip_comment(char *s)
 {
     const char *p = s;
@@ -133,6 +140,7 @@ static void strip_comment(char *s)
     }
 }
 
+/* Looks up a single-line macro in one table by name and parameter count. */
 static SMac *smac_find_in(HT *h, const char *key, int nargs, int isfunc_call)
 {
     SMac *m = ht_get(h, key);
@@ -143,6 +151,7 @@ static SMac *smac_find_in(HT *h, const char *key, int nargs, int isfunc_call)
     return NULL;
 }
 
+/* Builds the lookup key for a name, adding the context prefix for %$ names. */
 static char *ctx_key(const char *name)
 {
     const char *p = name;
@@ -159,6 +168,7 @@ static char *ctx_key(const char *name)
     return xstrdup(name);
 }
 
+/* Finds a single-line macro, checking the case-sensitive table and then the case-insensitive one. */
 static SMac *smac_lookup(const char *name, int nargs, int isfunc_call)
 {
     char *key = ctx_key(name);
@@ -173,6 +183,7 @@ static SMac *smac_lookup(const char *name, int nargs, int isfunc_call)
     return m;
 }
 
+/* Releases a macro and its parameters. */
 static void smac_free(SMac *m)
 {
     free(m->name);
@@ -182,6 +193,7 @@ static void smac_free(SMac *m)
     free(m);
 }
 
+/* Removes a single-line macro (%undef). */
 static void smac_undef(const char *name)
 {
     char *key = ctx_key(name);
@@ -196,6 +208,7 @@ static void smac_undef(const char *name)
     free(key);
 }
 
+/* Adds a single-line macro (%define, %xdefine, %assign). */
 static void smac_define(const char *name, int casei, int isfunc, char **params, int nparams, int variadic, const char *body)
 {
     char *key = ctx_key(name);
@@ -224,6 +237,7 @@ static void smac_define(const char *name, int casei, int isfunc, char **params, 
     free(key);
 }
 
+/* Defines an object-like macro from C code. Used for the predefined names. */
 static void define_simple(const char *name, const char *body)
 {
     smac_define(name, 0, 0, NULL, 0, 0, body);
@@ -234,6 +248,7 @@ static void expand_text(const char *in, Str *out, Active *act);
 static int is_active(Active *a, SMac *m);
 static SMac *smac_lookup(const char *name, int nargs, int isfunc_call);
 
+/* Expands one operand of %+ before pasting. */
 static char *paste_operand(const char *tok, size_t n, Active *act)
 {
     char *t = xstrndup(tok, n);
@@ -246,6 +261,7 @@ static char *paste_operand(const char *tok, size_t n, Active *act)
     return xstrdup(r);
 }
 
+/* Joins tokens around %+ into one. */
 static void paste_tokens(Str *s, Active *act)
 {
     if (!s->s) return;
@@ -290,6 +306,7 @@ static void paste_tokens(Str *s, Active *act)
     *s = r;
 }
 
+/* Reads the arguments of a function-like macro call, honoring nested brackets and quotes. */
 static int parse_call_args(const char **pp, char ***args, int *nargs)
 {
     const char *p = *pp;
@@ -348,12 +365,14 @@ static int parse_call_args(const char **pp, char ***args, int *nargs)
     return 1;
 }
 
+/* True if macro m is already being expanded (stops infinite recursion). */
 static int is_active(Active *act, SMac *m)
 {
     for (; act; act = act->up) if (act->m == m) return 1;
     return 0;
 }
 
+/* Expands a macro body with its arguments substituted. */
 static void expand_smac_body(SMac *m, char **args, int nargs, Str *out, Active *act)
 {
     Str sub = {0};
@@ -405,6 +424,7 @@ static char *expand_dup(const char *in);
 
 static int cond_eval(const char *kind, const char *arg);
 
+/* Built-in preprocessor functions: the is* tests (isdef, isnum, isidn ...), abs, cond, count, eval, num, sel, str, strcat, strlen, substr and tok. Returns 0 if name is not one. */
 static int pp_function(const char *name, const char *inner, Str *out)
 {
     if (name[0] == 'i' && name[1] == 's') {
@@ -529,6 +549,7 @@ static int pp_function(const char *name, const char *inner, Str *out)
     return handled;
 }
 
+/* Main macro expander for one line of text. Finds macros, expands them and rescans the result. */
 static void expand_text(const char *in, Str *out, Active *act)
 {
     Str res = {0};
@@ -745,6 +766,7 @@ static void expand_text(const char *in, Str *out, Active *act)
     free(res.s);
 }
 
+/* Expands a string and returns the result as new memory. */
 static char *expand_dup(const char *in)
 {
     Str o = {0};
@@ -754,6 +776,7 @@ static char *expand_dup(const char *in)
 
 static int src_next(Src *s, SLine *out);
 
+/* Sends a finished line to the output list. */
 static void out_line(const char *text, const char *file, int line)
 {
     lv_add(P.out, text, file, line);
@@ -779,6 +802,7 @@ static void out_line(const char *text, const char *file, int line)
     }
 }
 
+/* True if the current %if branch is being assembled. */
 static int cur_active(void)
 {
     return P.ncond == 0 ? 1 : P.conds[P.ncond - 1].active;
@@ -786,6 +810,7 @@ static int cur_active(void)
 
 static void process_src(Src *s);
 
+/* Finds a multi line macro by name and argument count. */
 static MMac *mmac_find(const char *name, int nargs)
 {
     for (int ci = 0; ci < 2; ci++) {
@@ -800,6 +825,7 @@ static MMac *mmac_find(const char *name, int nargs)
     return NULL;
 }
 
+/* True if any multi line macro has this name. */
 static int mmac_exists_name(const char *name)
 {
     for (int ci = 0; ci < 2; ci++) {
@@ -812,6 +838,7 @@ static int mmac_exists_name(const char *name)
     return 0;
 }
 
+/* Reports the allowed argument range of a macro name so the assembler can tell a macro call from an instruction. */
 int pp_macro_arity(const char *name, int *minp, int *maxp)
 {
     for (int ci = 0; ci < 2; ci++) {
@@ -824,6 +851,7 @@ int pp_macro_arity(const char *name, int *minp, int *maxp)
     return 0;
 }
 
+/* Splits the text after a macro name into arguments, with greedy last parameter handling. */
 static int split_margs(const char *s, char ***args, int *nargs, MMac *greedy_for)
 {
     int cap = 8, n = 0;
@@ -890,12 +918,14 @@ static int split_margs(const char *s, char ***args, int *nargs, MMac *greedy_for
 static const char *cc_names[] = { "o", "no", "b", "c", "nae", "ae", "nb", "nc", "e", "z", "ne", "nz", "be", "na", "a", "nbe", "s", "ns", "p", "pe", "np", "po", "l", "nge", "ge", "nl", "le", "ng", "g", "nle", NULL };
 static const char *cc_inv[] = { "no", "o", "ae", "nc", "ae", "b", "b", "c", "ne", "nz", "e", "z", "a", "a", "be", "be", "ns", "s", "s", "np", "pe", "pe", "p", "ge", "l", "l", "g", "g", "le", "le" };
 
+/* Opposite condition code (e to ne, l to ge ...), used for the %-1 form of a macro argument. */
 static const char *cc_invert(const char *cc)
 {
     for (int i = 0; cc_names[i]; i++) if (!strcasecmp(cc_names[i], cc)) return cc_inv[i];
     return NULL;
 }
 
+/* Replaces %1, %0, %%labels, %$ context names and similar inside a macro body line. */
 static void subst_inv(const char *in, Inv *inv, Str *out)
 {
     const char *p = in;
@@ -988,6 +1018,7 @@ static void subst_inv(const char *in, Inv *inv, Str *out)
     }
 }
 
+/* Next line of the current source, taking lines from a running macro first. */
 static int src_next(Src *s, SLine *out)
 {
     if (s->i >= s->lv->n) return 0;
@@ -1002,6 +1033,7 @@ static int src_next(Src *s, SLine *out)
     return 1;
 }
 
+/* Runs a multi line macro: sets up %1..%n and local labels, then processes its body. */
 static void invoke_mmac(MMac *m, char **args, int nargs, const char *name, const char *file, int line)
 {
     if (P.depth > 200) { err("macro recursion too deep"); return; }
@@ -1040,6 +1072,7 @@ static void invoke_mmac(MMac *m, char **args, int nargs, const char *name, const
     (void)line;
 }
 
+/* If the line is a macro call, runs it and returns 1. */
 static int try_mmacro(char *line, const char *file, int line_no)
 {
     const char *p = line;
@@ -1116,6 +1149,7 @@ static int try_mmacro(char *line, const char *file, int line_no)
 }
 
 
+/* Reads the next word or quoted string from p into buf. */
 static const char *next_tok(const char *p, char *buf, size_t sz)
 {
     while (*p == ' ' || *p == '\t') p++;
@@ -1144,6 +1178,7 @@ static const char *next_tok(const char *p, char *buf, size_t sz)
     return p;
 }
 
+/* Evaluates an expression quietly. Errors do not show. */
 static int try_eval(const char *s, Val *v)
 {
     int e0 = g_errors;
@@ -1156,6 +1191,7 @@ static int try_eval(const char *s, Val *v)
     return ok && !bad;
 }
 
+/* Compares two strings ignoring blank differences and optionally case. */
 static int norm_eq(const char *a, const char *b, int ci)
 {
     for (;;) {
@@ -1170,6 +1206,7 @@ static int norm_eq(const char *a, const char *b, int ci)
     }
 }
 
+/* Splits at commas outside brackets and quotes. */
 static char **split_top_commas(const char *s, int *n)
 {
     char **r = NULL;
@@ -1198,6 +1235,7 @@ static char **split_top_commas(const char *s, int *n)
     return r;
 }
 
+/* Evaluates one %if variant (%ifdef, %ifnum, %ifidn ...). */
 static int cond_eval(const char *kind, const char *arg)
 {
     if (!strcmp(kind, "")) {
@@ -1301,6 +1339,7 @@ static int cond_eval(const char *kind, const char *arg)
     return 0;
 }
 
+/* Splits a directive like %elifndef into its kind and whether it is negated. */
 static int split_cond(const char *dir, const char **kind_out, int *neg, const char *prefix)
 {
     size_t pl = strlen(prefix);
@@ -1314,6 +1353,7 @@ static int split_cond(const char *dir, const char **kind_out, int *neg, const ch
     return 0;
 }
 
+/* Like src_next but without expanding macros, for skipping inactive blocks and collecting bodies. */
 static int src_next_raw(Src *s, SLine *out)
 {
     if (s->i >= s->lv->n) return 0;
@@ -1324,6 +1364,7 @@ static int src_next_raw(Src *s, SLine *out)
     return 1;
 }
 
+/* Collects raw lines until the matching close directive, counting nested opens. */
 static void collect_until(Src *s, const char *open1, const char *open2, const char *close1, const char *close2, LineVec *body, const char *file, int line, const char *what, int raw)
 {
     int depth = 1;
@@ -1357,6 +1398,7 @@ static void collect_until(Src *s, const char *open1, const char *open2, const ch
     err("`%%%s' without matching end", what);
 }
 
+/* Reads the header of %macro: name, parameter range, defaults and flags. */
 static void parse_macro_header(const char *rest, int casei, MMac **out)
 {
     char name[256];
@@ -1401,6 +1443,7 @@ static void parse_macro_header(const char *rest, int casei, MMac **out)
     *out = m;
 }
 
+/* Stores a finished multi line macro, replacing an older one with the same name. */
 static void add_mmac(MMac *m)
 {
     HT *h = m->casei ? &P.mmacs_ci : &P.mmacs;
@@ -1418,6 +1461,7 @@ static void add_mmac(MMac *m)
     free(k);
 }
 
+/* Finds a file whose name matches ignoring case, one path piece at a time. */
 static char *ci_resolve(const char *dir, const char *name)
 {
     char *norm = xstrdup(name);
@@ -1460,6 +1504,7 @@ static char *ci_resolve(const char *dir, const char *name)
     return cur;
 }
 
+/* Finds an include file: as given, next to the including file, in -I folders, then ignoring case. */
 static char *find_include(const char *name, const char *from)
 {
     if (file_exists(name) && (name[0] == '/' || name[0] == '\\' || (name[0] && name[1] == ':'))) return xstrdup(name);
@@ -1485,6 +1530,7 @@ static char *find_include(const char *name, const char *from)
     return NULL;
 }
 
+/* Splits file text into lines, dropping a UTF-8 BOM and joining \\ continuation lines. */
 static void split_text_lines(char *text, const char *file, LineVec *lv)
 {
     int line = 1;
@@ -1513,6 +1559,7 @@ static void split_text_lines(char *text, const char *file, LineVec *lv)
     free(cur.s);
 }
 
+/* Handles %include: finds the file and processes it as a nested source. */
 static void do_include(const char *name, const char *from)
 {
     if (P.depth > 64) { err("include nesting too deep"); return; }
@@ -1540,6 +1587,7 @@ static void do_include(const char *name, const char *from)
     free(path);
 }
 
+/* Removes the quotes of a string token and processes escapes. */
 static char *unquote_str(const char *tok)
 {
     Str s = {0};
@@ -1550,6 +1598,7 @@ static char *unquote_str(const char *tok)
     return sget(&s);
 }
 
+/* Appends text quoted with whichever quote character it does not contain. */
 static void quote_into(Str *o, const char *txt)
 {
     if (!strchr(txt, '"')) { sadc(o, '"'); sadd(o, txt); sadc(o, '"'); }
@@ -1561,6 +1610,7 @@ static void quote_into(Str *o, const char *txt)
     }
 }
 
+/* Size in bytes of a type word such as byte, word, dword, qword. */
 static i64 type_size(const char *t)
 {
     if (!strcasecmp(t, "byte")) return 1;
@@ -1573,6 +1623,7 @@ static i64 type_size(const char *t)
     return 0;
 }
 
+/* Handles %arg and %local for stack frames inside a context. */
 static void do_arg_local(const char *rest, int islocal)
 {
     if (P.nctx == 0) { err("`%%%s' used outside a context", islocal ? "local" : "arg"); return; }
@@ -1611,6 +1662,7 @@ static void do_arg_local(const char *rest, int islocal)
     free(parts);
 }
 
+/* Parses the rest of a %define or %xdefine line (name, parameters, body) and defines the macro. */
 static void define_from_text(const char *rest, int casei, int expand_body)
 {
     const char *p = rest;
@@ -1660,6 +1712,7 @@ static void define_from_text(const char *rest, int casei, int expand_body)
     free(name);
 }
 
+/* Executes one % directive: conditionals, macros, include, rep, assign, defines, contexts, error and warning, and the rest. */
 static void handle_directive(char *tt, Src *s, const char *file, int line)
 {
     char dir[64];
@@ -2035,6 +2088,7 @@ static void handle_directive(char *tt, Src *s, const char *file, int line)
     }
 }
 
+/* Runs the preprocessor over one source: for each line, directive, macro call or plain line. */
 static void process_src(Src *s)
 {
     SLine l;
@@ -2076,6 +2130,7 @@ static void process_src(Src *s)
     }
 }
 
+/* Defines the predefined names: NASM version, __CLY__, CPU and kernel, __SYS_*__ numbers, date and time, output format. */
 static void define_builtins(PPOpts *o)
 {
     define_simple("__NASM_MAJOR__", "2");
@@ -2133,6 +2188,7 @@ static void define_builtins(PPOpts *o)
     }
 }
 
+/* Preprocesses a file into out. Returns 0 on failure. */
 int pp_run(const char *path, PPOpts *o, LineVec *out)
 {
     memset(&P, 0, sizeof P);

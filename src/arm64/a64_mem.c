@@ -1,5 +1,7 @@
+/* ARM64 loads and stores: addressing modes, pairs, exclusive and acquire/release forms, atomics and prefetch. */
 #include "a64.h"
 
+/* Checks the operand count and reports a count error if it is outside lo..hi. */
 static int usage(Ctx *c, int lo, int hi)
 {
     if (lo == hi) err("%s: expected %d operand%s, found %d", c->mn, lo, lo == 1 ? "" : "s", c->n);
@@ -9,12 +11,14 @@ static int usage(Ctx *c, int lo, int hi)
 
 #define NEED(lo, hi) do { if (c->n < (lo) || c->n > (hi)) return usage(c, (lo), (hi)); } while (0)
 
+/* Skips blanks. */
 static const char *skip(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
     return p;
 }
 
+/* Splits at top-level commas. */
 static int split_top(char *s, char **parts, int max)
 {
     int n = 0, depth = 0;
@@ -35,6 +39,7 @@ static int split_top(char *s, char **parts, int max)
     return n;
 }
 
+/* Parses an extend or shift name with amount inside a memory operand. */
 static int ext_name(const char *s, int *kind, int *code, i64 *amt, int *has, Ctx *c)
 {
     static const struct { const char *n; int kind; int code; } t[] = {
@@ -63,6 +68,7 @@ static int ext_name(const char *s, int *kind, int *code, i64 *amt, int *has, Ctx
 }
 
 
+/* Parses [base], [base, #imm], [base, Xm, ext], pre-index and post-index forms, and :lo12: symbol offsets. */
 int a64_parse_mem(Ctx *c, const char *s, AMem *m)
 {
     memset(m, 0, sizeof *m);
@@ -209,6 +215,7 @@ int a64_parse_mem(Ctx *c, const char *s, AMem *m)
 
 typedef struct { int sz; int fp; int opc_ld, opc_st; int w64; int n; int zr; } RtInfo;
 
+/* Parses the transfer register and its size. */
 static int rt_parse(Ctx *c, int i, RtInfo *r, int allow_fp)
 {
     GReg g;
@@ -231,6 +238,7 @@ static int rt_parse(Ctx *c, int i, RtInfo *r, int allow_fp)
     return 0;
 }
 
+/* Emits a load or store with a :lo12: relocation. */
 static int emit_lo12(Ctx *c, u32 base, int shift, const Val *v)
 {
     a64_reloc(c, RK_A64_LO12, shift, v, (i64)c->out->code.n);
@@ -238,6 +246,7 @@ static int emit_lo12(Ctx *c, u32 base, int shift, const Val *v)
     return 1;
 }
 
+/* Reads the immediate of a post-index form. */
 static int post_imm(Ctx *c, AMem *m, int post_idx, i64 *val)
 {
     int unk;
@@ -245,6 +254,7 @@ static int post_imm(Ctx *c, AMem *m, int post_idx, i64 *val)
     return a64_const(c, c->tok[post_idx], val, &unk);
 }
 
+/* ldr, str, ldur, stur, byte, half and signed forms, FP and SIMD registers. */
 static int h_ldst(Ctx *c, const MnEnt *e)
 {
     NEED(2, 3);
@@ -361,6 +371,7 @@ static int h_ldst(Ctx *c, const MnEnt *e)
     return 0;
 }
 
+/* Unprivileged loads and stores (ldtr, sttr). */
 static int h_ldtr(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -391,6 +402,7 @@ static int h_ldtr(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ldp, stp, ldnp, stnp, ldpsw. */
 static int h_ldp(Ctx *c, const MnEnt *e)
 {
     NEED(3, 4);
@@ -434,6 +446,7 @@ static int h_ldp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Parses an operand that must be just [base]. */
 static int base_only(Ctx *c, int idx, int *base)
 {
     AMem m;
@@ -446,6 +459,7 @@ static int base_only(Ctx *c, int idx, int *base)
     return 1;
 }
 
+/* Exclusive load and store (ldxr, stxr, ldaxr, stlxr and pair forms). */
 static int h_excl(Ctx *c, const MnEnt *e)
 {
     int kind = e->a;
@@ -472,6 +486,7 @@ static int h_excl(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ldar, stlr, ldapr and relatives. */
 static int h_ldar(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -489,6 +504,7 @@ static int mk_atomic(const char *mn, MnEnt *out);
 
 static int h_atomic(Ctx *c, const MnEnt *e);
 
+/* Finds an atomic instruction (ldadd, swp, cas ... with size and ordering suffixes). */
 const MnEnt *a64_atomic_lookup(const char *mn)
 {
     static MnEnt dyn;
@@ -505,6 +521,7 @@ static const AtBase atbases[] = {
     { NULL, 0, 0 }
 };
 
+/* Builds a table entry for an atomic mnemonic from its base, size and ordering suffix. */
 static int mk_atomic(const char *mn, MnEnt *out)
 {
     for (int i = 0; atbases[i].n; i++) {
@@ -526,6 +543,7 @@ static int mk_atomic(const char *mn, MnEnt *out)
     return 0;
 }
 
+/* Atomic memory operations. */
 static int h_atomic(Ctx *c, const MnEnt *e)
 {
     int kind = e->a & 15, op = e->a >> 4;
@@ -571,6 +589,7 @@ static const struct { const char *n; int v; } prfops[] = {
     { "pstl1keep", 16 }, { "pstl1strm", 17 }, { "pstl2keep", 18 }, { "pstl2strm", 19 }, { "pstl3keep", 20 }, { "pstl3strm", 21 }, { NULL, 0 }
 };
 
+/* prfm and prfum. */
 static int h_prfm(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);

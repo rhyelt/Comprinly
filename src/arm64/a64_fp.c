@@ -1,6 +1,8 @@
+/* ARM64 scalar floating point: fmov, arithmetic, conversions, compares and selects. Vector forms are passed on to the SIMD code. */
 #include "a64.h"
 #include <math.h>
 
+/* Checks the operand count and reports a count error if it is outside lo..hi. */
 static int usage(Ctx *c, int lo, int hi)
 {
     if (lo == hi) err("%s: expected %d operand%s, found %d", c->mn, lo, lo == 1 ? "" : "s", c->n);
@@ -12,6 +14,7 @@ static int usage(Ctx *c, int lo, int hi)
 
 int a64_simd_dispatch(Ctx *c);
 
+/* Parses a scalar FP register (h, s or d). */
 static int fpreg(Ctx *c, int i, VReg *v, const char *what)
 {
     if (!a64_p_vec(c->tok[i], v) || !v->scalar || v->sk == 'b' || v->sk == 'q') {
@@ -21,11 +24,13 @@ static int fpreg(Ctx *c, int i, VReg *v, const char *what)
     return 1;
 }
 
+/* FP type field value for a register size. */
 static int ftype(const VReg *v)
 {
     return v->sk == 's' ? 0 : v->sk == 'd' ? 1 : 3;
 }
 
+/* True if any operand is a vector register, so the SIMD handler must take over. */
 static int is_vecop(Ctx *c)
 {
     for (int i = 0; i < c->n; i++) {
@@ -36,6 +41,7 @@ static int is_vecop(Ctx *c)
     return 0;
 }
 
+/* True if an operand is a SIMD scalar register (b, h, s, d, q). */
 static int any_scalar_simd(Ctx *c)
 {
     VReg v;
@@ -43,6 +49,7 @@ static int any_scalar_simd(Ctx *c)
     return 0;
 }
 
+/* Encodes a floating point constant as the 8-bit fmov immediate. Returns 0 if not representable. */
 int fp_imm8(const char *s, int *out)
 {
     s = a64_strip_hash(s);
@@ -71,6 +78,7 @@ int fp_imm8(const char *s, int *out)
     return 0;
 }
 
+/* True if text looks like a number with a fraction or exponent. */
 static int looks_float(const char *s)
 {
     s = a64_strip_hash(s);
@@ -78,6 +86,7 @@ static int looks_float(const char *s)
     return isdigit((unsigned char)*s) || *s == '.';
 }
 
+/* fmov: register, general register, immediate and vector element forms. */
 static int h_fmov(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -143,6 +152,7 @@ static int h_fmov(Ctx *c, const MnEnt *e)
     return 0;
 }
 
+/* Two operand FP arithmetic (fadd, fsub, fmul, fdiv, fmax ...). */
 static int h_fp2(Ctx *c, const MnEnt *e)
 {
     if (is_vecop(c)) return a64_simd_dispatch(c);
@@ -155,6 +165,7 @@ static int h_fp2(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* One operand FP instructions (fabs, fneg, fsqrt, frint ...). */
 static int h_fp1(Ctx *c, const MnEnt *e)
 {
     if (is_vecop(c)) return a64_simd_dispatch(c);
@@ -167,6 +178,7 @@ static int h_fp1(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fcvt between precisions. */
 static int h_fcvt(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -179,6 +191,7 @@ static int h_fcvt(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Fused multiply-add family (fmadd, fmsub ...). */
 static int h_fp3(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -189,6 +202,7 @@ static int h_fp3(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fcmp and fcmpe. */
 static int h_fcmp(Ctx *c, const MnEnt *e)
 {
     NEED(2, 2);
@@ -208,6 +222,7 @@ static int h_fcmp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fccmp and fccmpe. */
 static int h_fccmp(Ctx *c, const MnEnt *e)
 {
     NEED(4, 4);
@@ -224,6 +239,7 @@ static int h_fccmp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fcsel. */
 static int h_fcsel(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -237,6 +253,7 @@ static int h_fcsel(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Conversions between FP and integer (scvtf, ucvtf, fcvtzs, fcvtzu ...). */
 static int h_cvt_int(Ctx *c, const MnEnt *e)
 {
     if (is_vecop(c)) return a64_simd_dispatch(c);
@@ -270,6 +287,7 @@ static int h_cvt_int(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* fjcvtzs. */
 static int h_fjcvtzs(Ctx *c, const MnEnt *e)
 {
     (void)e;

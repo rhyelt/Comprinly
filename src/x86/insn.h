@@ -1,3 +1,4 @@
+/* x86 instruction table types. S_* are operand specs (r8, rm32, imm8, rel ...) a table row can ask for. Ent is one row: mnemonic, specs, encoding tokens and the CPU level that introduced it. */
 #ifndef CLY_INSN_H
 #define CLY_INSN_H
 
@@ -55,5 +56,6 @@ int spec_msize(int s);
 void T(const char *mn, const char *ops, const char *enc);
 void TF(const char *mn, const char *ops, const char *fmt, ...);
 void tab_lv(int n);
+void tab_blob(const unsigned char *b, size_t cn, size_t rn);
 
 #endif

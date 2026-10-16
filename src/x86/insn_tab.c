@@ -1,3 +1,4 @@
+/* The x86 instruction table. Rows come from three places: the generated compressed tables (insn_gen*.c), the hand written groups below (integer, FPU, SSE) and ext tab. Each row is mnemonic, operand specs and an encoding string. */
 #include "cly.h"
 #include "insn.h"
 
@@ -28,6 +29,7 @@ static const struct { const char *n; int id; } specnames[] = {
     { NULL, 0 }
 };
 
+/* Parses a vector operand spec name like vx, vy, vz or vm into its code. */
 static int vec_spec(const char *n, int len)
 {
     if (len < 2 || n[0] != 'v') return -1;
@@ -48,6 +50,7 @@ static int vec_spec(const char *n, int len)
     return -1;
 }
 
+/* Maps an operand spec name (r8, rm32, imm8, ...) to its numeric id. */
 static int spec_id(const char *n, int len)
 {
     {
@@ -60,6 +63,7 @@ static int spec_id(const char *n, int len)
     exit(3);
 }
 
+/* Memory size in bytes that a spec expects. */
 int spec_msize(int s)
 {
     switch (s) {
@@ -74,6 +78,29 @@ int spec_msize(int s)
     }
 }
 
+/* Reads the decompressed generated table text and adds each row with T(). Scans by hand because strchr is slow on musl. */
+void tab_blob(const unsigned char *b, size_t cn, size_t rn)
+{
+    char *t = lz_text(b, cn, rn);
+    char *end = t + rn;
+    char *p = t;
+    while (p < end) {
+        char *f[2] = { NULL, NULL };
+        int nf = 0;
+        char *q = p;
+        for (; q < end && *q != '\n'; q++) if (*q == '\t' && nf < 2) f[nf++] = q;
+        *q = 0;
+        if (*p == '#') tab_lv(atoi(p + 1));
+        else if (nf == 2) {
+            *f[0] = 0;
+            *f[1] = 0;
+            T(p, f[0] + 1, f[1] + 1);
+        }
+        p = q + 1;
+    }
+}
+
+/* Adds one instruction table row: mnemonic, comma separated operand specs, and the encoding string. */
 void T(const char *mn, const char *ops, const char *enc)
 {
     Ent *e = xcalloc(1, sizeof *e);
@@ -157,6 +184,7 @@ void T(const char *mn, const char *ops, const char *enc)
     else { while (h->next) h = h->next; h->next = e; }
 }
 
+/* printf style version of T for rows made in loops. */
 void TF(const char *mn, const char *ops, const char *fmt, ...)
 {
     char buf[256];
@@ -170,6 +198,7 @@ void TF(const char *mn, const char *ops, const char *fmt, ...)
 #define LV(n) (cur_level = (n))
 void tab_lv(int n) { cur_level = n; }
 
+/* The eight ALU instructions (add, or, adc, sbb, and, sub, xor, cmp) in all their forms. */
 static void alu_tab(void)
 {
     static const char *alu[] = { "add", "or", "adc", "sbb", "and", "sub", "xor", "cmp" };
@@ -202,6 +231,7 @@ static const struct { const char *n; int c; } ccal[] = {
     { NULL, 0 }
 };
 
+/* Integer instructions: mov, jumps, stack, strings, shifts, multiply and divide, bit operations, system instructions. */
 static void int_tab(void)
 {
     LV(0);
@@ -588,6 +618,7 @@ static void int_tab(void)
     T("crc32", "r32,rm32", "o32 f2 0f 38 f1 /r");
 }
 
+/* x87 floating point instructions. */
 static void fpu_tab(void)
 {
     LV(0);
@@ -697,6 +728,7 @@ static void fpu_tab(void)
     TF(mn "ss", "xmm,xm32", "f3 0f %02x /r", op); \
     TF(mn "sd", "xmm,xm64", "f2 0f %02x /r", op)
 
+/* SSE, SSE2, SSE3, SSSE3, SSE4 and related instructions. */
 static void sse_tab(void)
 {
     LV(7);
@@ -958,6 +990,7 @@ void gen64_tab(void);
 static void mark_nolong(void);
 void ext_tab(void);
 
+/* Builds the whole table: hand written groups, generated groups, extras. */
 void insn_tab_init(void)
 {
     int_tab();
@@ -969,6 +1002,7 @@ void insn_tab_init(void)
     mark_nolong();
 }
 
+/* Prints the table for --dump-insns. */
 void insn_dump(FILE *f)
 {
     for (size_t i = 0; i < g_etab.nb; i++)
@@ -1000,6 +1034,7 @@ void insn_dump(FILE *f)
             }
 }
 
+/* True if the word is an instruction mnemonic. */
 int insn_known(const char *mn)
 {
     char b[40];
@@ -1010,6 +1045,7 @@ int insn_known(const char *mn)
     return ht_get(&g_etab, b) != NULL;
 }
 
+/* Closest instruction or directive name for the did you mean hint. */
 const char *insn_suggest(const char *mn)
 {
     static const char *dirs[] = { "section", "segment", "global", "extern", "bits", "org", "align", "times", "equ", "resb", "resw", "resd", "db", "dw", "dd", "dq", "incbin", "default", "absolute", "common", "struc", "endstruc", "istruc", "iend", "cpu", NULL };
@@ -1029,6 +1065,7 @@ const char *insn_suggest(const char *mn)
     return best;
 }
 
+/* True if the encoding string contains a given token. */
 static int has_tok(const Ent *e, const char *tok)
 {
     size_t l = strlen(tok);
@@ -1040,12 +1077,14 @@ static int has_tok(const Ent *e, const char *tok)
     return 0;
 }
 
+/* True if one of the entry's operand specs is a. */
 static int has_spec(const Ent *e, int a)
 {
     for (int i = 0; i < e->nops; i++) if (e->sp[i] == a) return 1;
     return 0;
 }
 
+/* Marks instructions that do not exist in 64-bit mode (aaa, daa, pusha ...). */
 static void mark_nolong(void)
 {
     static const char *nl[] = {

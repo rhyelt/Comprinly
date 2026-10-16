@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.1
+
+- Changed: `syscall` is now a plain pass-through. It sends the registers to the system the program runs on and returns whatever comes back. The built-in per-system runtimes, the number translation tables and the call checks for Windows, Mac and bare are gone, so programs carry no support code. Use the call numbers of the system you build for. Linux numbers are still checked.
+- Changed: the source now carries comments that explain each file and function.
+
+- Smaller compiler: the generated instruction tables, and the built-in C library are now stored compressed and unpacked at start. `cly` went from 1.1 MB to 0.6 MB, `cly32` from 860 KB to 570 KB and `cly.exe` from 910 KB to 630 KB. The release builds also use `-Os`, section garbage collection and no unwind tables (`make static`, `make cly64`, `make cly32`, `make cly.exe`).
+- Smaller programs: when the optimizer is on, `mov r, N` that repeats a value already in another register becomes a register copy, a redundant `xor r, r` or `mov r, N` is dropped, `xor r64, r64` becomes `xor r32, r32`, `add r, 128` becomes `sub r, -128` when the flags are free, and `mov r64, label` becomes the 5 byte `mov r32, label` in Linux 64-bit executables. A conditional jump to the next line is removed and a `jmp` to a `ret` becomes the `ret`.
+- Smaller ELF files: with the optimizer on, x86 Linux executables leave out unused header space and default section padding. A program without data saves a whole program header.
+- Faster: symbol tables grow as they fill, which took a 200,000 line source from 29 seconds to under 2. Keyword checks skip most string compares, the instruction encoder no longer compares every prefix name for every token, and the optimizer stops re-reading unchanged lines.
+- Fixed: the compiler was very slow on musl builds (`cly32`) because of line searches over the whole library text. Start up on `cly32` went from 100 ms to 14 ms.
+- Fixed: `-q` now hides warnings too, as the README says. It used to hide only the size line.
+- Fixed: the pass lines of `-log` reported a hash instead of the real size.
+
 ## 1.3.0
 
 - New: plain NASM programs build and run. `global`, `extern`, `main`, `_start`, `wrt ..plt`, `wrt ..got`, `@PLT`, `section`, `istruc` and friends are accepted.

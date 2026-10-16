@@ -1,3 +1,4 @@
+/* Small optimizer for ARM64 and RISC-V text: removes no-ops, dead code after jumps, jumps to the next line, chains of jumps and a few other safe patterns. */
 #include "cly.h"
 #include <ctype.h>
 
@@ -22,6 +23,7 @@ typedef struct {
     int a64;
 } NC;
 
+/* Skips blanks. */
 static const char *sk(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
@@ -30,6 +32,7 @@ static const char *sk(const char *p)
 
 static int idch(int c) { return isalnum(c) || c == '_' || c == '.' || c == '$' || c == '@' || c == '?'; }
 
+/* Releases a parsed line. */
 static void free_nl(NL *l)
 {
     free(l->label);
@@ -38,6 +41,7 @@ static void free_nl(NL *l)
     memset(l, 0, sizeof *l);
 }
 
+/* Copy of n characters without surrounding blanks. */
 static char *trimdup(const char *s, size_t n)
 {
     while (n && (*s == ' ' || *s == '\t')) { s++; n--; }
@@ -48,6 +52,7 @@ static char *trimdup(const char *s, size_t n)
     return r;
 }
 
+/* Parses a line into label, mnemonic and operands. */
 static void parse_nl(NC *c, const char *text, NL *L)
 {
     memset(L, 0, sizeof *L);
@@ -93,6 +98,7 @@ static void parse_nl(NC *c, const char *text, NL *L)
     }
 }
 
+/* Normalized operand text for comparing (no spaces, lower case). */
 static char *normop(const char *s)
 {
     char *r = xmalloc(strlen(s) + 1);
@@ -105,6 +111,7 @@ static char *normop(const char *s)
     return r;
 }
 
+/* True if two operands are the same after normalizing. */
 static int opeq(const char *a, const char *b)
 {
     char *x = normop(a), *y = normop(b);
@@ -114,6 +121,7 @@ static int opeq(const char *a, const char *b)
     return r;
 }
 
+/* Rebuilds the line text from its parts after a change. */
 static void rebuild(NC *c, int i)
 {
     NL *L = &c->L[i];
@@ -128,6 +136,7 @@ static void rebuild(NC *c, int i)
     c->lv->v[i].text = xstrdup(buf);
 }
 
+/* Turns an instruction into nothing (the label on the line stays). */
 static void kill_insn(NC *c, int i)
 {
     NL *L = &c->L[i];
@@ -140,6 +149,7 @@ static void kill_insn(NC *c, int i)
     L->changed = 1;
 }
 
+/* Replaces an instruction with a new mnemonic and operands. */
 static void set_insn(NC *c, int i, const char *mn, int nops, const char *a, const char *b, const char *d)
 {
     NL *L = &c->L[i];
@@ -153,6 +163,7 @@ static void set_insn(NC *c, int i, const char *mn, int nops, const char *a, cons
     rebuild(c, i);
 }
 
+/* Records the enclosing label of every line for local label handling. */
 static void compute_scopes(NC *c)
 {
     char *cur = xstrdup("");
@@ -165,6 +176,7 @@ static void compute_scopes(NC *c)
     free(cur);
 }
 
+/* True if a branch operand is a plain label name. */
 static int is_plain_target(const char *t)
 {
     if (!(isalpha((unsigned char)*t) || *t == '_' || *t == '.')) return 0;
@@ -172,6 +184,7 @@ static int is_plain_target(const char *t)
     return 1;
 }
 
+/* Unique key for a label, including its scope for local names. */
 static char *key_of(const char *name, const char *scope)
 {
     char buf[512];
@@ -180,6 +193,7 @@ static char *key_of(const char *name, const char *scope)
     return xstrdup(buf);
 }
 
+/* True for unconditional branches and returns. */
 static int is_uncond(NC *c, const NL *L)
 {
     if (L->kind != N_INSN) return 0;
@@ -188,12 +202,14 @@ static int is_uncond(NC *c, const NL *L)
     return (!strcmp(m, "j") && L->nops == 1) || (!strcmp(m, "jr") && L->nops == 1) || (!strcmp(m, "ret") && L->nops == 0) || (!strcmp(m, "tail") && L->nops == 1) || !strcmp(m, "mret") || !strcmp(m, "sret");
 }
 
+/* True for a plain jump to a label. */
 static int is_jump_label(NC *c, const NL *L)
 {
     if (L->kind != N_INSN || L->nops != 1) return 0;
     return c->a64 ? !strcmp(L->mn, "b") : !strcmp(L->mn, "j");
 }
 
+/* True for conditional branches; gives the target operand index. */
 static int is_cond(NC *c, const NL *L, int *tgt)
 {
     if (L->kind != N_INSN) return 0;
@@ -211,6 +227,7 @@ static int is_cond(NC *c, const NL *L, int *tgt)
     return 0;
 }
 
+/* Opposite branch mnemonic (b.eq to b.ne, beq to bne ...). */
 static const char *inv_name(NC *c, const char *m, char *buf)
 {
     static const char *const pa[][2] = { { "b.eq", "b.ne" }, { "b.cs", "b.cc" }, { "b.hs", "b.lo" }, { "b.mi", "b.pl" }, { "b.vs", "b.vc" }, { "b.hi", "b.ls" }, { "b.ge", "b.lt" }, { "b.gt", "b.le" }, { "cbz", "cbnz" }, { "tbz", "tbnz" }, { NULL, NULL } };
@@ -223,6 +240,7 @@ static const char *inv_name(NC *c, const char *m, char *buf)
     return NULL;
 }
 
+/* Next instruction line, or -1 if something blocks the scan. */
 static int next_insn_idx(NC *c, int i)
 {
     for (int k = i + 1; k < c->n; k++) {
@@ -233,6 +251,7 @@ static int next_insn_idx(NC *c, int i)
     return -1;
 }
 
+/* Next instruction if only blank lines (no labels) are between. */
 static int adjacent_insn(NC *c, int i)
 {
     for (int k = i + 1; k < c->n; k++) {
@@ -244,6 +263,7 @@ static int adjacent_insn(NC *c, int i)
     return -1;
 }
 
+/* Line where a label key is defined, or -1. */
 static int label_line(NC *c, const char *key)
 {
     for (int i = 0; i < c->n; i++) {
@@ -257,6 +277,7 @@ static int label_line(NC *c, const char *key)
     return -1;
 }
 
+/* True if a label key is defined before the next instruction (so jumping to it lands where it is expected). */
 static int chain_has(NC *c, int from, const char *key)
 {
     for (int k = from; k < c->n; k++) {
@@ -273,6 +294,7 @@ static int chain_has(NC *c, int from, const char *key)
     return 0;
 }
 
+/* Label key of a branch target. */
 static int tgt_key(NC *c, int i, int ti, char **key)
 {
     NL *L = &c->L[i];
@@ -282,6 +304,7 @@ static int tgt_key(NC *c, int i, int ti, char **key)
     return 1;
 }
 
+/* Removes mov x, x and add x, x, 0 style no-ops. */
 static int pass_nops(NC *c)
 {
     int ch = 0;
@@ -301,6 +324,7 @@ static int pass_nops(NC *c)
     return ch;
 }
 
+/* Removes unreachable instructions after an unconditional branch until the next label. */
 static int pass_dead(NC *c)
 {
     int ch = 0;
@@ -317,6 +341,7 @@ static int pass_dead(NC *c)
     return ch;
 }
 
+/* Removes a jump to the very next line. */
 static int pass_jump_next(NC *c)
 {
     int ch = 0;
@@ -335,6 +360,7 @@ static int pass_jump_next(NC *c)
     return ch;
 }
 
+/* Jump threading: a branch to a label that holds only another jump goes straight to the final target. */
 static int pass_thread(NC *c)
 {
     int ch = 0;
@@ -370,6 +396,7 @@ static int pass_thread(NC *c)
     return ch;
 }
 
+/* A conditional branch over one unconditional branch becomes one inverted conditional branch. */
 static int pass_invert(NC *c)
 {
     int ch = 0;
@@ -396,11 +423,13 @@ static int pass_invert(NC *c)
     return ch;
 }
 
+/* True for sp, x29 and similar base registers. */
 static int is_stackbase(const char *base)
 {
     return !strcasecmp(base, "sp") || !strcasecmp(base, "x29") || !strcasecmp(base, "fp") || !strcasecmp(base, "s0");
 }
 
+/* Gets the base register of a memory operand. */
 static int mem_base(NC *c, const char *op, char *out, size_t sz)
 {
     const char *p = op;
@@ -424,6 +453,7 @@ static int mem_base(NC *c, const char *op, char *out, size_t sz)
     return n > 0 && (!strcasecmp(out, "sp") || !strcasecmp(out, "s0") || !strcasecmp(out, "fp"));
 }
 
+/* A store followed immediately by a load from the same address: the load is dropped or becomes a register copy. */
 static int pass_fwd(NC *c)
 {
     int ch = 0;
@@ -451,6 +481,7 @@ static int pass_fwd(NC *c)
     return ch;
 }
 
+/* Register number, or 0 if the text is not a register. */
 static int reg_id(NC *c, const char *r)
 {
     if (c->a64) {
@@ -464,6 +495,7 @@ static int reg_id(NC *c, const char *r)
     return -1;
 }
 
+/* True if the operands use the register. */
 static int mentions_reg(NC *c, const NL *L, int from, int id)
 {
     for (int k = from; k < L->nops; k++) {
@@ -481,6 +513,7 @@ static int mentions_reg(NC *c, const NL *L, int from, int id)
     return 0;
 }
 
+/* Removes a register write that is immediately overwritten by another write to the same register. */
 static int pass_waw(NC *c)
 {
     static const char *const firsta[] = { "mov", "movz", "movn", NULL };
@@ -514,6 +547,7 @@ static int pass_waw(NC *c)
     return ch;
 }
 
+/* True if an instruction leaves the flags alone. */
 static int flag_clean(NC *c, int i)
 {
     NL *L = &c->L[i];
@@ -523,6 +557,7 @@ static int flag_clean(NC *c, int i)
     return 0;
 }
 
+/* cmp x, #0 followed by beq or bne becomes cbz or cbnz (ARM64). */
 static int pass_cbz(NC *c)
 {
     if (!c->a64) return 0;
@@ -561,6 +596,7 @@ static int pass_cbz(NC *c)
     return ch;
 }
 
+/* Runs the passes until nothing changes. */
 void opt_run_nx(LineVec *lv, int arch, int kernel, int type)
 {
     (void)kernel;

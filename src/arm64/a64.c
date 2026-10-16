@@ -1,8 +1,10 @@
+/* ARM64 assembler core: mnemonic lookup, register and operand parsing, immediate encoders, branches and the entry point a64_insn. Instruction groups live in the other a64_*.c files and are chosen through the mnemonic tables. */
 #include "a64.h"
 
 static HT g_tab;
 static int g_tab_init;
 
+/* Builds the mnemonic hash table from the per-group tables on first use. */
 static void tab_init(void)
 {
     if (g_tab_init) return;
@@ -14,6 +16,7 @@ static void tab_init(void)
 
 static const char *const cond_names[] = { "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "nv", NULL };
 
+/* Parses a two letter condition code (eq, ne, hs, lo ...). Gives its 4-bit value. */
 int a64_p_cond(const char *s, int *cc)
 {
     char b[4];
@@ -28,6 +31,7 @@ int a64_p_cond(const char *s, int *cc)
     return 0;
 }
 
+/* Recognizes b.cond and bcond spellings and returns the condition. */
 static int cond_branch_name(const char *mn, int *cc)
 {
     if (mn[0] != 'b') return 0;
@@ -42,6 +46,7 @@ static const MnEnt bcond_ent = { "b.cond", h_bcond, 0, 0, 0 };
 
 const MnEnt *a64_atomic_lookup(const char *mn);
 
+/* Finds the table entry for a mnemonic, including conditional branch forms. */
 const MnEnt *a64_lookup(const char *mn)
 {
     tab_init();
@@ -55,6 +60,7 @@ const MnEnt *a64_lookup(const char *mn)
 static HT g_vtab;
 static int g_vtab_init;
 
+/* Finds a vector (SIMD) table entry by name. */
 static const MnEnt *vlookup(const char *mn)
 {
     if (!g_vtab_init) {
@@ -64,11 +70,13 @@ static const MnEnt *vlookup(const char *mn)
     return ht_get(&g_vtab, mn);
 }
 
+/* Public wrapper for vlookup. */
 const MnEnt *a64_vlookup(const char *mn)
 {
     return vlookup(mn);
 }
 
+/* True if a name starts like a scalar SIMD register (b0, h0, s0, d0, q0). */
 static int sc_first(const char *s)
 {
     size_t n = strlen(s);
@@ -79,6 +87,7 @@ static int sc_first(const char *s)
     return 1;
 }
 
+/* True if an operand text mentions a vector register (v0..v31). */
 static int has_vname(const char *s)
 {
     while (*s == ' ' || *s == '{') s++;
@@ -86,6 +95,7 @@ static int has_vname(const char *s)
     return 0;
 }
 
+/* True if the mnemonic is an ARM64 instruction. */
 int a64_known(const char *mn)
 {
     char b[40];
@@ -96,6 +106,7 @@ int a64_known(const char *mn)
     return a64_lookup(b) != NULL || vlookup(b) != NULL;
 }
 
+/* Removes trailing blanks and CR in place. */
 void a64_trim(char *s)
 {
     size_t n = strlen(s);
@@ -105,6 +116,7 @@ void a64_trim(char *s)
     if (k) memmove(s, s + k, strlen(s + k) + 1);
 }
 
+/* Parses a general register: x0..x30, w0..w30, sp, wsp, xzr, wzr, fp, lr. */
 int a64_p_gpr(const char *s, GReg *r)
 {
     char b[8];
@@ -135,6 +147,7 @@ int a64_p_gpr(const char *s, GReg *r)
     return 1;
 }
 
+/* Parses a vector or scalar FP register with arrangement and lane (v0.4s, v1.d[1], s2, q3 ...). */
 int a64_p_vec(const char *s, VReg *v)
 {
     memset(v, 0, sizeof *v);
@@ -200,6 +213,7 @@ int a64_p_vec(const char *s, VReg *v)
     return *p == 0;
 }
 
+/* Skips blanks and an optional # in front of an immediate. */
 const char *a64_strip_hash(const char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -208,6 +222,7 @@ const char *a64_strip_hash(const char *s)
     return s;
 }
 
+/* Evaluates an operand expression with the common expression parser. */
 int a64_eval(Ctx *c, const char *s, Val *v)
 {
     (void)c;
@@ -216,6 +231,7 @@ int a64_eval(Ctx *c, const char *s, Val *v)
     return expr_eval_str(s, v, 0);
 }
 
+/* Evaluates an expression that must be a constant. Sets *unk when it is not known yet in the first pass. */
 int a64_const(Ctx *c, const char *s, i64 *out, int *unk)
 {
     Val v;
@@ -234,16 +250,19 @@ int a64_const(Ctx *c, const char *s, i64 *out, int *unk)
     return 1;
 }
 
+/* Appends one 32-bit instruction word. */
 void a64_W(Ctx *c, u32 w)
 {
     badle(&c->out->code, w, 4);
 }
 
+/* Offset of the instruction being built within its section. */
 i64 a64_cur_off(Ctx *c)
 {
     return c->ic->start_off + (i64)c->out->code.n;
 }
 
+/* Adds a relocation to the instruction output. */
 void a64_reloc(Ctx *c, int kind, int size, const Val *v, i64 off)
 {
     InsnOut *o = c->out;
@@ -259,17 +278,20 @@ void a64_reloc(Ctx *c, int kind, int size, const Val *v, i64 off)
     r->v = *v;
 }
 
+/* True if a symbol lives in the current section, so a branch can be resolved without relocation. */
 int a64_same_sec(Ctx *c, const Val *v)
 {
     return !v->unk && v->pos == c->ic->cur_sec && v->neg < 0 && !v->ext && !v->hasreg;
 }
 
+/* Pads the output with NOPs up to the fixed size chosen in an earlier pass, so sizes do not jump between passes. */
 void a64_pad(Ctx *c)
 {
     while ((int)c->out->code.n < c->floor) a64_W(c, 0xd503201f);
     if ((int)c->out->code.n > 4 && (int)c->out->code.n > c->ic->wide) c->ic->need_wide = (int)c->out->code.n;
 }
 
+/* Number of instruction words to reserve, never less than the earlier pass used. */
 int a64_need_n(Ctx *c, int count)
 {
     int bytes = count * 4;
@@ -277,6 +299,7 @@ int a64_need_n(Ctx *c, int count)
     return bytes / 4;
 }
 
+/* Encodes a bitmask immediate for AND/ORR/EOR. Returns 0 if the value has no encoding. */
 int a64_logical_imm(u64 imm, int is64, u32 *out)
 {
     if (!is64) {
@@ -308,12 +331,14 @@ int a64_logical_imm(u64 imm, int is64, u32 *out)
     return 0;
 }
 
+/* True if v fits in the given number of bits, signed or unsigned. */
 static int range_bits(i64 v, int bits, int sign)
 {
     if (sign) return v >= -((i64)1 << (bits - 1)) && v < ((i64)1 << (bits - 1));
     return v >= 0 && v < ((i64)1 << bits);
 }
 
+/* Encodes a branch family instruction with a relative target: direct when known, relocation otherwise. Reports out of range. */
 int a64_enc_branch(Ctx *c, u32 base, const Val *v, int kind, int bits, int sub, int shift_field)
 {
     i64 at = a64_cur_off(c);
@@ -338,6 +363,7 @@ int a64_enc_branch(Ctx *c, u32 base, const Val *v, int kind, int bits, int sub, 
     return 1;
 }
 
+/* True if a branch target is in range, or cannot be checked yet. */
 static int branch_fits(Ctx *c, const Val *v, int bits)
 {
     if (!a64_same_sec(c, v)) return 1;
@@ -346,6 +372,7 @@ static int branch_fits(Ctx *c, const Val *v, int bits)
     return range_bits(d >> 2, bits, 1);
 }
 
+/* Emits one movz/movn/movk word. */
 static int movw(Ctx *c, int sf, int opc, int rd, u32 imm16, int hw)
 {
     (void)c;
@@ -353,6 +380,7 @@ static int movw(Ctx *c, int sf, int opc, int rd, u32 imm16, int hw)
     return 1;
 }
 
+/* Loads any 64-bit immediate with the shortest movz/movn/movk sequence, or a bitmask orr. */
 int a64_mov_imm(Ctx *c, GReg rd, i64 val, int unk)
 {
     int sf = rd.w64;
@@ -405,6 +433,7 @@ int a64_mov_imm(Ctx *c, GReg rd, i64 val, int unk)
     return 1;
 }
 
+/* Loads the address of a symbol: adr when close, adrp plus add otherwise. */
 int a64_load_addr(Ctx *c, int rd, const Val *v)
 {
     if (c->optimize && c->floor < 8 && (v->unk || a64_same_sec(c, v))) {
@@ -429,6 +458,7 @@ int a64_load_addr(Ctx *c, int rd, const Val *v)
     return 1;
 }
 
+/* Handler for b.cond. */
 static int h_bcond(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -445,6 +475,7 @@ static int h_bcond(Ctx *c, const MnEnt *e)
     return a64_enc_branch(c, 0x54000000u | (u32)cc, &v, RK_A64_B19, 19, 0, 5);
 }
 
+/* True for shift and extend keywords (lsl, lsr, asr, ror, msl, uxtb ...). */
 static int is_shkw(const char *p, size_t n)
 {
     static const char *const k[] = { "lsl", "lsr", "asr", "ror", "msl", "uxtb", "uxth", "uxtw", "uxtx", "sxtb", "sxth", "sxtw", "sxtx", NULL };
@@ -452,6 +483,7 @@ static int is_shkw(const char *p, size_t n)
     return 0;
 }
 
+/* Splits a trailing shift or extend such as 'lsl #3' from an operand. */
 char *a64_split_shift(char *buf)
 {
     char *ws = buf;
@@ -467,6 +499,7 @@ char *a64_split_shift(char *buf)
     return p;
 }
 
+/* Splits the operand text into tokens at top-level commas. */
 static int tokenize(const char *rest, Ctx *c)
 {
     char buf[512];
@@ -506,6 +539,7 @@ static int tokenize(const char *rest, Ctx *c)
     return 1;
 }
 
+/* Entry point. Looks the mnemonic up, tokenizes the operands and calls the group handler. Pads to the planned size. */
 int a64_insn(const char *mn, const char *rest, IC *ic, InsnOut *out)
 {
     Ctx c;

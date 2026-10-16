@@ -1,3 +1,4 @@
+/* Support for -log: timestamped lines for each compile step. */
 #include "cly.h"
 #include <time.h>
 
@@ -5,6 +6,7 @@ int g_log;
 static FILE *lf;
 static double t0;
 
+/* Seconds from a monotonic clock, falling back to the wall clock. */
 static double now(void)
 {
 #if defined(CLOCK_MONOTONIC)
@@ -14,6 +16,7 @@ static double now(void)
     return (double)clock() / (double)CLOCKS_PER_SEC;
 }
 
+/* Starts logging to stderr, or to the file given. Returns 0 if the file cannot be opened. */
 int log_open(const char *path)
 {
     lf = stderr;
@@ -26,6 +29,7 @@ int log_open(const char *path)
     return 1;
 }
 
+/* Stops logging and closes the file if one was opened. */
 void log_close(void)
 {
     if (lf && lf != stderr) fclose(lf);
@@ -33,6 +37,7 @@ void log_close(void)
     g_log = 0;
 }
 
+/* Writes one log line tagged with the phase name and the time since logging started. Does nothing when -log is off. */
 void xlog(const char *phase, const char *fmt, ...)
 {
     if (!g_log || !lf) return;

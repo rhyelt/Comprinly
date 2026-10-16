@@ -1,6 +1,6 @@
+/* Built-in C library for Linux x86 and x86-64. Scans the program for calls to library functions, pulls in only the blocks it needs from the packed library text, and turns simple printf, puts, putchar and exit calls with constant text into direct system calls. */
 #include "cly.h"
 
-extern const char libc_src64[], libc_src32[];
 
 typedef struct {
     char *names[12];
@@ -18,12 +18,14 @@ typedef struct {
     int n;
 } Lib;
 
+/* Skips spaces and tabs. */
 static const char *skipws(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
     return p;
 }
 
+/* Splits text into up to max words. */
 static int words(const char *p, char **out, int max)
 {
     int n = 0;
@@ -37,6 +39,7 @@ static int words(const char *p, char **out, int max)
     return n;
 }
 
+/* Parses the library text into blocks. Each block has the names it defines, the names it needs and its code. */
 static void lib_load(Lib *L, const char *src)
 {
     int cap = 0;
@@ -44,7 +47,7 @@ static void lib_load(Lib *L, const char *src)
     L->n = 0;
     const char *p = src;
     while (*p) {
-        const char *nl = strchr(p, '\n');
+        const char *nl = cly_nl(p);
         size_t len = nl ? (size_t)(nl - p) : strlen(p);
         if (len >= 3 && !strncmp(p, ";;@", 3)) {
             if (L->n == cap) { cap = cap ? cap * 2 : 64; L->b = xrealloc(L->b, sizeof(Blk) * (size_t)cap); }
@@ -58,7 +61,7 @@ static void lib_load(Lib *L, const char *src)
             Str body = {0};
             p = nl ? nl + 1 : p + len;
             while (*p && strncmp(p, ";;@", 3)) {
-                const char *e = strchr(p, '\n');
+                const char *e = cly_nl(p);
                 size_t l2 = e ? (size_t)(e - p) : strlen(p);
                 if (l2 >= 3 && !strncmp(p, ";;>", 3)) {
                     char *t2 = xstrndup(p + 3, l2 - 3);
@@ -81,12 +84,14 @@ static int is_id(int c) { return ident_char((unsigned char)c); }
 
 typedef struct { char **v; int n, cap; } Set;
 
+/* True if a name is in the set. */
 static int set_has(const Set *s, const char *k, size_t l)
 {
     for (int i = 0; i < s->n; i++) if (strlen(s->v[i]) == l && !strncmp(s->v[i], k, l)) return 1;
     return 0;
 }
 
+/* Adds a name to the set once. */
 static void set_add(Set *s, const char *k, size_t l)
 {
     if (set_has(s, k, l)) return;
@@ -94,11 +99,13 @@ static void set_add(Set *s, const char *k, size_t l)
     s->v[s->n++] = xstrndup(k, l);
 }
 
+/* The line without leading blanks. */
 static const char *line_body(const char *t)
 {
     return skipws(t);
 }
 
+/* True for words that start data definitions (db, dd, equ ...). */
 static int data_word(const char *p, size_t l)
 {
     static const char *const k[] = { "equ", "db", "dw", "dd", "dq", "dt", "do", "dy", "dz", "resb", "resw", "resd", "resq", "rest", "reso", "resy", "resz", "times", "incbin", "istruc", "struc", NULL };
@@ -106,6 +113,7 @@ static int data_word(const char *p, size_t l)
     return 0;
 }
 
+/* Collects every label the program defines. */
 static void collect_defs(const LineVec *lv, Set *defs)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -122,12 +130,14 @@ static void collect_defs(const LineVec *lv, Set *defs)
     }
 }
 
+/* True if the line starts with word w as a whole word. */
 static int is_cmd(const char *t, const char *w)
 {
     size_t l = strlen(w);
     return !strncasecmp(t, w, l) && !is_id(t[l]);
 }
 
+/* Rewrites call foo wrt ..plt and similar NASM forms into plain calls, and collects names needing a GOT slot. */
 static void rewrite_got(LineVec *lv, Set *gots, int *changed)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -182,6 +192,7 @@ static void rewrite_got(LineVec *lv, Set *gots, int *changed)
     }
 }
 
+/* Finds the library block that defines a name. */
 static int find_block(Lib *L, const char *name, size_t l)
 {
     for (int i = 0; i < L->n; i++)
@@ -190,6 +201,7 @@ static int find_block(Lib *L, const char *name, size_t l)
     return -1;
 }
 
+/* True if a name is a public library function (not an internal helper). */
 static int is_public_name(Lib *L, const char *name, size_t l, int *bi)
 {
     int i = find_block(L, name, l);
@@ -199,6 +211,7 @@ static int is_public_name(Lib *L, const char *name, size_t l, int *bi)
     return 1;
 }
 
+/* Marks a block used and everything it depends on. */
 static void need(Lib *L, int bi)
 {
     if (L->b[bi].used) return;
@@ -211,6 +224,7 @@ static void need(Lib *L, int bi)
     }
 }
 
+/* Removes extern lines for names the library now defines. */
 static void strip_extern(LineVec *lv, Lib *L, const Set *defs)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -240,6 +254,7 @@ static void strip_extern(LineVec *lv, Lib *L, const Set *defs)
     }
 }
 
+/* Collects names the program uses that the library defines and the program does not. */
 static void collect_refs(const LineVec *lv, Lib *L, const Set *defs, Set *refs)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -277,6 +292,7 @@ static void collect_refs(const LineVec *lv, Lib *L, const Set *defs, Set *refs)
 
 static int has_def(const Set *defs, const char *n) { return set_has(defs, n, strlen(n)); }
 
+/* Decides 32 or 64-bit library code from the bits lines in the source. */
 static int target_bits(const LineVec *lv, int defbits)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -292,6 +308,7 @@ static int target_bits(const LineVec *lv, int defbits)
 
 typedef struct { char *name; int len; } StrLen;
 
+/* Reads a number in a db list. */
 static int parse_num_item(const char *p, long *v, const char **end)
 {
     const char *s = p;
@@ -311,6 +328,7 @@ static int parse_num_item(const char *p, long *v, const char **end)
     return 1;
 }
 
+/* Computes the length in bytes of a db line (strings and numbers). */
 static int db_len(const char *p, int *len, int *done)
 {
     for (;;) {
@@ -348,6 +366,7 @@ static int db_len(const char *p, int *len, int *done)
     }
 }
 
+/* Collects every labelled db string and its length. Lets printf of a constant string become a direct write. */
 static void collect_strs(const LineVec *lv, StrLen **out, int *n)
 {
     int cap = 0;
@@ -384,12 +403,14 @@ static void collect_strs(const LineVec *lv, StrLen **out, int *n)
     }
 }
 
+/* Finds the length of a collected string by name. */
 static int find_len(StrLen *sl, int n, const char *name, size_t l)
 {
     for (int i = 0; i < n; i++) if (strlen(sl[i].name) == l && !strncmp(sl[i].name, name, l)) return sl[i].len;
     return -1;
 }
 
+/* Reads a symbol operand such as offset msg or msg. */
 static int match_sym_operand(const char *p, char *name, size_t sz)
 {
     p = skipws(p);
@@ -421,6 +442,7 @@ static int match_sym_operand(const char *p, char *name, size_t sz)
     return 1;
 }
 
+/* Looks back from a call for the instruction that loaded the format string. */
 static int prev_fmt_load(const LineVec *lv, int i, int bits, char *name, size_t sz)
 {
     int seen = 0;
@@ -458,6 +480,7 @@ static int prev_fmt_load(const LineVec *lv, int i, int bits, char *name, size_t 
     return 0;
 }
 
+/* True if the line is call to function fn. */
 static int call_target(const char *t, const char *fn)
 {
     if (!is_cmd(t, "call")) return 0;
@@ -468,6 +491,7 @@ static int call_target(const char *t, const char *fn)
     return !*p || *p == ';';
 }
 
+/* Merges a previous mov rdi, N with a following load so exit(N) becomes one move. */
 static int fold_rdi(LineVec *out)
 {
     if (out->n < 1) return 0;
@@ -497,6 +521,7 @@ static int fold_rdi(LineVec *out)
     return 1;
 }
 
+/* Replaces printf, puts, putchar and exit calls that have constant text with direct write and exit system calls. */
 static void inline_calls(LineVec *lv, const Set *defs, int bits)
 {
     StrLen *sl;
@@ -610,6 +635,7 @@ static void inline_calls(LineVec *lv, const Set *defs, int bits)
     free(sl);
 }
 
+/* True if main takes argc, argv, envp (so the start stub passes them). */
 static int main_wants_env(const LineVec *lv)
 {
     int in = 0;
@@ -625,6 +651,7 @@ static int main_wants_env(const LineVec *lv)
     return 0;
 }
 
+/* Entry point. Adds the needed library blocks and a start stub (when main exists and no entry does). Does nothing outside Linux x86 executables. */
 void libc_run(LineVec *lv, int kernel, int type, int defbits)
 {
     if (kernel != K_LINUX || (type != T_BIN && type != T_ELF)) return;
@@ -643,7 +670,7 @@ void libc_run(LineVec *lv, int kernel, int type, int defbits)
     collect_defs(lv, &defs);
     inline_calls(lv, &defs, bits);
     Lib L;
-    lib_load(&L, bits == 64 ? libc_src64 : libc_src32);
+    lib_load(&L, libc_text(bits));
     collect_refs(lv, &L, &defs, &refs);
     int main_def = has_def(&defs, "main");
     int has_entry = has_def(&defs, "_start") || has_def(&defs, "start") || has_def(&defs, "..start");
@@ -676,7 +703,7 @@ void libc_run(LineVec *lv, int kernel, int type, int defbits)
     char *s = sget(&out);
     int ln = 1;
     for (char *p = s; *p;) {
-        char *nl = strchr(p, '\n');
+        char *nl = cly_nl(p);
         if (nl) *nl = 0;
         lv_add(lv, p, "<libc>", ln++);
         if (!nl) break;

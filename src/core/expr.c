@@ -1,3 +1,4 @@
+/* Expression evaluator: numbers, character constants, symbols, operators and relocatable values. Values keep track of a symbol to add (pos), one to subtract (neg) and an external symbol, so label differences fold to constants. */
 #include "cly.h"
 #include <math.h>
 
@@ -9,6 +10,7 @@ typedef struct {
     int err;
 } EP;
 
+/* Sets v to a plain constant n. */
 void val_const(Val *v, i64 n)
 {
     memset(v, 0, sizeof *v);
@@ -16,6 +18,7 @@ void val_const(Val *v, i64 n)
     v->pos = v->neg = -1;
 }
 
+/* True if the value is a known number with no symbol parts. */
 int val_isconst(const Val *v)
 {
     return !v->unk && v->pos < 0 && v->neg < 0 && !v->ext && !v->hasreg;
@@ -28,6 +31,7 @@ static void sk(EP *e) { while (*e->p == ' ' || *e->p == '\t') e->p++; }
 
 static int lowc(int c) { return tolower((unsigned char)c); }
 
+/* Value of a hex digit, or 99 if c is not one. */
 static int digval(int c)
 {
     if (c >= '0' && c <= '9') return c - '0';
@@ -38,6 +42,7 @@ static int digval(int c)
 
 int num_overflow;
 
+/* Multiplies v by base and adds d, flagging overflow instead of wrapping. */
 static u64 acc(u64 v, int base, int d)
 {
     u64 r;
@@ -45,6 +50,7 @@ static u64 acc(u64 v, int base, int d)
     return r;
 }
 
+/* Reads a number token: decimal, 0x or h hex, 0b or b binary, o or q octal, 0d, underscores, and floats. Sets *isfloat for float forms. */
 int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
 {
     const char *p = s;
@@ -146,6 +152,7 @@ int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat)
     return 1;
 }
 
+/* Reads exactly n hex digits into *v. */
 static int hexn(const char *p, int n, u32 *v)
 {
     u32 r = 0;
@@ -158,6 +165,7 @@ static int hexn(const char *p, int n, u32 *v)
     return 1;
 }
 
+/* Appends the UTF-8 bytes of code point c. */
 static void put_utf8(Str *o, u32 c)
 {
     if (c < 0x80) sadc(o, (int)c);
@@ -166,6 +174,7 @@ static void put_utf8(Str *o, u32 c)
     else { sadc(o, (int)(0xF0 | (c >> 18))); sadc(o, (int)(0x80 | ((c >> 12) & 63))); sadc(o, (int)(0x80 | ((c >> 6) & 63))); sadc(o, (int)(0x80 | (c & 63))); }
 }
 
+/* Recognizes a quote character (plain or curly) and reports its kind and length. */
 static int quote_at(const char *p, int *len, char *kind)
 {
     unsigned char c = (unsigned char)p[0];
@@ -178,6 +187,7 @@ static int quote_at(const char *p, int *len, char *kind)
     return 0;
 }
 
+/* Reads a quoted string or character constant with escapes (for backquote strings) into out. */
 int parse_charconst(const char **pp, Str *out)
 {
     const char *p = *pp;
@@ -250,6 +260,7 @@ int parse_charconst(const char **pp, Str *out)
     return 1;
 }
 
+/* Marks a value as unknown. Used in the first pass when a symbol is not defined yet. */
 static void v_unk(Val *v)
 {
     val_const(v, 0);
@@ -260,6 +271,7 @@ static const char *skipws_e(const char *p) { while (*p == ' ' || *p == '\t') p++
 
 static int is_reg_val(const Val *v) { return v->hasreg; }
 
+/* Adds or subtracts two values, combining symbol parts when possible. Returns 0 on an invalid mix. */
 static int v_add(Val *a, const Val *b, int sign)
 {
     if (a->unk || b->unk) {
@@ -301,6 +313,7 @@ static int v_add(Val *a, const Val *b, int sign)
     return 1;
 }
 
+/* Checks that an operator got constant operands. Reports an error if not. */
 static int need_const(const Val *a, const Val *b, const char *op)
 {
     if ((a->unk) || (b && b->unk)) return 1;
@@ -315,6 +328,7 @@ static int cmp_prec(void) { return 0; }
 
 static int parse_expr(EP *e, Val *v);
 
+/* Copies the text of a floating point literal into buf. */
 static int parse_float_text(EP *e, char *buf, size_t sz)
 {
     const char *p = e->p;
@@ -342,6 +356,7 @@ static int parse_float_text(EP *e, char *buf, size_t sz)
     return (int)n;
 }
 
+/* Numbers, strings, symbols, $, $$, parentheses, registers and the special function-like names (seg, float helpers ...). */
 static int parse_primary(EP *e, Val *v)
 {
     sk(e);
@@ -567,6 +582,7 @@ static int parse_primary(EP *e, Val *v)
     return 0;
 }
 
+/* Unary minus, plus, ~ and !. */
 static int parse_unary(EP *e, Val *v)
 {
     sk(e);
@@ -592,6 +608,7 @@ static int parse_unary(EP *e, Val *v)
     return parse_primary(e, v);
 }
 
+/* * / // % %%. */
 static int parse_mul(EP *e, Val *v)
 {
     if (!parse_unary(e, v)) return 0;
@@ -632,6 +649,7 @@ static int parse_mul(EP *e, Val *v)
     return 1;
 }
 
+/* + and -. */
 static int parse_add(EP *e, Val *v)
 {
     if (!parse_mul(e, v)) return 0;
@@ -647,6 +665,7 @@ static int parse_add(EP *e, Val *v)
     return 1;
 }
 
+/* << and >>. */
 static int parse_shift(EP *e, Val *v)
 {
     if (!parse_add(e, v)) return 0;
@@ -672,6 +691,7 @@ static int parse_shift(EP *e, Val *v)
     return 1;
 }
 
+/* Bitwise &. */
 static int parse_and(EP *e, Val *v)
 {
     if (!parse_shift(e, v)) return 0;
@@ -688,6 +708,7 @@ static int parse_and(EP *e, Val *v)
     return 1;
 }
 
+/* Bitwise ^. */
 static int parse_xor(EP *e, Val *v)
 {
     if (!parse_and(e, v)) return 0;
@@ -704,6 +725,7 @@ static int parse_xor(EP *e, Val *v)
     return 1;
 }
 
+/* Bitwise |. */
 static int parse_or(EP *e, Val *v)
 {
     if (!parse_xor(e, v)) return 0;
@@ -720,11 +742,13 @@ static int parse_or(EP *e, Val *v)
     return 1;
 }
 
+/* True if two values refer to the same symbols, so they can be compared. */
 static int same_reloc(const Val *a, const Val *b)
 {
     return a->pos == b->pos && a->neg == b->neg && a->ext == b->ext;
 }
 
+/* Comparisons < <= > >= = == != <>. */
 static int parse_cmp(EP *e, Val *v)
 {
     (void)cmp_prec;
@@ -766,6 +790,7 @@ static int parse_cmp(EP *e, Val *v)
     return 1;
 }
 
+/* Logical && . */
 static int parse_land(EP *e, Val *v)
 {
     if (!parse_cmp(e, v)) return 0;
@@ -782,6 +807,7 @@ static int parse_land(EP *e, Val *v)
     return 1;
 }
 
+/* Logical ^^. */
 static int parse_lxor(EP *e, Val *v)
 {
     if (!parse_land(e, v)) return 0;
@@ -798,6 +824,7 @@ static int parse_lxor(EP *e, Val *v)
     return 1;
 }
 
+/* Logical ||. */
 static int parse_lor(EP *e, Val *v)
 {
     if (!parse_lxor(e, v)) return 0;
@@ -814,6 +841,7 @@ static int parse_lor(EP *e, Val *v)
     return 1;
 }
 
+/* The wrt operator for relocation types such as ..got and ..plt. */
 static int parse_wrt(EP *e, Val *v)
 {
     if (!parse_lor(e, v)) return 0;
@@ -841,6 +869,7 @@ static int parse_wrt(EP *e, Val *v)
     return 1;
 }
 
+/* Top of the grammar: the ?: conditional, then everything above. */
 static int parse_expr(EP *e, Val *v)
 {
     if (!parse_wrt(e, v)) return 0;
@@ -863,6 +892,7 @@ static int parse_expr(EP *e, Val *v)
     return 1;
 }
 
+/* Parses one expression from *pp and advances it. Flags control address-expression and float behavior. */
 int expr_parse(const char **pp, Val *out, int flags)
 {
     EP e;
@@ -879,6 +909,7 @@ int expr_parse(const char **pp, Val *out, int flags)
     return 1;
 }
 
+/* Evaluates a whole string as one expression. Returns 0 if anything is left over. */
 int expr_eval_str(const char *s, Val *out, int flags)
 {
     const char *p = s;

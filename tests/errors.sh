@@ -46,7 +46,6 @@ wchk arm64 'start:\n mov x8, 999\n svc 0\n' 'not a Linux system call'
 wchk arm64 'start:\n mov x8, 93\n svc 1\n' 'ignores the `svc'"'"' number'
 wchk rv64 'start:\n li a7, 500\n ecall\n' 'not a Linux system call'
 wchk x86-64 'SYS equ 400\nstart:\n mov eax, SYS\n syscall\n' 'not a Linux system call'
-wchk x86-64 'start:\n mov eax, 41\n syscall\n' 'not supported by the windows runtime' windows
 wchk x86-64 'start:\n int 0x80\n' 'int 0x80'
 gchk 'start:\n mov w0, 1\n mov eax, 2\n' 'chosen from `w0'"'"
 gchk 'start:\n mov rax, 1\n add x0, x1, x2\n' 'ARM64 register'

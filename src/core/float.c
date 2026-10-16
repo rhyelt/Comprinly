@@ -1,3 +1,4 @@
+/* Exact decimal to binary float conversion for db/dw/dd/dq/dt/do with big integer math, so results round correctly for half, single, double, extended and quad. */
 #include "cly.h"
 
 #define BL 1200
@@ -6,6 +7,7 @@ typedef struct { u32 d[BL]; int n; } Big;
 
 static void bnorm(Big *a) { while (a->n > 0 && a->d[a->n - 1] == 0) a->n--; }
 
+/* Sets a big integer from a 64-bit value. */
 static void bset(Big *a, u64 v)
 {
     a->n = 0;
@@ -14,6 +16,7 @@ static void bset(Big *a, u64 v)
 
 static int big_iszero(const Big *a) { return a->n == 0; }
 
+/* a = a * m + add. */
 static void bmuladd(Big *a, u32 m, u32 add)
 {
     u64 c = add;
@@ -25,6 +28,7 @@ static void bmuladd(Big *a, u32 m, u32 add)
     if (c && a->n < BL) a->d[a->n++] = (u32)c;
 }
 
+/* Number of significant bits. */
 static int bbitlen(const Big *a)
 {
     if (!a->n) return 0;
@@ -34,6 +38,7 @@ static int bbitlen(const Big *a)
     return (a->n - 1) * 32 + b;
 }
 
+/* Value of bit i. */
 static int bbit(const Big *a, int i)
 {
     int w = i / 32;
@@ -41,6 +46,7 @@ static int bbit(const Big *a, int i)
     return (a->d[w] >> (i % 32)) & 1;
 }
 
+/* Shifts left by s bits. */
 static void bshl2(Big *a, int s)
 {
     if (!a->n || s <= 0) return;
@@ -57,6 +63,7 @@ static void bshl2(Big *a, int s)
     *a = r;
 }
 
+/* Compares two big integers. */
 static int big_cmp(const Big *a, const Big *b)
 {
     if (a->n != b->n) return a->n < b->n ? -1 : 1;
@@ -65,6 +72,7 @@ static int big_cmp(const Big *a, const Big *b)
     return 0;
 }
 
+/* a = a - b (a is not smaller than b). */
 static void bsub(Big *a, const Big *b)
 {
     i64 br = 0;
@@ -76,6 +84,7 @@ static void bsub(Big *a, const Big *b)
     bnorm(a);
 }
 
+/* Multiplies by 10^e. */
 static void bmulpow10(Big *a, int e)
 {
     while (e >= 9) { bmuladd(a, 1000000000u, 0); e -= 9; }
@@ -84,6 +93,7 @@ static void bmulpow10(Big *a, int e)
     if (m > 1) bmuladd(a, m, 0);
 }
 
+/* Takes 64 bits starting at bit position shift. */
 static void bshr_to_u64(const Big *a, int shift, u64 *out)
 {
     u64 r = 0;
@@ -94,6 +104,7 @@ static void bshr_to_u64(const Big *a, int shift, u64 *out)
 
 typedef struct { int ebits, mbits, explicit_int, bytes; } FFmt;
 
+/* Layout of a float kind: exponent bits, mantissa bits and whether the integer bit is stored. */
 static FFmt ffmt_for(int kind)
 {
     switch (kind) {
@@ -107,6 +118,7 @@ static FFmt ffmt_for(int kind)
     }
 }
 
+/* Packs sign, exponent and mantissa into the output bytes, little endian. */
 static void put_bits(u8 *out, int nbytes, int sign, int expf, const Big *mant, int mbits_total, int ebits)
 {
     memset(out, 0, 16);
@@ -118,6 +130,7 @@ static void put_bits(u8 *out, int nbytes, int sign, int expf, const Big *mant, i
     (void)nbytes;
 }
 
+/* Divides the scaled numerator by the denominator, rounds to nearest even and handles subnormals and overflow. */
 static int build_float(int sign, Big *Nn, Big *Dd, int k2, int kind, u8 *out)
 {
     FFmt f = ffmt_for(kind);
@@ -204,6 +217,7 @@ static int build_float(int sign, Big *Nn, Big *Dd, int k2, int kind, u8 *out)
     return 1;
 }
 
+/* Handles __?Infinity?__, __?QNaN?__ and similar names. */
 int float_special(const char *name, const char *text, u8 *out, int *nbytes)
 {
     (void)text;
@@ -220,6 +234,7 @@ int float_special(const char *name, const char *text, u8 *out, int *nbytes)
     return 1;
 }
 
+/* Bytes for inf, nan and signaling nan in a given float kind. */
 static int special_bits(const char *t, int sign, int kind, u8 *out)
 {
     FFmt f = ffmt_for(kind);
@@ -257,6 +272,7 @@ static int special_bits(const char *t, int sign, int kind, u8 *out)
     return 0;
 }
 
+/* Converts decimal or hex float text to bytes of the given kind. Returns 0 if the text is not a float. */
 int float_encode(const char *text, int kind, u8 *out)
 {
     const char *p = text;

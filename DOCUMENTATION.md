@@ -313,7 +313,7 @@ Things NASM and other assemblers have that Comprinly does not are listed next.
     src/riscv/     RISC-V encoder
     src/opt/       optimizer
     src/format/    ELF, PE, Mach-O, COFF writers and the linker
-    src/runtime/   runtime helpers for ARM64 and RISC-V
+    src/runtime/   boot sector source for bare metal images
     src/extras/    built-in C library and the leak check
 
 The build uses `-Isrc`, so every file just includes `cly.h`. Generated files (`rt_data.c`, `libc_data.c`, `insn_gen*.c`) come from the scripts in `rt/` and `tools/`.

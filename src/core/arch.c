@@ -1,5 +1,7 @@
+/* CPU selection: names, the cpu line, guessing the CPU from the code, and complaints when code looks like it is for another CPU. */
 #include "cly.h"
 
+/* Printable name of a CPU. */
 const char *arch_name(int arch)
 {
     switch (arch) {
@@ -10,11 +12,13 @@ const char *arch_name(int arch)
     return "x86-64";
 }
 
+/* Word size of a CPU: 32 for rv32, 64 for the rest. */
 int arch_bits(int arch)
 {
     return arch == ARCH_RV32 ? 32 : 64;
 }
 
+/* Lower-cases up to n-1 characters of s into d. */
 static void lower(char *d, const char *s, size_t n)
 {
     size_t i = 0;
@@ -22,6 +26,7 @@ static void lower(char *d, const char *s, size_t n)
     d[i] = 0;
 }
 
+/* Reads a RISC-V extension string such as imac or gc and sets the bits in *mask. Returns 0 if it is not valid. */
 static int rv_ext_parse(const char *s, int *mask)
 {
     int m = 0;
@@ -88,6 +93,7 @@ static int rv_ext_parse(const char *s, int *mask)
     return 0;
 }
 
+/* Turns a CPU name (x86-64, arm64, rv64gc, rv32imac ...) into an ARCH_* value and an extension mask. */
 int arch_parse(const char *name, int *rvext)
 {
     char s[64];
@@ -123,6 +129,7 @@ int arch_parse(const char *name, int *rvext)
     return arch;
 }
 
+/* True for the plain name risc-v, where the size comes from -m32 or -m64. */
 int arch_rv_generic(const char *name)
 {
     char s[64];
@@ -136,6 +143,7 @@ int arch_rv_generic(const char *name)
     return 1;
 }
 
+/* Recognizes a cpu NAME line (or [cpu NAME]) and copies the name out. */
 int arch_cpu_line(const char *text, char *arg, size_t sz)
 {
     const char *p = text;
@@ -153,12 +161,14 @@ int arch_cpu_line(const char *text, char *arg, size_t sz)
     return n > 0;
 }
 
+/* True for lines with nothing but a comment. */
 static int blank_or_comment(const char *t)
 {
     while (*t == ' ' || *t == '\t') t++;
     return !*t || *t == ';';
 }
 
+/* Finds the first cpu line in the source, if any, and its line number. */
 int arch_first_cpu(const LineVec *lv, char *arg, size_t sz, int *lineno)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -170,6 +180,7 @@ int arch_first_cpu(const LineVec *lv, char *arg, size_t sz, int *lineno)
     return 0;
 }
 
+/* True if the mnemonic exists on the given CPU. */
 int arch_known(int arch, const char *mn)
 {
     if (arch == ARCH_A64) return a64_known(mn);
@@ -177,12 +188,14 @@ int arch_known(int arch, const char *mn)
     return insn_known(mn);
 }
 
+/* Encodes one ARM64 or RISC-V instruction through the matching back end. */
 int arch_insn(int arch, const char *mn, const char *rest, IC *ic, InsnOut *out)
 {
     if (arch == ARCH_A64) return a64_insn(mn, rest, ic, out);
     return rv_insn(mn, rest, ic, out);
 }
 
+/* True for RISC-V ABI register names (zero, ra, sp, a0 ...). */
 static int is_rv_reg(const char *s, size_t n)
 {
     static const char *names[] = { "zero", "ra", "gp", "tp", "fp", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
@@ -194,6 +207,7 @@ static int is_rv_reg(const char *s, size_t n)
 int g_guess_line;
 char g_guess_tok[64];
 
+/* True for register names only ARM64 has (xzr, wzr, w0..w30, v0..v31 ...). */
 static int is_a64_only_reg(const char *s, size_t n)
 {
     if (n == 3 && (!strncasecmp(s, "xzr", 3) || !strncasecmp(s, "wzr", 3))) return 1;
@@ -205,6 +219,7 @@ static int is_a64_only_reg(const char *s, size_t n)
     return 0;
 }
 
+/* True for x0 to x31. */
 static int is_x_reg(const char *s, size_t n)
 {
     if (n < 2 || n > 3 || (s[0] != 'x' && s[0] != 'X') || !isdigit((unsigned char)s[1])) return 0;
@@ -213,6 +228,7 @@ static int is_x_reg(const char *s, size_t n)
     return v <= 31;
 }
 
+/* True for register names only RISC-V has. */
 static int is_rv_only_reg(const char *s, size_t n)
 {
     if (is_rv_reg(s, n)) {
@@ -224,6 +240,7 @@ static int is_rv_only_reg(const char *s, size_t n)
     return 0;
 }
 
+/* True for x86 register names. Strong evidence the line is x86. */
 static int is_x86_reg_tok(const char *s, size_t n)
 {
     if (n < 2 || n > 8) return 0;
@@ -239,6 +256,7 @@ static int is_x86_reg_tok(const char *s, size_t n)
     return c == RC_R8 || c == RC_R16 || c == RC_R32 || c == RC_R64 || c == RC_XMM || c == RC_YMM || c == RC_ZMM || c == RC_RIP;
 }
 
+/* Splits a source line into its mnemonic and operand text, skipping labels, comments and directives. */
 static const char *line_mnemonic(const char *t, char *w, size_t sz, const char **ops)
 {
     while (*t == ' ' || *t == '\t') t++;
@@ -268,6 +286,7 @@ static const char *line_mnemonic(const char *t, char *w, size_t sz, const char *
     return w;
 }
 
+/* Looks at one operand token and reports which CPU its register name points to, if any. */
 static int tok_clue(const char *b, size_t l)
 {
     if (is_a64_only_reg(b, l)) return ARCH_A64;
@@ -276,6 +295,7 @@ static int tok_clue(const char *b, size_t l)
     return -1;
 }
 
+/* Remembers the line and token that decided the guess so the message can name them. */
 static void note_guess(int line, const char *b, size_t l)
 {
     g_guess_line = line;
@@ -284,6 +304,7 @@ static void note_guess(int line, const char *b, size_t l)
     g_guess_tok[k] = 0;
 }
 
+/* Reads the code and picks a CPU from register names and mnemonics. Used when no cpu line or option is given. */
 int arch_guess(const LineVec *lv, int *rvext)
 {
     int xregs = 0;
@@ -324,6 +345,7 @@ int arch_guess(const LineVec *lv, int *rvext)
     return ARCH_X86;
 }
 
+/* True if a label of this name exists in the source. */
 static int label_defined(const LineVec *lv, const char *name, size_t l)
 {
     for (int i = 0; i < lv->n; i++) {
@@ -338,6 +360,7 @@ static int label_defined(const LineVec *lv, const char *name, size_t l)
     return 0;
 }
 
+/* After the CPU is chosen, reports instructions that belong to a different CPU and suggests the right one. Returns the error count. */
 int arch_check_foreign(const LineVec *lv, int arch)
 {
     int nerr = 0;

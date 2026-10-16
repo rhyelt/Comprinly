@@ -1,3 +1,4 @@
+/* More NEON: shifts by immediate, by-element multiplies, structure loads and stores, crypto, dot product and complex arithmetic. */
 #include "a64_simd.h"
 
 enum { SH_R, SH_L, SH_N, SH_LL, SH_FX };
@@ -17,6 +18,7 @@ static const TS ts[] = {
     { NULL, 0, 0, 0, 0 }
 };
 
+/* Finds a shift-by-immediate table entry. */
 static const TS *ts_find(const char *mn, int *p2)
 {
     *p2 = 0;
@@ -30,12 +32,14 @@ static const TS *ts_find(const char *mn, int *p2)
     return NULL;
 }
 
+/* True if a mnemonic is a shift-by-immediate instruction. */
 int shift_known(const char *mn)
 {
     int p;
     return ts_find(mn, &p) != NULL;
 }
 
+/* Vector shifts by immediate (shl, sshr, ushr, shrn, sli, sri ...). */
 int h_shift(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -137,6 +141,7 @@ static const TE te[] = {
     { NULL, 0, 0, 0 }
 };
 
+/* Finds a by-element table entry. */
 static const TE *te_find(const char *mn, int *p2)
 {
     *p2 = 0;
@@ -150,12 +155,14 @@ static const TE *te_find(const char *mn, int *p2)
     return NULL;
 }
 
+/* True if operand i is an indexed element. */
 int elem_operand(Ctx *c, int i)
 {
     VReg m;
     return i < c->n && a64_p_vec(c->tok[i], &m) && !m.scalar && m.lane >= 0;
 }
 
+/* Computes the H, L and M bits for an element index. */
 static int elem_fields(Ctx *c, const VReg *m, int es, u32 *bits)
 {
     int idx = m->lane;
@@ -176,6 +183,7 @@ static int elem_fields(Ctx *c, const VReg *m, int es, u32 *bits)
     return 1;
 }
 
+/* Multiplies and multiply-accumulates with an element operand. */
 int h_byelem(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -250,12 +258,14 @@ int h_byelem(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* True if a mnemonic has a by-element form. */
 int byelem_known(const char *mn)
 {
     int p;
     return te_find(mn, &p) != NULL;
 }
 
+/* Parses the [base] or [base], post operand of a structure load or store. */
 static int ls_mem(Ctx *c, int idx, GReg *rn)
 {
     const char *m = c->tok[idx];
@@ -282,6 +292,7 @@ static int ls_mem(Ctx *c, int idx, GReg *rn)
     return 1;
 }
 
+/* ld1 to ld4, st1 to st4, ld1r and lane forms. */
 int h_ldst_s(Ctx *c, const MnEnt *e)
 {
     int N = e->a, store = e->b, rep = e->c;
@@ -370,11 +381,13 @@ static const TC tcr[] = {
     { NULL, 0, 0 }
 };
 
+/* Name of a crypto table row. */
 const char *crypto_names(int i)
 {
     return tcr[i].n;
 }
 
+/* Operand i must have a given arrangement. */
 static int need_arr(Ctx *c, int i, VReg *v, int es, int lanes)
 {
     if (!sv_vreg(c, i, v)) return 0;
@@ -385,6 +398,7 @@ static int need_arr(Ctx *c, int i, VReg *v, int es, int lanes)
     return 1;
 }
 
+/* AES, SHA and SM3/SM4 instructions. */
 int h_crypto(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -469,6 +483,7 @@ int h_crypto(Ctx *c, const MnEnt *e)
 }
 
 
+/* Parses the rotation operand of fcadd and fcmla. */
 static int rotv(Ctx *c, int i, int *rot, int fcadd)
 {
     i64 r;
@@ -483,17 +498,20 @@ static int rotv(Ctx *c, int i, int *rot, int fcadd)
     return 1;
 }
 
+/* True if a register has the given arrangement. */
 static int arr_is(const VReg *v, int es, int lanes)
 {
     return !v->scalar && v->has_arr && v->lane < 0 && v->es == es && v->lanes == lanes;
 }
 
+/* Reports the correct form of a dot product instruction. */
 static int hd_bad(Ctx *c, const char *form)
 {
     err("%s: the form is %s", c->mn, form);
     return 0;
 }
 
+/* sdot, udot, usdot, fmla by element for half, bfdot and similar. */
 int h_dot(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -642,6 +660,7 @@ int h_dot(Ctx *c, const MnEnt *e)
     }
 }
 
+/* bfcvt, fcmla, fcadd and other less common vector instructions. */
 int h_misc(Ctx *c, const MnEnt *e)
 {
     (void)e;

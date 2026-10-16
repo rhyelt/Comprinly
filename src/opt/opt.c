@@ -1,3 +1,4 @@
+/* Text level x86 optimizer. Works on the preprocessed lines, parses each into a small record (Ln), and runs peephole rules that only fire when flags and registers cannot matter. The goal is smaller code with the same behavior. */
 #include "cly.h"
 
 enum { LK_BLANK, LK_LABEL, LK_INSN, LK_OTHER };
@@ -16,9 +17,13 @@ typedef struct {
 
 static int OB;
 static int OK_KERNEL;
+static int OK_ABS32;
+static HT lbl_ok;
+static HT lbl_bad;
 
 static int idc(int c) { return isalnum(c) || c == '_' || c == '.' || c == '$' || c == '#' || c == '@' || c == '~' || c == '?'; }
 
+/* Copy of a line without its ; comment. */
 static char *strip_comment(const char *t)
 {
     char *s = xstrdup(t);
@@ -38,6 +43,7 @@ static char *strip_comment(const char *t)
     return s;
 }
 
+/* Lower-case copy into a fixed buffer. */
 static void lowcpy(char *d, size_t n, const char *s)
 {
     size_t i = 0;
@@ -45,6 +51,7 @@ static void lowcpy(char *d, size_t n, const char *s)
     d[i] = 0;
 }
 
+/* True if w is in a NULL ended list of strings. */
 static int in_list(const char *w, const char *const *l)
 {
     for (int i = 0; l[i]; i++) if (!strcmp(w, l[i])) return 1;
@@ -54,6 +61,7 @@ static int in_list(const char *w, const char *const *l)
 static const char *const prefixes[] = { "lock", "rep", "repe", "repz", "repne", "repnz", "bnd", "a16", "a32", "o16", "o32", "xacquire", "xrelease", "nobnd", "times", NULL };
 static const char *const datad[] = { "db", "dw", "dd", "dq", "dt", "do", "dy", "dz", "resb", "resw", "resd", "resq", "rest", "reso", "resy", "resz", "incbin", "equ", "section", "segment", "global", "extern", "extrn", "default", "align", "alignb", "cpu", "bits", "public", NULL };
 
+/* Splits operand text at commas outside brackets and quotes. */
 static void split_ops(char *s, Ln *L)
 {
     int depth = 0;
@@ -83,6 +91,7 @@ static void split_ops(char *s, Ln *L)
     }
 }
 
+/* Fills an Ln: kind (label, instruction, blank, other), mnemonic, operands and words used for directive checks. */
 static void parse_line(const char *text, Ln *L)
 {
     memset(L, 0, sizeof *L);
@@ -152,6 +161,7 @@ static void parse_line(const char *text, Ln *L)
     free(s);
 }
 
+/* Releases the strings of an Ln. */
 static void free_ln(Ln *L)
 {
     free(L->name);
@@ -164,6 +174,7 @@ static const char *const r32[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "es
 static const char *const r16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
 static const char *const r8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", "spl", "bpl", "sil", "dil", NULL };
 
+/* Register width and the 32-bit name of a register, or 0 if the text is not a general register. */
 static int regw(const char *s, char *r32name)
 {
     char l[16];
@@ -186,6 +197,7 @@ static int regw(const char *s, char *r32name)
     return 0;
 }
 
+/* True if the text is a plain number; returns its value. */
 static int is_num(const char *s, long *v)
 {
     char *e;
@@ -197,6 +209,7 @@ static int is_num(const char *s, long *v)
     return 1;
 }
 
+/* Flags a condition code reads (ZF, CF, SF, OF, PF). */
 static int cond_mask(const char *c)
 {
     static const struct { const char *n; int m; } t[] = {
@@ -213,6 +226,7 @@ static int cond_mask(const char *c)
     return 0;
 }
 
+/* Opposite condition code. */
 static const char *inv_cc(const char *c)
 {
     static const char *const p[][2] = {
@@ -225,6 +239,7 @@ static const char *inv_cc(const char *c)
     return NULL;
 }
 
+/* True for conditional jumps; gives the condition. */
 static int is_jcc(const char *mn, const char **cc)
 {
     if (mn[0] != 'j' || !strcmp(mn, "jmp")) return 0;
@@ -233,6 +248,7 @@ static int is_jcc(const char *mn, const char **cc)
     return 1;
 }
 
+/* Which flags an instruction reads and writes. */
 static int flag_effects(const Ln *x, int *rd, int *wr)
 {
     const char *m = x->mn;
@@ -256,6 +272,7 @@ static int flag_effects(const Ln *x, int *rd, int *wr)
     return 0;
 }
 
+/* True for directives that do not affect code flow, so scans may look past them. */
 static int other_passes(const Ln *x)
 {
     if (in_list(x->w1, datad)) return strcmp(x->w1, "bits") != 0;
@@ -263,6 +280,7 @@ static int other_passes(const Ln *x)
     return 0;
 }
 
+/* True if no instruction after position at reads the flags before they are overwritten (looking forward a limited number of steps). Needed before changing an instruction's flag effects. */
 static int flags_dead(Ln *L, int n, int at, int need)
 {
     int steps = 0;
@@ -283,18 +301,21 @@ static int flags_dead(Ln *L, int n, int at, int need)
     return 1;
 }
 
+/* True for instructions that never fall through (jmp, ret, ud2 ...). */
 static int is_term(const Ln *x)
 {
     static const char *const t[] = { "jmp", "ret", "retn", "retf", "iret", "iretd", "iretq", "ud2", NULL };
     return x->kind == LK_INSN && in_list(x->mn, t);
 }
 
+/* Replaces the text of a line. */
 static void set_text(LineVec *lv, int i, const char *t)
 {
     free(lv->v[i].text);
     lv->v[i].text = xstrdup(t);
 }
 
+/* True if the text is a plain symbol name. */
 static int ident_only(const char *s)
 {
     if (!*s || isdigit((unsigned char)*s)) return 0;
@@ -302,6 +323,7 @@ static int ident_only(const char *s)
     return !regw(s, NULL);
 }
 
+/* If the instruction is a direct jump or call to a label, copies the label out. */
 static int direct_target(const Ln *x, char *out, size_t n)
 {
     if (x->kind != LK_INSN || x->nops != 1) return 0;
@@ -321,6 +343,7 @@ typedef struct {
     char **scope;
 } Ctx;
 
+/* Records the enclosing non-local label of every line so .local names can be told apart. */
 static void compute_scope(Ctx *c)
 {
     char cur[128] = "";
@@ -332,6 +355,7 @@ static void compute_scope(Ctx *c)
     }
 }
 
+/* Full name of a label reference including its scope. */
 static char *scoped(Ctx *c, int line, const char *t)
 {
     if (t[0] == '.' && t[1] != '.') {
@@ -343,6 +367,7 @@ static char *scoped(Ctx *c, int line, const char *t)
     return xstrdup(t);
 }
 
+/* Line number where a label is defined, or -1. */
 static int find_label(Ctx *c, const char *sc_name)
 {
     for (int i = 0; i < c->n; i++) {
@@ -356,6 +381,7 @@ static int find_label(Ctx *c, const char *sc_name)
     return -1;
 }
 
+/* Next instruction after line i, optionally skipping labels. */
 static int next_insn(Ctx *c, int i, int skip_labels, int *crossed_label_to, const char *want)
 {
     for (int k = i + 1; k < c->n; k++) {
@@ -375,6 +401,7 @@ static int next_insn(Ctx *c, int i, int skip_labels, int *crossed_label_to, cons
     return -1;
 }
 
+/* Rewrites a line and re-parses it. */
 static void set_line(Ctx *c, int i, const char *t)
 {
     set_text(c->lv, i, t);
@@ -382,6 +409,7 @@ static void set_line(Ctx *c, int i, const char *t)
     parse_line(t, &c->L[i]);
 }
 
+/* True if two memory operands are the same text. */
 static int mem_same(const char *a, const char *b)
 {
     const char *pa = strchr(a, '['), *pb = strchr(b, '[');
@@ -391,6 +419,149 @@ static int mem_same(const char *a, const char *b)
     return !strcasecmp(pa, pb);
 }
 
+
+static const char *const N64[16] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };
+static const char *const N32[16] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d" };
+
+/* Register number and width of a general register name, or -1. */
+static int regidx(const char *s, int *w)
+{
+    char l[16];
+    lowcpy(l, sizeof l, s);
+    for (int i = 0; i < 16; i++) {
+        if (!strcmp(l, N64[i])) { *w = 64; return i; }
+        if (!strcmp(l, N32[i])) { *w = 32; return i; }
+    }
+    for (int i = 0; i < 8; i++) if (!strcmp(l, r16[i])) { *w = 16; return i; }
+    for (int i = 0; i < 12; i++) if (!strcmp(l, r8[i])) { *w = 8; return i < 8 ? i & 3 : i - 4; }
+    if (l[0] == 'r' && isdigit((unsigned char)l[1])) {
+        char *e;
+        long n = strtol(l + 1, &e, 10);
+        if (n >= 8 && n <= 15 && (!strcmp(e, "w") || !strcmp(e, "b"))) { *w = e[0] == 'w' ? 16 : 8; return (int)n; }
+    }
+    return -1;
+}
+
+/* True if the instruction overwrites its first operand. */
+static int writes_dest(const Ln *x)
+{
+    static const char *const wr[] = { "mov", "lea", "add", "sub", "and", "or", "xor", "adc", "sbb", "inc", "dec", "neg", "not", "shl", "shr", "sar", "sal", "rol", "ror", "rcl", "rcr", "movzx", "movsx", "movsxd", "pop", "bswap", "bsf", "bsr", "popcnt", "lzcnt", "tzcnt", NULL };
+    const char *m = x->mn;
+    if (in_list(m, wr)) return 1;
+    if (!strcmp(m, "imul")) return x->nops >= 2;
+    if (!strncmp(m, "set", 3) && cond_mask(m + 3)) return 1;
+    if (!strncmp(m, "cmov", 4) && cond_mask(m + 4)) return 1;
+    return 0;
+}
+
+/* True if the instruction only reads its operands (cmp, test, push ...). */
+static int reads_only(const Ln *x)
+{
+    static const char *const ro[] = { "cmp", "test", "push", "nop", "bt", NULL };
+    return in_list(x->mn, ro);
+}
+
+static void clear_known(int *kn) { memset(kn, 0, 16 * sizeof(int)); }
+
+/* Forward constants: remembers values loaded into registers inside straight-line code and turns repeated loads into copies or drops them. */
+static int fwd_consts(Ctx *c)
+{
+    Ln *L = c->L;
+    int n = c->n;
+    int changed = 0;
+    int kn[16];
+    unsigned long long val[16];
+    char buf[96];
+    clear_known(kn);
+    for (int i = 0; i < n; i++) {
+        Ln *x = &L[i];
+        if (x->kind == LK_BLANK) continue;
+        if (x->kind != LK_INSN) { clear_known(kn); continue; }
+        const char *cc;
+        if (is_jcc(x->mn, &cc)) continue;
+        if (!strcmp(x->mn, "mov") && x->nops == 2) {
+            int dw, d = regidx(x->ops[0], &dw);
+            long v;
+            if (d >= 0 && (dw == 32 || (dw == 64 && OB == 64))) {
+                if (is_num(x->ops[1], &v)) {
+                    unsigned long long t = dw == 32 ? (unsigned long long)(unsigned int)v : (unsigned long long)v;
+                    if (d == 4) { kn[d] = 0; continue; }
+                    if (kn[d] && val[d] == t) {
+                        set_line(c, i, "");
+                        changed = 1;
+                        continue;
+                    }
+                    int hit = -1;
+                    if (t != 0) for (int k = 0; k < (OB == 64 ? 16 : 8); k++) if (k != d && k != 4 && kn[k] && val[k] == t) { hit = k; break; }
+                    if (hit >= 0) {
+                        snprintf(buf, sizeof buf, "    mov %s, %s", x->ops[0], dw == 64 ? N64[hit] : N32[hit]);
+                        set_line(c, i, buf);
+                        changed = 1;
+                    }
+                    kn[d] = 1;
+                    val[d] = t;
+                    continue;
+                }
+                int sw, sr = regidx(x->ops[1], &sw);
+                if (sr >= 0 && sw == dw) {
+                    if (d == 4) { kn[d] = 0; continue; }
+                    if (kn[sr]) {
+                        unsigned long long t = dw == 32 ? (unsigned long long)(unsigned int)val[sr] : val[sr];
+                        kn[d] = 1;
+                        val[d] = t;
+                    } else kn[d] = 0;
+                    continue;
+                }
+            }
+        }
+        if (!strcmp(x->mn, "xor") && x->nops == 2 && !strcasecmp(x->ops[0], x->ops[1])) {
+            int dw, d = regidx(x->ops[0], &dw);
+            if (d >= 0 && d != 4 && (dw == 32 || (dw == 64 && OB == 64))) {
+                if (kn[d] && val[d] == 0 && flags_dead(L, n, i, F_ALL)) { set_line(c, i, ""); changed = 1; continue; }
+                kn[d] = 1;
+                val[d] = 0;
+                continue;
+            }
+        }
+        if (reads_only(x)) continue;
+        if (writes_dest(x) && x->nops >= 1) {
+            if (strchr(x->ops[0], '[')) continue;
+            int dw, d = regidx(x->ops[0], &dw);
+            if (d < 0) { clear_known(kn); continue; }
+            kn[d] = 0;
+            continue;
+        }
+        clear_known(kn);
+    }
+    return changed;
+}
+
+/* Collects which labels are used as addresses, so rules that change address size know which are safe. */
+static void build_labels(Ctx *c)
+{
+    ht_clear(&lbl_ok);
+    ht_clear(&lbl_bad);
+    static const char *const dd[] = { "db", "dw", "dd", "dq", "dt", "do", "dy", "dz", "resb", "resw", "resd", "resq", "rest", "reso", "resy", "resz", NULL };
+    for (int i = 0; i < c->n; i++) {
+        Ln *x = &c->L[i];
+        if (x->plain && (strstr(x->plain, "absolute") || strstr(x->plain, "vstart") || strstr(x->plain, "start=") || strstr(x->plain, "follows"))) { ht_put(&lbl_bad, "\1all", (void *)1); }
+        if (x->kind == LK_LABEL && x->name && x->name[0] != '.') ht_put(&lbl_ok, x->name, (void *)1);
+        else if (x->kind == LK_OTHER && x->name && x->name[0] != '.') {
+            if (in_list(x->w2, dd)) ht_put(&lbl_ok, x->name, (void *)1);
+            else ht_put(&lbl_bad, x->name, (void *)1);
+        }
+    }
+}
+
+/* True if a label is safe to load with a 32-bit move. */
+static int addr_label(const char *nm)
+{
+    if (!OK_ABS32 || ht_get(&lbl_bad, "\1all")) return 0;
+    if (!ident_only(nm) || nm[0] == '.' || nm[0] == '$') return 0;
+    return ht_get(&lbl_ok, nm) && !ht_get(&lbl_bad, nm);
+}
+
+/* The main rules. Covers mov, add, sub, cmp, lea, xor, shifts and rotates, push/pop pairs, jmp and call to ret, jumps to the next line, mov r64, label to mov r32, label and xor r64, r64 to xor r32, r32. Rules that change flags only fire when flags_dead says nothing reads them. */
 static int peephole(Ctx *c)
 {
     Ln *L = c->L;
@@ -485,6 +656,34 @@ static int peephole(Ctx *c)
                 continue;
             }
         }
+        if (!strcmp(x->mn, "mov") && x->nops == 2 && OB == 64) {
+            int w = regw(x->ops[0], r32n);
+            if (w == 64 && addr_label(x->ops[1])) {
+                snprintf(buf, sizeof buf, "    mov %s, %s", r32n, x->ops[1]);
+                set_line(c, i, buf);
+                changed = 1;
+                continue;
+            }
+        }
+        if (!strcmp(x->mn, "xor") && x->nops == 2 && OB == 64 && !strcasecmp(x->ops[0], x->ops[1])) {
+            if (regw(x->ops[0], r32n) == 64 && r32n[0] == 'e') {
+                snprintf(buf, sizeof buf, "    xor %s, %s", r32n, r32n);
+                set_line(c, i, buf);
+                changed = 1;
+                continue;
+            }
+        }
+        if (x->nops == 2 && (!strcmp(x->mn, "add") || !strcmp(x->mn, "sub")) && is_num(x->ops[1], &v) && ((!strcmp(x->mn, "add") && v == 128) || (!strcmp(x->mn, "sub") && v == 128))) {
+            int w = regw(x->ops[0], NULL);
+            const char *o = x->ops[0];
+            int mem = strchr(o, '[') && (!strncasecmp(o, "word", 4) || !strncasecmp(o, "dword", 5) || !strncasecmp(o, "qword", 5));
+            if ((w >= 16 || mem) && flags_dead(L, n, i, F_ALL)) {
+                snprintf(buf, sizeof buf, "    %s %s, -128", !strcmp(x->mn, "add") ? "sub" : "add", o);
+                set_line(c, i, buf);
+                changed = 1;
+                continue;
+            }
+        }
         if (!strcmp(x->mn, "mov") && x->nops == 2) {
             int w = regw(x->ops[0], r32n);
             if ((w == 32 || w == 64) && is_num(x->ops[1], &v) && v == -1 && flags_dead(L, n, i, F_ALL)) {
@@ -508,6 +707,11 @@ static int peephole(Ctx *c)
             free(want);
             if (tl >= 0) {
                 int j = next_insn(c, tl, 1, NULL, NULL);
+                if (j >= 0 && j != i && !strcmp(L[j].mn, "ret") && L[j].nops == 0) {
+                    set_line(c, i, "    ret");
+                    changed = 1;
+                    continue;
+                }
                 if (j >= 0 && j != i && !strcmp(L[j].mn, "jmp") && direct_target(&L[j], t2, sizeof t2)) {
                     char *w2 = scoped(c, j, t2);
                     char *w1 = scoped(c, i, t);
@@ -524,6 +728,17 @@ static int peephole(Ctx *c)
             }
         }
         const char *cc;
+        if (is_jcc(x->mn, &cc) && direct_target(x, t, sizeof t)) {
+            char *want = scoped(c, i, t);
+            int hit = 0;
+            next_insn(c, i, 1, &hit, want);
+            free(want);
+            if (hit) {
+                set_line(c, i, "");
+                changed = 1;
+                continue;
+            }
+        }
         if (is_jcc(x->mn, &cc) && direct_target(x, t, sizeof t) && inv_cc(cc)) {
             int j = next_insn(c, i, 0, NULL, NULL);
             if (j > 0 && !strcmp(L[j].mn, "jmp") && direct_target(&L[j], t2, sizeof t2)) {
@@ -581,6 +796,7 @@ static int peephole(Ctx *c)
     return changed;
 }
 
+/* Re-parses every line after bulk edits. */
 static void reparse(Ctx *c)
 {
     for (int i = 0; i < c->n; i++) {
@@ -590,6 +806,7 @@ static void reparse(Ctx *c)
     compute_scope(c);
 }
 
+/* True for operands that make a call unsafe to inline ($, local labels, stack references). */
 static int unsafe_operand(const char *o)
 {
     if (strchr(o, '$') || strchr(o, '.')) return 1;
@@ -603,6 +820,7 @@ static int unsafe_operand(const char *o)
     return 0;
 }
 
+/* Replaces a call to a tiny function (at most 3 simple instructions then ret) with its body. */
 static int inline_calls(Ctx *c, LineVec *out_lv)
 {
     static const char *const safe[] = { "mov", "add", "sub", "inc", "dec", "xor", "and", "or", "not", "neg", "lea", "shl", "shr", "sar", "imul", "movzx", "movsx", "movsxd", "cmp", "test", "nop", "cdq", "cqo", "cdqe", NULL };
@@ -653,7 +871,7 @@ static int inline_calls(Ctx *c, LineVec *out_lv)
             if (!repl_text[i]) { lv_add(out_lv, c->lv->v[i].text, c->lv->v[i].file, c->lv->v[i].line); continue; }
             char *p = repl_text[i];
             for (;;) {
-                char *nl = strchr(p, '\n');
+                char *nl = cly_nl(p);
                 if (nl) *nl = 0;
                 lv_add(out_lv, p, c->lv->v[i].file, c->lv->v[i].line);
                 if (!nl) break;
@@ -666,11 +884,13 @@ static int inline_calls(Ctx *c, LineVec *out_lv)
     return did;
 }
 
+/* True for the entry labels: start, _start, ..start and main. */
 static int name_is_entry(const char *s)
 {
     return !strcasecmp(s, "start") || !strcasecmp(s, "_start") || !strcasecmp(s, "..start") || !strcasecmp(s, "main");
 }
 
+/* True if a name appears anywhere outside the range from..to. */
 static int mentions(Ctx *c, int from, int to, const char *name)
 {
     size_t nl = strlen(name);
@@ -691,6 +911,7 @@ static int mentions(Ctx *c, int from, int to, const char *name)
     return 0;
 }
 
+/* Removes functions that nothing refers to and that cannot be fallen into. */
 static int dead_functions(Ctx *c)
 {
     int changed = 0;
@@ -729,6 +950,7 @@ static int dead_functions(Ctx *c)
     return changed;
 }
 
+/* True for sources the optimizer must not touch (org, use16, bits 16, $ operands). Also reports the code size. */
 static int should_skip(LineVec *lv, int *bits_out)
 {
     int seen_bits = 0;
@@ -761,6 +983,7 @@ static int should_skip(LineVec *lv, int *bits_out)
     return 0;
 }
 
+/* Runs the optimizer: peephole, forward constants and dead function removal in a loop until nothing changes. */
 void opt_run(LineVec *lv, int bits, int kernel, int type)
 {
     if (bits == 16) return;
@@ -769,6 +992,7 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
     insn_init();
     OB = bits;
     OK_KERNEL = kernel;
+    OK_ABS32 = bits == 64 && kernel == K_LINUX && (type == T_ELF || type == T_BIN);
     int allow_dce = type != T_OBJ && type != T_COFF;
     for (int round = 0; round < 2; round++) {
         Ctx c;
@@ -797,10 +1021,11 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
             }
         }
         for (int it = 0; it < 12; it++) {
+            build_labels(&c);
             int ch = peephole(&c);
-            if (round == 1 && allow_dce) ch |= dead_functions(&c);
+            ch |= fwd_consts(&c);
+            if (round == 1 && allow_dce && dead_functions(&c)) { ch = 1; reparse(&c); }
             if (!ch) break;
-            reparse(&c);
         }
         if (round == 0 && allow_dce) {
             if (dead_functions(&c)) reparse(&c);

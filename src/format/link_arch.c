@@ -1,5 +1,7 @@
+/* Relocation patching for ARM64 and RISC-V instruction encodings. */
 #include "cly.h"
 
+/* Reads a 32-bit little endian word from section data. */
 static int rd32(Sec *s, i64 off, u32 *v)
 {
     if (off < 0 || (size_t)(off + 4) > s->data.n) return 0;
@@ -7,17 +9,20 @@ static int rd32(Sec *s, i64 off, u32 *v)
     return 1;
 }
 
+/* Writes a 32-bit little endian word. */
 static void wr32(Sec *s, i64 off, u32 v)
 {
     for (int i = 0; i < 4; i++) s->data.p[off + i] = (u8)(v >> (8 * i));
 }
 
+/* True if v fits a signed field of the given width. */
 static int fits(i64 v, int bits)
 {
     i64 lim = (i64)1 << (bits - 1);
     return v >= -lim && v < lim;
 }
 
+/* Applies one ARM64 relocation (branch, adrp, page offset, movz/movk, literal ...). */
 static int a64_apply(Obj *o, Reloc *r, i64 S, i64 P)
 {
     Sec *s = o->secs[r->sec];
@@ -69,6 +74,7 @@ static int a64_apply(Obj *o, Reloc *r, i64 S, i64 P)
     return 1;
 }
 
+/* Patches the 12-bit immediate of an I-type RISC-V instruction. */
 static void rv_patch_i(Sec *s, i64 off, i64 lo)
 {
     u32 w;
@@ -77,6 +83,7 @@ static void rv_patch_i(Sec *s, i64 off, i64 lo)
     wr32(s, off, w);
 }
 
+/* Patches the split 12-bit immediate of an S-type instruction. */
 static void rv_patch_s(Sec *s, i64 off, i64 lo)
 {
     u32 w;
@@ -85,6 +92,7 @@ static void rv_patch_s(Sec *s, i64 off, i64 lo)
     wr32(s, off, w);
 }
 
+/* Patches the 20-bit immediate of a U-type instruction. */
 static void rv_patch_u(Sec *s, i64 off, i64 hi)
 {
     u32 w;
@@ -93,11 +101,13 @@ static void rv_patch_u(Sec *s, i64 off, i64 hi)
     wr32(s, off, w);
 }
 
+/* Sign extends the low 12 bits. */
 static i64 sx12(i64 v)
 {
     return ((v & 0xfff) ^ 0x800) - 0x800;
 }
 
+/* Applies one RISC-V relocation (jal, branches, auipc pairs, compressed forms ...). */
 static int rv_apply(Obj *o, Reloc *r, i64 S, i64 P)
 {
     Sec *s = o->secs[r->sec];
@@ -160,6 +170,7 @@ static int rv_apply(Obj *o, Reloc *r, i64 S, i64 P)
     }
 }
 
+/* Entry for ARM64 and RISC-V relocations. Sets *handled when the kind belongs to those CPUs. */
 int link_arch_reloc(Obj *o, Reloc *r, i64 S, i64 P, int *handled)
 {
     *handled = 0;

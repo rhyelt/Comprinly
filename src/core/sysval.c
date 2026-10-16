@@ -1,14 +1,17 @@
+/* System call checks. Follows the number loaded into rax/eax (x8, a7) before each syscall and warns about Linux numbers that do not exist. */
 #include "cly.h"
 #include <ctype.h>
 
 typedef struct { char name[48]; long v; } Eq;
 
+/* Skips spaces and tabs. */
 static const char *skip(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
     return p;
 }
 
+/* Reads a number or an equ name (with optional sign and # prefix). Returns 0 if the text is anything more complex. */
 static int parse_num(const char *s, long *out, const Eq *eq, int neq)
 {
     s = skip(s);
@@ -33,6 +36,7 @@ static int parse_num(const char *s, long *out, const Eq *eq, int neq)
     return 0;
 }
 
+/* True for jumps, calls and returns on any CPU. A known register value does not survive them. */
 static int is_flow(const char *m)
 {
     static const char *const f[] = { "call", "ret", "retn", "retf", "jmp", "tail", "b", "bl", "br", "blr", "cbz", "cbnz", "tbz", "tbnz", "jal", "jalr", "jr", "j", "loop", "loope", "loopne", "beq", "bne", "blt", "bge", "bltu", "bgeu", "beqz", "bnez", "blez", "bgez", "bltz", "bgtz", "bgt", "ble", "bgtu", "bleu", "iret", "iretq", NULL };
@@ -42,6 +46,7 @@ static int is_flow(const char *m)
     return 0;
 }
 
+/* Splits operand text at top-level commas, ignoring commas inside brackets. */
 static int split(char *s, char **ops, int max)
 {
     int n = 0;
@@ -61,6 +66,7 @@ static int split(char *s, char **ops, int max)
     return n;
 }
 
+/* True for the register that carries the call number on this CPU. */
 static int is_numreg(int arch, const char *r)
 {
     if (arch == ARCH_X86) return !strcasecmp(r, "eax") || !strcasecmp(r, "rax");
@@ -68,11 +74,13 @@ static int is_numreg(int arch, const char *r)
     return !strcasecmp(r, "a7") || !strcasecmp(r, "x17");
 }
 
+/* True for al, ah and ax. Writing them makes the call number unknown. */
 static int x86_partial(const char *r)
 {
     return !strcasecmp(r, "al") || !strcasecmp(r, "ah") || !strcasecmp(r, "ax");
 }
 
+/* True if n is a real Linux call number for the CPU and word size. */
 static int linux_valid(int arch, long n, int bits)
 {
     if (n < 0) return 0;
@@ -85,6 +93,7 @@ static int linux_valid(int arch, long n, int bits)
     return 1;
 }
 
+/* True if the instruction changes its first operand, so a write to the number register invalidates what we knew. */
 static int writes_first(int arch, const char *m)
 {
     if (is_flow(m)) return 0;
@@ -93,6 +102,7 @@ static int writes_first(int arch, const char *m)
     return !(m[0] == 's' && (m[1] == 'b' || m[1] == 'h' || m[1] == 'w' || m[1] == 'd') && !m[2]) && strncasecmp(m, "fs", 2);
 }
 
+/* Name of a Linux call number, or NULL. Used in warning text. */
 static const char *sys_name(long n)
 {
     switch (n) {
@@ -103,6 +113,7 @@ static const char *sys_name(long n)
     return NULL;
 }
 
+/* Walks the lines, keeps the last constant loaded into the call number register and warns when a syscall, svc or ecall number is not a real Linux number. Only Linux calls are checked; other kernels get exactly what the program sends. */
 void sysval_run(const LineVec *lv, int arch, int kernel, int bits)
 {
     Eq *eq = NULL;
@@ -149,6 +160,11 @@ void sysval_run(const LineVec *lv, int arch, int kernel, int bits)
         char *ops[8];
         int n = split(rest, ops, 8);
         if (n == 1 && !*ops[0]) n = 0;
+        if (n == 1 && !strcasecmp(mn, "mov")) {
+            char *w = ops[0];
+            while (*w && *w != ' ' && *w != '\t') w++;
+            if (*w) { *w++ = 0; ops[1] = (char *)skip(w); n = 2; }
+        }
         for (int k = 0; k < n; k++) { char *e = ops[k] + strlen(ops[k]); while (e > ops[k] && (e[-1] == ' ' || e[-1] == '\t')) *--e = 0; }
         int isinsn = 0;
         long arg = 0;
@@ -165,17 +181,12 @@ void sysval_run(const LineVec *lv, int arch, int kernel, int bits)
                 else if (kernel != K_LINUX) warn("`int 0x80' only works on Linux; use `syscall' for other targets");
             }
             if (arch == ARCH_A64 && arg != 0) warn("Linux ignores the `svc' number; use `svc 0' and put the call number in x8");
-            if (known && (kernel == K_LINUX || (arch == ARCH_X86 && isinsn == 1))) {
+            if (known && kernel == K_LINUX) {
                 const char *nm = sys_name(num);
                 char desc[80];
                 if (nm) snprintf(desc, sizeof desc, "%ld (%s)", num, nm);
                 else snprintf(desc, sizeof desc, "%ld", num);
-                if (arch == ARCH_X86 && isinsn == 1 && kernel != K_LINUX) {
-                    if (!rt_syscall_supported(kernel, bits, (int)num)) warn("syscall %s is not supported by the %s runtime and will return -ENOSYS", desc, kernel == K_WINDOWS ? "windows" : kernel == K_MAC ? "mac" : "bare");
-                } else if (arch == ARCH_X86 && bits == 32 && kernel == K_LINUX && isinsn == 1) {
-                    if (!linux_valid(arch, num, 64)) warn("%ld is not a Linux system call number", num);
-                    else if (!rt_syscall_supported(kernel, bits, (int)num)) warn("syscall %s is not supported by the 32-bit Linux runtime and will return -ENOSYS", desc);
-                } else if (!linux_valid(arch, num, bits)) warn("%ld is not a Linux system call number on %s", num, arch_name(arch));
+                if (!linux_valid(arch, num, arch == ARCH_X86 && bits == 32 && isinsn == 1 ? 64 : bits)) warn("%s is not a Linux system call number on %s", desc, arch_name(arch));
             }
             if (arch == ARCH_X86) known = 0;
             (void)what;
@@ -188,7 +199,7 @@ void sysval_run(const LineVec *lv, int arch, int kernel, int bits)
             else if (arch != ARCH_X86 && !strcasecmp(mn, "addi") && n == 3 && !strcasecmp(ops[1], "zero") && parse_num(ops[2], &v, eq, neq)) { known = 1; num = v; }
             else if (writes_first(arch, mn)) known = 0;
         } else if (arch == ARCH_X86 && n >= 1 && x86_partial(ops[0])) known = 0;
-        else if (arch == ARCH_X86 && (!strcasecmp(mn, "xchg") || !strcasecmp(mn, "cpuid") || !strcasecmp(mn, "pop") || !strcasecmp(mn, "mul") || !strcasecmp(mn, "div") || !strcasecmp(mn, "imul") || !strcasecmp(mn, "idiv") || !strcasecmp(mn, "cdq") || !strcasecmp(mn, "cqo") || !strcasecmp(mn, "cdqe") || !strcasecmp(mn, "cwde") || !strcasecmp(mn, "lodsb") || !strcasecmp(mn, "lodsd") || !strcasecmp(mn, "lodsq") || !strcasecmp(mn, "rdtsc"))) known = 0;
+        else if (arch == ARCH_X86 && (!strcasecmp(mn, "xchg") || !strcasecmp(mn, "cpuid") || !strcasecmp(mn, "pop") || !strcasecmp(mn, "mul") || !strcasecmp(mn, "div") || !strcasecmp(mn, "imul") || !strcasecmp(mn, "idiv") || !strcasecmp(mn, "cdq") || !strcasecmp(mn, "cqo") || !strcasecmp(mn, "cdqe") || !strcasecmp(mn, "cwde") || !strcasecmp(mn, "lodsb") || !strcasecmp(mn, "lodsd") || !strcasecmp(mn, "lodsq") || !strcasecmp(mn, "rdtsc") || !strcasecmp(mn, "cmpxchg") || !strcasecmp(mn, "cmpxchg8b") || !strcasecmp(mn, "cmpxchg16b") || !strcasecmp(mn, "lahf") || !strcasecmp(mn, "xlat") || !strcasecmp(mn, "xlatb") || !strcasecmp(mn, "lodsw") || !strcasecmp(mn, "rdtscp") || !strcasecmp(mn, "rdmsr") || !strcasecmp(mn, "rdpmc") || !strcasecmp(mn, "xgetbv") || !strcasecmp(mn, "rep") || !strcasecmp(mn, "repe") || !strcasecmp(mn, "repne"))) known = 0;
         if (is_flow(mn)) known = 0;
     }
     g_pos.file = NULL;

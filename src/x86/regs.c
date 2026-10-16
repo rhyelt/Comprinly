@@ -1,3 +1,4 @@
+/* x86 register names and numbers. Registers are packed ids: class (r8, r16, r32, r64, xmm, ymm, zmm, k, segment ...) and number. */
 #include "cly.h"
 
 typedef struct { const char *n; int cls, num, size; } RegDef;
@@ -9,6 +10,7 @@ static int reg_ready;
 static RegDef **defs;
 static int ndefs;
 
+/* Adds a register name to a table. */
 static void radd2(HT *h, const char *n, int cls, int num, int size)
 {
     RegDef *d = xmalloc(sizeof *d);
@@ -19,6 +21,7 @@ static void radd2(HT *h, const char *n, int cls, int num, int size)
     ht_put(h, n, d);
 }
 
+/* Adds a register name to the main table. */
 static void radd(const char *n, int cls, int num, int size)
 {
     RegDef *d = xmalloc(sizeof *d);
@@ -31,6 +34,7 @@ static void radd(const char *n, int cls, int num, int size)
     ht_put(&regs, n, d);
 }
 
+/* Registers the common names: 8, 16 and 32-bit general registers, segment, control, debug, x87, MMX and vector registers. */
 static void reg_init(void)
 {
     static const char *r8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
@@ -73,6 +77,7 @@ static void reg_init(void)
     }
 }
 
+/* Adds r8..r15, the 64-bit registers and the new byte registers (sil, dil ...). Only in 64-bit mode. */
 static void reg64_init(void)
 {
     static int done;
@@ -103,12 +108,14 @@ static void reg64_init(void)
     }
 }
 
+/* Switches between 16/32-bit and 64-bit register sets. */
 void reg_mode(int bits)
 {
     if (bits == 64) reg64_init();
     rmode64 = bits == 64;
 }
 
+/* Maps a general register to a slot number for the virtual register area. */
 int reg_slot(int rid)
 {
     int n = REGNUM(rid);
@@ -124,6 +131,7 @@ int reg_slot(int rid)
     return -1;
 }
 
+/* Inverse of reg_slot. */
 int slot_reg(int s)
 {
     if (s < 16) return REGID(RC_R32, s);
@@ -135,6 +143,7 @@ int slot_reg(int s)
     return REGID(RC_ZMM, s - 128);
 }
 
+/* Finds a register by name (case insensitive). Returns its id and size, or 0. */
 int reg_lookup(const char *name, int *size)
 {
     if (!reg_ready) reg_init();
@@ -150,6 +159,7 @@ int reg_lookup(const char *name, int *size)
     return REGID(d->cls, d->num);
 }
 
+/* Name of a register id. */
 const char *reg_name(int id)
 {
     if (!reg_ready) reg_init();
@@ -161,6 +171,7 @@ const char *reg_name(int id)
     return "?";
 }
 
+/* Turns on the alternate NASM names (r0 to r7, r0d, r0w, r0l ...) used with the altreg option. */
 void reg_altreg(int on)
 {
     static int done;

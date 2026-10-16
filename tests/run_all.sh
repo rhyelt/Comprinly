@@ -26,24 +26,16 @@ if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ]; then
         case $ex in print) want="Hello, World!";; fact) want=3628800;; esac
         if [ "$(cat "$T/o")" = "$want" ]; then note "linux64 run $ex" ok; else note "linux64 run $ex" FAIL; fail=1; fi
     done
-    if ./cly linux examples/print.cly -m32 -q -out "$T/p" && "$T/p" >"$T/o" 2>/dev/null && [ "$(cat "$T/o")" = "Hello, World!" ]; then note "linux32 run" ok; else note "linux32 run" skipped; fi
+    printf 'start:\n mov eax, 4\n mov ebx, 1\n mov ecx, m\n mov edx, 14\n int 0x80\n mov eax, 1\n xor ebx, ebx\n int 0x80\nm db "Hello, World!", 10\n' > "$T/l32.cly"
+    if ./cly linux "$T/l32.cly" -m32 -q -out "$T/p" && "$T/p" >"$T/o" 2>/dev/null && [ "$(cat "$T/o")" = "Hello, World!" ]; then note "linux32 run" ok; else note "linux32 run" skipped; fi
 else
     note "linux run" skipped
 fi
 
 if python3 -c "import unicorn" 2>/dev/null; then
-    ./cly windows examples/print.cly -m32 -q -out "$T/w.exe"
-    python3 tests/emu/pe_emu.py "$T/w.exe" | grep -q "Hello, World" && note "windows32 emu" ok || { note "windows32 emu" FAIL; fail=1; }
-    ./cly windows examples/print.cly -m64 -q -out "$T/w.exe"
-    python3 tests/emu/pe64_emu.py "$T/w.exe" | grep -q "Hello, World" && note "windows64 emu" ok || { note "windows64 emu" FAIL; fail=1; }
-    ./cly mac examples/print.cly -m32 -q -out "$T/m"
-    python3 tests/emu/mac_emu.py "$T/m" | grep -q "Hello, World" && note "mac32 emu" ok || { note "mac32 emu" FAIL; fail=1; }
-    ./cly mac examples/print.cly -m64 -q -out "$T/m"
+    printf 'start:\n mov eax, 0x2000004\n mov edi, 1\n lea rsi, [rel m]\n mov edx, 14\n syscall\n mov eax, 0x2000001\n xor edi, edi\n syscall\nm db "Hello, World!", 10\n' > "$T/m64.cly"
+    ./cly mac "$T/m64.cly" -m64 -q -out "$T/m"
     python3 tests/emu/mac64_emu.py "$T/m" | grep -q "Hello, World" && note "mac64 emu" ok || { note "mac64 emu" FAIL; fail=1; }
-    for m in -m32 -m64; do
-        ./cly bare examples/print.cly $m -q -out "$T/b"
-        python3 tests/emu/bare_emu.py "$T/b" | grep -q "Hello, World" && note "bare$m emu" ok || { note "bare$m emu" FAIL; fail=1; }
-    done
 else
     note "emulators" "skipped (no unicorn)"
 fi

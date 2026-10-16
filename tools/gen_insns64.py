@@ -1,5 +1,10 @@
+# Generates src/x86/insn_gen64.c: the 64-bit and newer instruction rows, packed with tools/lz.py.
 import re
 import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lz
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "data/insns.dat"
 DST = sys.argv[2] if len(sys.argv) > 2 else "src/x86/insn_gen64.c"
@@ -198,16 +203,17 @@ def main():
         seen.add(r)
         lines.append(r)
         n += 1
+    rows = []
+    cur = -1
+    for mn, ops, enc, lv in lines:
+        if lv != cur:
+            rows.append("#%d" % lv)
+            cur = lv
+        rows.append("\t".join((mn, ops, enc)))
     with open(DST, "w") as f:
-        f.write('#include "cly.h"\n#include "insn.h"\n\n')
-        f.write("void gen64_tab(void)\n{\n")
-        cur = -1
-        for mn, ops, enc, lv in lines:
-            if lv != cur:
-                f.write("    tab_lv(%d);\n" % lv)
-                cur = lv
-            f.write('    T("%s", "%s", "%s");\n' % (mn, ops, enc))
-        f.write("}\n")
+        f.write('/* Generated file. Do not edit; run make gen or make rt. */\n#include "cly.h"\n#include "insn.h"\n\n')
+        f.write(lz.pack("gen64_blob", "\n".join(rows) + "\n"))
+        f.write("\nvoid gen64_tab(void) { tab_blob(gen64_blob, sizeof gen64_blob, gen64_blob_raw); }\n")
     sys.stderr.write("generated %d, skipped %d\n" % (n, skipped))
 
 

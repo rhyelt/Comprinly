@@ -1,3 +1,4 @@
+/* Memory leak checker. Reads the x86 code, splits it into functions, and follows where each allocation (malloc, calloc, strdup, mmap, or a function that returns one) is held: in registers (R), stack slots (S) or globals (G). If an allocation can reach the end of a function or program without being freed or handed on, it is reported. Also builds a fixed copy of the program with the missing frees added. */
 #include "cly.h"
 #include <limits.h>
 
@@ -58,12 +59,14 @@ static const char *rn64[16] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi",
 static const char *rn32[16] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d" };
 static const int argreg[6] = { 7, 6, 2, 1, 8, 9 };
 
+/* Skips spaces and tabs. */
 static const char *skipw(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
     return p;
 }
 
+/* Number for a named location (register, stack slot or global). */
 static int loc_id(const char *name)
 {
     for (int i = 0; i < nloc; i++) if (!strcmp(loc_names[i], name)) return i;
@@ -72,6 +75,7 @@ static int loc_id(const char *name)
     return nloc++;
 }
 
+/* Location id of a register. */
 static int reg_loc(int r)
 {
     char b[16];
@@ -79,6 +83,7 @@ static int reg_loc(int r)
     return loc_id(b);
 }
 
+/* Location id of a stack slot at an offset. */
 static int slot_loc(int off)
 {
     char b[32];
@@ -86,6 +91,7 @@ static int slot_loc(int off)
     return loc_id(b);
 }
 
+/* Location id of a global symbol. */
 static int glob_loc(const char *sym)
 {
     char b[160];
@@ -98,6 +104,7 @@ static int loc_is_slot(int l) { return loc_names[l][0] == 'S'; }
 static int loc_reg(int l) { return atoi(loc_names[l] + 1); }
 static int loc_slot(int l) { return atoi(loc_names[l] + 1); }
 
+/* Register number from a name, or -1. */
 static int reg_index(const char *s, size_t n)
 {
     char t[16];
@@ -131,6 +138,7 @@ typedef struct {
     int ok;
 } Mem;
 
+/* Parses a memory operand into base register, index, displacement and symbol. */
 static int parse_mem(const char *op, Mem *m)
 {
     memset(m, 0, sizeof *m);
@@ -186,6 +194,7 @@ static int parse_mem(const char *op, Mem *m)
 
 enum { L_NONE, L_REG, L_STACK, L_GLOBAL, L_DEREF };
 
+/* Location named by an operand, with its class (register, slot, global, none). */
 static int op_loc(const char *op, const St *st, int *cls)
 {
     if (!op || !*op) { *cls = L_NONE; return -1; }
@@ -211,6 +220,7 @@ static int op_loc(const char *op, const St *st, int *cls)
     return -1;
 }
 
+/* Value of an immediate operand. */
 static long op_imm(const char *op, int *ok)
 {
     const char *p = skipw(op);
@@ -226,6 +236,7 @@ static long op_imm(const char *op, int *ok)
     return neg ? -v : v;
 }
 
+/* Starts an empty abstract state. */
 static void st_init(St *s)
 {
     memset(s, 0, sizeof *s);
@@ -235,35 +246,41 @@ static void st_init(St *s)
     for (int i = 0; i < 16; i++) s->cv[i] = LONG_MIN;
 }
 
+/* Finds the tracked allocation for a site. */
 static Al *find_al(St *s, int site)
 {
     for (int i = 0; i < s->nal; i++) if (s->al[i].site == site) return &s->al[i];
     return NULL;
 }
 
+/* True if a location holds the allocation. */
 static int al_has(const Al *a, int l)
 {
     for (int i = 0; i < a->nh; i++) if (a->h[i] == l) return 1;
     return 0;
 }
 
+/* Records another location holding the allocation. */
 static void al_add(Al *a, int l)
 {
     if (al_has(a, l) || a->nh >= MAXH) return;
     a->h[a->nh++] = (short)l;
 }
 
+/* Removes a location from the holders. */
 static void al_del(Al *a, int l)
 {
     for (int i = 0; i < a->nh; i++)
         if (a->h[i] == l) { a->h[i] = a->h[--a->nh]; return; }
 }
 
+/* Forgets an allocation (it was freed or escaped). */
 static void st_drop(St *s, int idx)
 {
     s->al[idx] = s->al[--s->nal];
 }
 
+/* Creates or finds the numbered allocation site for an instruction. */
 static int site_new(int ins, int kind, const char *fn, long len)
 {
     for (int i = 0; i < nS; i++) if (S[i].ins == ins && S[i].kind == kind) return i;
@@ -276,6 +293,7 @@ static int site_new(int ins, int kind, const char *fn, long len)
     return nS++;
 }
 
+/* Records an event (leak, double free, use after free ...) for the report. */
 static void ev_add(int site, int k, int kind)
 {
     if (!g_report) return;
@@ -288,6 +306,7 @@ static void ev_add(int site, int k, int kind)
     nEV++;
 }
 
+/* Joins two states where control flow meets. Returns 1 if the destination changed. */
 static int merge_into(St *d, const St *s)
 {
     int ch = 0;
@@ -309,12 +328,14 @@ static int merge_into(St *d, const St *s)
     return ch;
 }
 
+/* True for registers a callee must preserve. */
 static int is_callee_saved(int r)
 {
     if (g_bits == 64) return r == 3 || r == 5 || r == 4 || (r >= 12 && r <= 15);
     return r == 3 || r == 5 || r == 4 || r == 6 || r == 7;
 }
 
+/* Allocation lost its last holder: report it as leaked. */
 static void orphan(St *s, int site_idx, int k, int lost)
 {
     Al *a = &s->al[site_idx];
@@ -322,6 +343,7 @@ static void orphan(St *s, int site_idx, int k, int lost)
     st_drop(s, site_idx);
 }
 
+/* A location was overwritten: it no longer holds anything. */
 static void kill_loc(St *s, int l, int k)
 {
     for (int i = 0; i < s->nal; i++) {
@@ -333,6 +355,7 @@ static void kill_loc(St *s, int l, int k)
     }
 }
 
+/* A location's content escaped (stored in unknown memory or passed on): stop tracking it. */
 static void escape_loc(St *s, int l)
 {
     for (int i = 0; i < s->nal; i++) {
@@ -340,17 +363,20 @@ static void escape_loc(St *s, int l)
     }
 }
 
+/* A location was copied: both now hold the same allocations. */
 static void alias_loc(St *s, int from, int to)
 {
     for (int i = 0; i < s->nal; i++) if (al_has(&s->al[i], from)) al_add(&s->al[i], to);
 }
 
+/* True if some tracked allocation sits in the location. */
 static int holds(const St *s, int l)
 {
     for (int i = 0; i < s->nal; i++) if (al_has(&s->al[i], l)) return 1;
     return 0;
 }
 
+/* Stack space below the stack pointer was released: forget slots there. */
 static void drop_stack_holders(St *s, int below, int k)
 {
     for (int i = 0; i < s->nal; i++) {
@@ -363,6 +389,7 @@ static void drop_stack_holders(St *s, int below, int k)
     }
 }
 
+/* The stack pointer changed in an unknown way: forget stack holders. */
 static void unknown_stack(St *s)
 {
     for (int i = 0; i < s->nal; i++) {
@@ -374,6 +401,7 @@ static void unknown_stack(St *s)
     }
 }
 
+/* Clears registers a call may change. */
 static void kill_regs_mask(St *s, int k, int caller_saved_only)
 {
     for (int r = 0; r < 16; r++) {
@@ -384,6 +412,7 @@ static void kill_regs_mask(St *s, int k, int caller_saved_only)
     }
 }
 
+/* True for allocator names (malloc, calloc, strdup, ...). */
 static const char *known_alloc(const char *n)
 {
     static const char *const f[] = { "malloc", "calloc", "strdup", "strndup", "aligned_alloc", "memalign", "valloc", NULL };
@@ -391,6 +420,7 @@ static const char *known_alloc(const char *n)
     return NULL;
 }
 
+/* True for library functions that neither keep nor free their arguments. */
 static int known_safe(const char *n)
 {
     static const char *const f[] = { "printf", "puts", "putchar", "strlen", "strcpy", "strncpy", "strcat", "strncat", "strcmp", "strncmp", "strchr", "strrchr", "strstr", "memcpy", "memmove", "memset", "memcmp", "scanf", "sscanf", "fgets", "fputs", "fprintf", "sprintf", "snprintf", "write", "read", "atoi", "atol", "strtol", "gets", "toupper", "tolower", "fwrite", "fread", "fputc", "putc", "fflush", "isdigit", "isalpha", "abs", "labs", "sqrt", "time", "srand", "rand", "usleep", "sleep", "getchar", "fgetc", "getc", "strtod", "atof", "qsort", "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "exp", "exp2", "log", "log10", "log2", "pow", "fmod", "hypot", "fmin", "fmax", "trunc", "round", "floor", "ceil", "fabs", NULL };
@@ -398,12 +428,14 @@ static int known_safe(const char *n)
     return 0;
 }
 
+/* Index of the function that starts at a label. */
 static int find_fn_by_label(const char *name)
 {
     for (int i = 0; i < nfn; i++) if (!strcmp(fn_name[i], name)) return i;
     return -1;
 }
 
+/* Name of the call target for a call instruction. */
 static void call_name(const char *op, char *out, size_t sz)
 {
     out[0] = 0;
@@ -429,6 +461,7 @@ static void call_name(const char *op, char *out, size_t sz)
     if (at) *at = 0;
 }
 
+/* Location of argument i for the calling convention in use. */
 static int arg_loc_of(int i, const St *s)
 {
     if (g_bits == 64) return i < 6 ? reg_loc(argreg[i]) : -1;
@@ -436,6 +469,7 @@ static int arg_loc_of(int i, const St *s)
     return slot_loc(s->delta + 4 * i);
 }
 
+/* Passing a pointer to an unknown function lets it escape. */
 static void handle_arg_escape(St *s, int nargs)
 {
     for (int i = 0; i < nargs; i++) {
@@ -444,6 +478,7 @@ static void handle_arg_escape(St *s, int nargs)
     }
 }
 
+/* An allocation happens: start tracking it in the return register. */
 static void new_alloc(St *s, int site, int where_reg)
 {
     Al *old = find_al(s, site);
@@ -463,6 +498,7 @@ static void new_alloc(St *s, int site, int where_reg)
     al_add(a, reg_loc(where_reg));
 }
 
+/* Known constant in a register (for sizes). */
 static int const_reg(const St *s, int r, long *v)
 {
     if (s->cv[r] == LONG_MIN) return 0;
@@ -470,6 +506,7 @@ static int const_reg(const St *s, int r, long *v)
     return 1;
 }
 
+/* A free call: marks the allocation in argument i freed and reports double frees. */
 static void free_arg(St *s, int i, int k, int fn_frees_mark)
 {
     int l = arg_loc_of(i, s);
@@ -486,12 +523,14 @@ static void free_arg(St *s, int i, int k, int fn_frees_mark)
 
 static int cur_fn;
 
+/* True if a global holds the allocation (it is not leaked while a global points to it). */
 static int has_global_holder(const Al *a)
 {
     for (int i = 0; i < a->nh; i++) if (loc_names[a->h[i]][0] == 'G') return 1;
     return 0;
 }
 
+/* Program or function exit: allocations still held and not global leak here. */
 static void do_exit_event(St *s, int k)
 {
     for (int i = 0; i < s->nal; i++) {
@@ -501,12 +540,14 @@ static void do_exit_event(St *s, int k)
     }
 }
 
+/* True for conditional jumps. */
 static int is_jcc(const char *m)
 {
     if (m[0] != 'j' || !strcmp(m, "jmp")) return 0;
     return 1;
 }
 
+/* Abstract effect of one instruction on the state: moves, loads, stores, push and pop, calls, returns. */
 static void transfer(St *s, int k)
 {
     const Ins *in = &I[k];
@@ -813,6 +854,7 @@ static int fn_of_ins(int k) { return I[k].fn; }
 
 typedef struct { int to; St st; int taken; } Edge;
 
+/* Instruction index of a label. */
 static int find_label_ins(const char *name, int from)
 {
     char full[160];
@@ -838,6 +880,7 @@ static int find_label_ins(const char *name, int from)
     return -1;
 }
 
+/* Full name of a jump target, adding the parent for .local names. */
 static char *canon_target(const char *name, int k)
 {
     if (name[0] != '.') return xstrdup(name);
@@ -856,6 +899,7 @@ static char *canon_target(const char *name, int k)
     return sget(&s);
 }
 
+/* Skips short, near, far on a jump operand. */
 static const char *skip_jmp_kw(const char *p)
 {
     static const char *const kw[] = { "short", "near", "far", "dword", "qword", NULL };
@@ -870,6 +914,7 @@ static const char *skip_jmp_kw(const char *p)
     }
 }
 
+/* Instruction index a jump goes to. */
 static int target_ins(const char *op, int k)
 {
     const char *p = skip_jmp_kw(op);
@@ -885,6 +930,7 @@ static int target_ins(const char *op, int k)
     return t < 0 ? -1 : t;
 }
 
+/* After a test or cmp against 0, an allocation is known null on one branch and non-null on the other. */
 static int refine_null(St *s, const Ins *jin, int taken)
 {
     if (s->nullcmp < 0) return 0;
@@ -901,6 +947,7 @@ static int refine_null(St *s, const Ins *jin, int taken)
     return 1;
 }
 
+/* Computes the next instructions (fall through and jump targets) and their states. */
 static int succ_edges(int k, const St *out_st_nonref, const St *pre, Edge *e)
 {
     int n = 0;
@@ -945,6 +992,7 @@ static int succ_edges(int k, const St *out_st_nonref, const St *pre, Edge *e)
 
 static St *IN;
 
+/* Runs the data flow over one function until the states stop changing. */
 static void analyze_fn(int f)
 {
     int a = fn_entry[f], b = fn_end[f];
@@ -990,6 +1038,7 @@ static void analyze_fn(int f)
     free(inq);
 }
 
+/* Re-runs a function once more to collect the leak events. */
 static void collect_events(int f)
 {
     int a = fn_entry[f], b = fn_end[f];
@@ -1003,6 +1052,7 @@ static void collect_events(int f)
     g_report = 0;
 }
 
+/* Turns the program lines into instruction records. */
 static int parse_lines(LineVec *lv)
 {
     I = xcalloc((size_t)lv->n + 1, sizeof(Ins));
@@ -1109,6 +1159,7 @@ static int parse_lines(LineVec *lv)
     return nI;
 }
 
+/* Splits the instructions into functions at call targets and entry points. */
 static void find_functions(void)
 {
     nfn = 0;
@@ -1146,6 +1197,7 @@ static void find_functions(void)
     }
 }
 
+/* Opposite conditional jump. */
 static const char *inv_jcc(const char *m)
 {
     static const char *const p[][2] = { { "jz", "jnz" }, { "je", "jne" }, { "jg", "jle" }, { "jge", "jl" }, { "ja", "jbe" }, { "jae", "jb" }, { "js", "jns" }, { "jo", "jno" }, { "jp", "jnp" }, { "jc", "jnc" }, { "jnae", "jae" }, { "jnb", "jb" }, { "jnbe", "ja" }, { "jna", "ja" }, { "jnc", "jc" }, { "jng", "jg" }, { "jnge", "jge" }, { "jnl", "jl" }, { "jnle", "jle" }, { "jpe", "jpo" }, { "jpo", "jpe" }, { "jecxz", NULL }, { "jrcxz", NULL }, { NULL, NULL } };
@@ -1162,6 +1214,7 @@ typedef struct {
     int labn;
 } FixList;
 
+/* Queues an edit for the fixed copy. */
 static void fix_add(FixList *F, int line, int where, const char *text, int repl)
 {
     for (int i = 0; i < F->n; i++)
@@ -1174,6 +1227,7 @@ static void fix_add(FixList *F, int line, int where, const char *text, int repl)
     F->n++;
 }
 
+/* Text of an operand that names a holder location. */
 static int holder_operand(char *buf, size_t sz, int h, const St *st, int pushed)
 {
     const char *nm = loc_names[h];
@@ -1197,6 +1251,7 @@ static int holder_operand(char *buf, size_t sz, int h, const St *st, int pushed)
     return 0;
 }
 
+/* Chooses the most convenient holder to free from. */
 static int pick_holder(const Al *a)
 {
     int best = -1, score = -1;
@@ -1211,6 +1266,7 @@ static int pick_holder(const Al *a)
     return best;
 }
 
+/* Builds the lines that free an allocation (a call to free, or munmap for mmap). */
 static int gen_free(Str *out, const Site *site, int h, const St *st)
 {
     char hb[96];
@@ -1235,6 +1291,7 @@ static int gen_free(Str *out, const Site *site, int h, const St *st)
     return 1;
 }
 
+/* Placeholder for keeping pushes balanced. */
 static void sanitize_push(Str *s)
 {
     (void)s;
@@ -1242,6 +1299,7 @@ static void sanitize_push(Str *s)
 
 typedef struct { int *site; int n; } SiteSet;
 
+/* Decides where to put the free in the fixed copy for one leak. */
 static int leak_event_edges(FixList *F, const Ev *ev, int *ok)
 {
     int k = ev->k;
@@ -1297,6 +1355,7 @@ static int leak_event_edges(FixList *F, const Ev *ev, int *ok)
 
 static void ins_text(Str *out, const char *s) { sadd(out, s); }
 
+/* Builds the comma separated list of source lines of an event type for a warning. */
 static int list_lines(const Ev *evs, int n, int site, int kind, char *buf, size_t sz)
 {
     int cnt = 0;
@@ -1315,6 +1374,7 @@ static int list_lines(const Ev *evs, int n, int site, int kind, char *buf, size_
     return cnt;
 }
 
+/* Short description of an allocation site for warnings. */
 static const char *site_desc(const Site *s, char *b, size_t sz)
 {
     if (s->kind == SK_MMAP) snprintf(b, sz, "the mmap");
@@ -1323,6 +1383,7 @@ static const char *site_desc(const Site *s, char *b, size_t sz)
     return b;
 }
 
+/* Entry point. Analyzes the program, prints leak warnings and fills the fixed copy. */
 int leak_check(LineVec *lv, int bits, LineVec *fixed, int *nfixed)
 {
     g_lv = lv;
@@ -1409,7 +1470,7 @@ int leak_check(LineVec *lv, int bits, LineVec *fixed, int *nfixed)
                 sadd(&t, F.v[j].text);
                 char *s = sget(&t);
                 for (char *p = s; *p;) {
-                    char *nl = strchr(p, '\n');
+                    char *nl = cly_nl(p);
                     if (nl) *nl = 0;
                     if (*p) lv_add(fixed, p, lv->v[i].file, lv->v[i].line);
                     if (!nl) break;
@@ -1425,7 +1486,7 @@ int leak_check(LineVec *lv, int bits, LineVec *fixed, int *nfixed)
                 sadd(&t, F.v[j].text);
                 char *s = sget(&t);
                 for (char *p = s; *p;) {
-                    char *nl = strchr(p, '\n');
+                    char *nl = cly_nl(p);
                     if (nl) *nl = 0;
                     if (*p) lv_add(fixed, p, lv->v[i].file, lv->v[i].line);
                     if (!nl) break;

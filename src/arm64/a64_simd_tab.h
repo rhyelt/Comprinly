@@ -1,3 +1,4 @@
+/* NEON mnemonic table, part 1. E(name, handler, a, b, c) rows. */
     E("and", h_logic3, 0, 0, 0),
     E("bic", h_logic3, 1, 0, 0),
     E("orr", h_logic3, 2, 0, 0),

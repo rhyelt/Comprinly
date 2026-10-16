@@ -1,3 +1,4 @@
+/* The assembler proper. Runs several passes over the preprocessed lines. Every pass walks the lines, defines labels, encodes data and instructions into per-section chunks and re-sizes, until the section sizes stop changing. The last pass keeps the output and reports errors. State lives in the global A. */
 #include "cly.h"
 #include "x86/insn.h"
 
@@ -48,7 +49,6 @@ typedef struct {
     char *istruc_savelbl;
     Val istruc_start;
     Sec *istruc_sec;
-    int uses_syscall;
     int uses_vreg;
     i64 *psize;
     int npsize;
@@ -68,6 +68,7 @@ typedef struct {
 
 static AS A;
 
+/* True if w is an instruction on the current CPU. */
 static int known(const char *w)
 {
     if (A.arch == ARCH_X86) return insn_known(w);
@@ -75,6 +76,7 @@ static int known(const char *w)
     return rv_known(w, A.rvext);
 }
 
+/* Adds a relocation record to a chunk of output bytes. */
 static void chunk_reloc(Chunk *c, const Val *v, int size, int kind, i64 off)
 {
     if (c->nr == c->cap) {
@@ -89,6 +91,7 @@ static void chunk_reloc(Chunk *c, const Val *v, int size, int kind, i64 off)
     r->v = *v;
 }
 
+/* Appends a value of the given size to a chunk. Constants are written now. Symbols become relocations to be resolved at link time. */
 static void chunk_val(Chunk *c, const Val *v, int size)
 {
     if (v->unk || val_isconst(v)) {
@@ -113,6 +116,7 @@ static void chunk_val(Chunk *c, const Val *v, int size)
     badle(&c->b, 0, size);
 }
 
+/* Releases a chunk's bytes and relocations. */
 static void chunk_free(Chunk *c)
 {
     free(c->b.p);
@@ -120,6 +124,7 @@ static void chunk_free(Chunk *c)
     memset(c, 0, sizeof *c);
 }
 
+/* Finds a symbol by name or creates it. */
 static Sym *get_sym(const char *name)
 {
     Sym *s = ht_get(&A.symtab, name);
@@ -147,6 +152,7 @@ static Sym *get_sym(const char *name)
 
 Sym *sym_find(const char *name) { return ht_get(&A.symtab, name); }
 
+/* Expands a .local label to its full name (lastlabel.local). */
 static char *full_name(const char *name)
 {
     if (name[0] == '.' && name[1] != '.' && A.lastlabel && A.lastlabel[0]) {
@@ -158,6 +164,7 @@ static char *full_name(const char *name)
     return xstrdup(name);
 }
 
+/* Creates a section and registers it. */
 static Sec *new_sec(const char *name)
 {
     Sec *s = xcalloc(1, sizeof *s);
@@ -173,6 +180,7 @@ static Sec *new_sec(const char *name)
     return s;
 }
 
+/* Sets flags (code, writable, uninitialized) from a section name such as .text, .data, .bss or CODE. */
 static void sec_defaults(Sec *s)
 {
     const char *n = s->name;
@@ -183,6 +191,7 @@ static void sec_defaults(Sec *s)
     else { s->write = 1; s->align = 4; }
 }
 
+/* Finds a section by name. */
 static Sec *find_sec(const char *name)
 {
     for (int i = 0; i < A.nsecs; i++) if (!strcmp(A.secs[i]->name, name)) return A.secs[i];
@@ -193,6 +202,7 @@ static int pow2_ok(i64 n) { return n > 0 && (n & (n - 1)) == 0; }
 
 static void ensure_vregsec(void);
 
+/* Looks for a symbol that matches except for letter case. Returns it only when exactly one spelling exists. Off in -nasm mode. */
 static Sym *ci_match(const char *name)
 {
     Sym *found = NULL;
@@ -207,6 +217,7 @@ static Sym *ci_match(const char *name)
     return found;
 }
 
+/* Callback for the expression parser: resolves a name to a value (label, equ, extern or the virtual register area). */
 static int asm_sym_lookup(const char *name, Val *out)
 {
     if (!strcmp(name, "__cly_vregs")) {
@@ -255,6 +266,7 @@ static int asm_sym_lookup(const char *name, Val *out)
     return 1;
 }
 
+/* Value of $ (the current position). */
 static void asm_cur_loc(Val *out)
 {
     Sec *s = A.stmt ? A.stmt : A.text;
@@ -264,6 +276,7 @@ static void asm_cur_loc(Val *out)
     out->n = s->size;
 }
 
+/* Value of $$ (the start of the current section). */
 static void asm_sec_start(Val *out)
 {
     Sec *s = A.stmt ? A.stmt : A.text;
@@ -272,12 +285,14 @@ static void asm_sec_start(Val *out)
     out->pos = s->idx;
 }
 
+/* Skips spaces and tabs. */
 static const char *skipws(const char *p)
 {
     while (*p == ' ' || *p == '\t') p++;
     return p;
 }
 
+/* Copies one identifier (or a $-prefixed one) into buf and returns the position after it. */
 static const char *scan_word(const char *p, char *buf, size_t sz)
 {
     size_t n = 0;
@@ -288,12 +303,14 @@ static const char *scan_word(const char *p, char *buf, size_t sz)
 }
 
 
+/* Reports a redefined symbol and where it was first defined. */
 static void redef_err(const Sym *s, const char *name)
 {
     if (s->deffile && s->defln) err("symbol `%s' redefined (first defined at %s:%d)", name, s->deffile, s->defln);
     else err("symbol `%s' redefined", name);
 }
 
+/* True if two names differ by one edit (a typo). */
 static int edit1(const char *a, const char *b)
 {
     size_t la = strlen(a), lb = strlen(b);
@@ -305,6 +322,7 @@ static int edit1(const char *a, const char *b)
     return strcasecmp(a + i, b + i + 1) == 0;
 }
 
+/* Finds a defined symbol that looks like a mistyped name for the did you mean hint. */
 static const char *sym_suggest(const char *name)
 {
     if (g_nasm) return NULL;
@@ -315,6 +333,7 @@ static const char *sym_suggest(const char *name)
     return NULL;
 }
 
+/* Defines a label at the current position of a section. */
 static void def_label_now(const char *fname, Sec *s)
 {
     Sym *sym = get_sym(fname);
@@ -333,6 +352,7 @@ static void def_label_now(const char *fname, Sec *s)
     sym->defline = A.cur_line;
 }
 
+/* Defines labels that were waiting for the next thing that sets their section. */
 static void flush_labels(Sec *s)
 {
     for (int i = 0; i < A.npending; i++) {
@@ -346,6 +366,7 @@ static int *pend_line;
 static const char **pend_file;
 static int pend_cap;
 
+/* Queues a label until the section it belongs to is known. */
 static void add_pending(const char *fname)
 {
     for (int i = 0; i < A.npending; i++)
@@ -364,6 +385,7 @@ static void add_pending(const char *fname)
     A.pending[A.npending++] = xstrdup(fname);
 }
 
+/* Adds n bytes of padding to a section, using a fill byte or a repeating pattern. */
 static void sec_pad(Sec *s, i64 n, u8 fill, const Bytes *pat)
 {
     if (n <= 0) return;
@@ -375,6 +397,7 @@ static void sec_pad(Sec *s, i64 n, u8 fill, const Bytes *pat)
     s->size += n;
 }
 
+/* Pads code with the shortest real NOP instructions instead of repeated 0x90. */
 static void smart_pad(Sec *s, i64 n)
 {
     static const char *g[] = { "", "90", "89f6", "8d7600", "8d742600", "908d742600", "8db600000000", "8db42600000000" };
@@ -417,6 +440,7 @@ static void smart_pad(Sec *s, i64 n)
     free(b.p);
 }
 
+/* NOP padding for ARM64 and RISC-V (4-byte instructions, 2-byte on compressed RISC-V). */
 static void arch_nop_pad(Sec *s, i64 n)
 {
     if (s->nobits || s->absolute) { s->size += n; return; }
@@ -428,6 +452,7 @@ static void arch_nop_pad(Sec *s, i64 n)
     }
 }
 
+/* Applies a pending align request to a section, remembering a user-given alignment for the linker. */
 static void apply_align(Sec *s)
 {
     if (A.pend_align > 1) {
@@ -437,6 +462,7 @@ static void apply_align(Sec *s)
         else if (r && A.pend_smart && A.smart_on && !A.has_pend_fill) smart_pad(s, n - r);
         else if (r) sec_pad(s, n - r, (s->exec || g_nasm) ? 0x90 : 0, A.has_pend_fill ? &A.pend_fill : NULL);
         if (!s->absolute && n > s->align) s->align = (int)n;
+        if (n > s->ualign) s->ualign = (int)n;
     }
     A.pend_align = 0;
     A.pend_smart = 0;
@@ -444,6 +470,7 @@ static void apply_align(Sec *s)
     A.pend_fill.n = 0;
 }
 
+/* Chooses the section for code, data or bss when none was named. */
 static Sec *pick_sec(int kind)
 {
     if (A.cur) return A.cur;
@@ -454,6 +481,7 @@ static Sec *pick_sec(int kind)
     }
 }
 
+/* Selects the section to emit into and flushes pending labels there. Starts the implicit section sorting. */
 static Sec *begin_emit(int kind)
 {
     Sec *s = kind == K_NONE || kind == K_EQU ? (A.cur ? A.cur : (A.last ? A.last : A.text)) : pick_sec(kind);
@@ -468,6 +496,7 @@ static Sec *begin_emit(int kind)
     return s;
 }
 
+/* Appends a finished chunk of bytes and its relocations to a section. */
 static void commit_chunk(Sec *s, Chunk *c, i64 size_only)
 {
     i64 base = s->size;
@@ -496,6 +525,7 @@ static void commit_chunk(Sec *s, Chunk *c, i64 size_only)
     A.last = s;
 }
 
+/* Saves bytes of a line for the -l listing (final pass only). */
 static void note_list(Sec *s, i64 off, const u8 *p, size_t n)
 {
     if (!A.o->list || !A.final) return;
@@ -516,6 +546,7 @@ static const KW sizekw[] = {
     { "byte", 1 }, { "word", 2 }, { "dword", 4 }, { "qword", 8 }, { "tword", 10 }, { "oword", 16 }, { "yword", 32 }, { "zword", 64 }, { NULL, 0 }
 };
 
+/* True if w is a segment register. */
 static int is_segreg(const char *w, int *reg)
 {
     int sz;
@@ -524,6 +555,7 @@ static int is_segreg(const char *w, int *reg)
     return 0;
 }
 
+/* Creates the hidden section that holds r8 to r15 and similar virtual registers in 32-bit code. */
 static void ensure_vregsec(void)
 {
     if (!A.vregsec) {
@@ -535,6 +567,7 @@ static void ensure_vregsec(void)
     }
 }
 
+/* Turns a parsed address expression into base, index, scale and displacement. */
 static int lin_to_ea(Val *v, Op *o, int *err_out)
 {
     int base = -1, idx = -1, scale = 1;
@@ -590,6 +623,7 @@ static int lin_to_ea(Val *v, Op *o, int *err_out)
     return 1;
 }
 
+/* Reads size words in front of an operand: byte, dword, near, short, strict ... */
 static int parse_modifiers(const char **pp, Op *o)
 {
     const char *p = *pp;
@@ -620,6 +654,7 @@ static int parse_modifiers(const char **pp, Op *o)
     return 1;
 }
 
+/* Parses a [memory] operand, including segment overrides and RIP relative forms. */
 static int parse_memory(const char **pp, Op *o)
 {
     const char *p = *pp;
@@ -674,6 +709,7 @@ static int parse_memory(const char **pp, Op *o)
     return 1;
 }
 
+/* Rewrites a virtual register (r8..r15 in 32-bit code) as a memory operand. */
 static void vreg_to_mem(Op *o, int regid, int size)
 {
     ensure_vregsec();
@@ -690,6 +726,7 @@ static void vreg_to_mem(Op *o, int regid, int size)
     o->vsize = size;
 }
 
+/* True if p looks like the start of an operand. */
 static int operand_start(const char *p)
 {
     p = skipws(p);
@@ -697,6 +734,7 @@ static int operand_start(const char *p)
     return ident_start((unsigned char)*p) || isdigit((unsigned char)*p) || *p == '{' || *p == '[' || *p == '$' || *p == '"' || *p == '\'' || *p == '`' || *p == '(' || *p == '-' || *p == '+' || *p == '~' || (unsigned char)*p == 0xE2;
 }
 
+/* Parses one operand: register, immediate, memory or a bare symbol. */
 static int parse_operand0(const char **pp, Op *o)
 {
     memset(o, 0, sizeof *o);
@@ -777,6 +815,7 @@ static int parse_operand0(const char **pp, Op *o)
     return 1;
 }
 
+/* Reads AVX-512 decorators such as {k1}{z} and {1to8}. */
 static int parse_deco(const char **pp, Op *o)
 {
     const char *p = skipws(*pp);
@@ -812,12 +851,14 @@ static int parse_deco(const char **pp, Op *o)
     return 1;
 }
 
+/* One operand with its decorators. */
 static int parse_operand(const char **pp, Op *o)
 {
     if (!parse_operand0(pp, o)) return 0;
     return parse_deco(pp, o);
 }
 
+/* Parses the comma separated operand list of an instruction. */
 static int parse_operands(const char **pp, Op *ops, int *n)
 {
     const char *p = skipws(*pp);
@@ -848,6 +889,7 @@ static int parse_operands(const char **pp, Op *ops, int *n)
     return 1;
 }
 
+/* True if text looks like the start of a float literal. */
 static int is_float_start(const char *p)
 {
     const char *q = p;
@@ -874,6 +916,7 @@ static int is_float_start(const char *p)
     return 0;
 }
 
+/* Copies a float literal out of the source. */
 static int float_text(const char **pp, char *buf, size_t sz)
 {
     const char *p = skipws(*pp);
@@ -908,6 +951,7 @@ static int float_text(const char **pp, char *buf, size_t sz)
     return 1;
 }
 
+/* Handles __utf16__, __utf32__ and their le/be forms for string data. */
 static int utf_encode(const char *name, const char *s, size_t len, Chunk *c)
 {
     const char *n = name;
@@ -944,6 +988,7 @@ static int utf_encode(const char *name, const char *s, size_t len, Chunk *c)
     return 1;
 }
 
+/* Parses the items after db/dw/dd/dq/dt/do/dy/dz into bytes. Handles strings, floats, dup and expressions. */
 static int data_items(const char **ppos, int unit, Chunk *c, int depth)
 {
     const char *p = skipws(*ppos);
@@ -1046,6 +1091,7 @@ static int data_items(const char **ppos, int unit, Chunk *c, int depth)
     return 1;
 }
 
+/* Parses an expression that must be a constant. Reports an error otherwise. */
 static int const_expr(const char **pp, i64 *out, const char *what)
 {
     Val v;
@@ -1056,6 +1102,7 @@ static int const_expr(const char **pp, i64 *out, const char *what)
     return 1;
 }
 
+/* Finds an instruction name close to a mistyped word for the did you mean hint. */
 static int near_mnemonic(const char *w, char *out, size_t sz)
 {
     if (g_nasm) return 0;
@@ -1091,6 +1138,7 @@ static int near_mnemonic(const char *w, char *out, size_t sz)
 
 static void do_stmt(const char *p, int kind_hint);
 
+/* Classifies a word as db/dw/... (data) or resb/resw/... (reserve) and gives its unit size. */
 static int word_kind(const char *w, int *unit)
 {
     static const struct { const char *n; int kind; int unit; } t[] = {
@@ -1106,6 +1154,7 @@ static int word_kind(const char *w, int *unit)
     return -1;
 }
 
+/* True for assembler directives (bits, section, global, extern, times ...). */
 static int is_directive_word(const char *w)
 {
     static const char *d[] = {
@@ -1117,6 +1166,7 @@ static int is_directive_word(const char *w)
     return 0;
 }
 
+/* True for instruction prefixes (lock, rep, a32 ...). */
 static int is_prefix_word(const char *w)
 {
     static const char *d[] = { "lock", "rep", "repe", "repz", "repne", "repnz", "a16", "a32", "o16", "o32", "bnd", "xacquire", "xrelease", "nobnd", NULL };
@@ -1124,12 +1174,14 @@ static int is_prefix_word(const char *w)
     return 0;
 }
 
+/* Sets the code size to 16, 32 or 64. */
 static void set_bits(int b)
 {
     if (b == 16 || b == 32 || b == 64) { A.bits = b; reg_mode(b); }
     else err("`bits' must be 16, 32 or 64");
 }
 
+/* Warns when an equ length counts a trailing zero byte of a string. */
 static void equ_nul_note(const char *q)
 {
     if (!A.final) return;
@@ -1149,6 +1201,7 @@ static void equ_nul_note(const char *q)
     warn("`$ - %s' counts the trailing 0 byte; use `$ - %s - 1' for the text only", id, id);
 }
 
+/* Defines a constant symbol. */
 static void define_equ(const char *fname, const Val *v)
 {
     Sym *s = get_sym(fname);
@@ -1164,6 +1217,7 @@ static void define_equ(const char *fname, const Val *v)
     s->defline = A.cur_line;
 }
 
+/* Emits a db/dw/dd/dq/... statement. */
 static void handle_data_stmt(const char *rest, int unit)
 {
     Sec *s = begin_emit(K_DATA);
@@ -1180,6 +1234,7 @@ static void handle_data_stmt(const char *rest, int unit)
     chunk_free(&c);
 }
 
+/* Reserves uninitialized space for resb/resw/.... */
 static void handle_res_stmt(const char *rest, int unit)
 {
     Sec *s = begin_emit(K_BSS);
@@ -1203,6 +1258,7 @@ static void handle_res_stmt(const char *rest, int unit)
     A.last = s;
 }
 
+/* Finds an incbin file: as given, then next to the source. */
 static char *find_file(const char *name)
 {
     if (file_exists(name)) return xstrdup(name);
@@ -1215,6 +1271,7 @@ static char *find_file(const char *name)
     return NULL;
 }
 
+/* Includes the bytes of a file, with optional skip and length. */
 static void handle_incbin(const char *rest)
 {
     Sec *s = begin_emit(K_DATA);
@@ -1251,6 +1308,7 @@ static void handle_incbin(const char *rest)
 
 static void handle_times(const char *rest);
 
+/* Parses a comma separated list of names with attributes (global a:function, b) and calls fn for each. */
 static int parse_name_list(const char *p, void (*fn)(const char *name, const char *attr, void *ud), void *ud)
 {
     p = skipws(p);
@@ -1279,6 +1337,7 @@ static int parse_name_list(const char *p, void (*fn)(const char *name, const cha
     return 1;
 }
 
+/* Marks a symbol global and applies attributes (function, data, size, hidden ...). */
 static void cb_global(const char *name, const char *attr, void *ud)
 {
     (void)ud;
@@ -1314,6 +1373,7 @@ static void cb_global(const char *name, const char *attr, void *ud)
     free(fn);
 }
 
+/* Declares a symbol defined elsewhere. */
 static void cb_extern(const char *name, const char *attr, void *ud)
 {
     (void)attr;
@@ -1325,6 +1385,7 @@ static void cb_extern(const char *name, const char *attr, void *ud)
     free(fn);
 }
 
+/* Marks a symbol local to this file. */
 static void cb_static(const char *name, const char *attr, void *ud)
 {
     (void)attr;
@@ -1335,6 +1396,7 @@ static void cb_static(const char *name, const char *attr, void *ud)
 }
 
 
+/* Handles section/segment: opens or creates a section and applies its attributes (align=, progbits, nobits, exec, write ...). */
 static void handle_section(const char *rest)
 {
     const char *p = skipws(rest);
@@ -1375,7 +1437,7 @@ static void handle_section(const char *rest)
         else if (!strcasecmp(w, "nowrite")) s->write = 0;
         else if (!strcasecmp(w, "alloc")) s->alloc = 1;
         else if (!strcasecmp(w, "noalloc")) s->alloc = 0;
-        else if (!strcasecmp(w, "align")) { if (pow2_ok(val)) s->align = (int)val; else err("section alignment must be a power of two"); }
+        else if (!strcasecmp(w, "align")) { if (pow2_ok(val)) { s->align = (int)val; s->ualign = (int)val; } else err("section alignment must be a power of two"); }
         else if (!strcasecmp(w, "start")) { s->has_start = 1; s->start = val; }
         else if (!strcasecmp(w, "vstart")) { s->has_vstart = 1; s->vstart = val; }
         else if (!strcasecmp(w, "follows")) { free(s->follows); s->follows = xstrdup(eq ? eq + 1 : ""); }
@@ -1395,6 +1457,7 @@ static void handle_section(const char *rest)
     }
 }
 
+/* Starts an absolute section where labels get numbers instead of addresses. */
 static void handle_absolute(const char *rest)
 {
     const char *p = skipws(rest);
@@ -1411,6 +1474,7 @@ static void handle_absolute(const char *rest)
     A.last = &A.absec;
 }
 
+/* Handles align and alignb: pads now or records the request for the next item. */
 static void handle_align(const char *rest, int isalignb)
 {
     const char *p = skipws(rest);
@@ -1463,6 +1527,7 @@ static void handle_align(const char *rest, int isalignb)
     }
 }
 
+/* Repeats the following statement a constant number of times. */
 static void handle_times(const char *rest)
 {
     const char *p = skipws(rest);
@@ -1484,6 +1549,7 @@ static void handle_times(const char *rest)
     }
 }
 
+/* Sets the load address of a flat binary. */
 static void do_org(const char *rest)
 {
     const char *p = skipws(rest);
@@ -1493,6 +1559,7 @@ static void do_org(const char *rest)
     A.org = v;
 }
 
+/* Starts a struc definition. */
 static void struc_begin(const char *rest)
 {
     char w[256];
@@ -1528,6 +1595,7 @@ static void struc_begin(const char *rest)
     A.lastlabel = xstrdup(w);
 }
 
+/* Ends a struc and defines NAME_size. */
 static void struc_end(void)
 {
     if (!A.struc_active) { err("`endstruc' without `struc'"); return; }
@@ -1541,6 +1609,7 @@ static void struc_end(void)
     A.struc_active = 0;
 }
 
+/* Starts a struc instance. */
 static void istruc_begin(const char *rest)
 {
     char w[256];
@@ -1557,6 +1626,7 @@ static void istruc_begin(const char *rest)
     A.lastlabel = xstrdup(w);
 }
 
+/* Pads the section so the next field starts at a target offset. */
 static void pad_to(Sec *s, i64 target)
 {
     i64 n = target - s->size;
@@ -1571,6 +1641,7 @@ static void pad_to(Sec *s, i64 target)
     }
 }
 
+/* Handles at FIELD, ... inside an instance. */
 static void istruc_at(const char *rest)
 {
     if (!A.istruc_name) { err("`at' without `istruc'"); return; }
@@ -1587,6 +1658,7 @@ static void istruc_at(const char *rest)
     if (*p && *p != ';') do_stmt(p, 0);
 }
 
+/* Ends an instance and pads it to the full structure size. */
 static void istruc_end(void)
 {
     if (!A.istruc_name) { err("`iend' without `istruc'"); return; }
@@ -1603,6 +1675,7 @@ static void istruc_end(void)
     A.istruc_savelbl = NULL;
 }
 
+/* Runs one directive: bits, section, global, extern, org, align, struc, default, cpu, warning, import, export and the rest. */
 static void do_directive(const char *w, const char *rest)
 {
     if (A.arch != ARCH_X86 && (is_kw(w, "bits") || is_kw(w, "use16") || is_kw(w, "use32") || is_kw(w, "use64"))) {
@@ -1648,6 +1721,7 @@ static void do_directive(const char *w, const char *rest)
         i64 r = al > 1 ? s->size % al : 0;
         if (r) s->size += al - r;
         if (al > s->align) s->align = (int)al;
+        if (al > s->ualign) s->ualign = (int)al;
         char *fn = full_name(name);
         def_label_now(fn, s);
         get_sym(fn)->global = 1;
@@ -1740,12 +1814,14 @@ static void do_directive(const char *w, const char *rest)
     } else err("unknown directive `%s'", w);
 }
 
+/* True if an operand is a virtual register memory slot. */
 static int has_vreg_op(const Op *ops, int n)
 {
     for (int i = 0; i < n; i++) if (ops[i].kind == OK_MEM && ops[i].vreg) return 1;
     return 0;
 }
 
+/* True if an operand uses the given register. */
 static int op_uses_reg(const Op *o, int reg)
 {
     if (o->kind == OK_REG && REGNUM(o->reg) == REGNUM(reg) && REGCLS(o->reg) >= RC_R8 && REGCLS(o->reg) <= RC_R32) return 1;
@@ -1756,6 +1832,7 @@ static int op_uses_reg(const Op *o, int reg)
     return 0;
 }
 
+/* Stores an encoded instruction into the section. */
 static int commit_insn(Sec *s, InsnOut *out)
 {
     Chunk c;
@@ -1771,6 +1848,7 @@ static int commit_insn(Sec *s, InsnOut *out)
     return 1;
 }
 
+/* Encodes one instruction with the x86 encoder and reports why if no form fits. */
 static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int quiet)
 {
     IC ic = *ic0;
@@ -1804,45 +1882,25 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
     return 1;
 }
 
+/* In object output, treats names that are used but never defined as extern. */
 static void auto_extern(void)
 {
     if (A.type != T_OBJ || g_nasm) return;
     for (int i = 0; i < A.nsyms; i++) {
         Sym *s = A.syms[i];
-        if (s->referenced && !s->defined && !s->ext && !s->common && strncmp(s->name, "__num_", 6) && strcmp(s->name, "__cly_syscall")) s->ext = 1;
+        if (s->referenced && !s->defined && !s->ext && !s->common && strncmp(s->name, "__num_", 6)) s->ext = 1;
     }
-}
-
-static void handle_syscall(Sec *s, IC *ic)
-{
-    A.uses_syscall = 1;
-    Op o;
-    memset(&o, 0, sizeof o);
-    o.scale = 1;
-    o.kind = OK_IMM;
-    Sym *rt = get_sym("__cly_syscall");
-    rt->referenced = 1;
-    val_const(&o.val, 0);
-    if (rt->defined) {
-        o.val.pos = rt->sec;
-        o.val.n = rt->off;
-    } else o.val.unk = 1;
-    IC c2 = *ic;
-    c2.bits = A.bits;
-    if (A.bits == 16) {
-        err("`syscall' is only available in 32-bit and 64-bit code");
-        return;
-    }
-    encode_one(s, "call", &o, 1, &c2, 0);
 }
 
 static void handle_insn(const char *mn, const char *rest, IC *ic);
 
+/* True for esp and ebp. */
 static int is_stackreg32(const Op *o)
 {
     return o->kind == OK_REG && REGCLS(o->reg) == RC_R32 && (REGNUM(o->reg) == 4 || REGNUM(o->reg) == 5);
 }
 
+/* In 64-bit code, treats 32-bit stack habits (push eax, mov ebp, esp, [esp+4]) as their 64-bit forms. */
 static void promote_regs(const char *mn, Op *ops, int nops, IC *ic)
 {
     if (ic->a32) return;
@@ -1886,6 +1944,7 @@ static void promote_regs(const char *mn, Op *ops, int nops, IC *ic)
     }
 }
 
+/* Expands pushad/popad/pushfd style instructions that do not exist in 64-bit mode. */
 static int expand_legacy64(const char *mn, int nops, Sec *s, IC *ic)
 {
     (void)s;
@@ -1908,6 +1967,7 @@ static int expand_legacy64(const char *mn, int nops, Sec *s, IC *ic)
     return 1;
 }
 
+/* Rewrites number-style label references such as 1f and 1b to unique names. */
 static char *rewrite_numrefs(const char *s)
 {
     Str o = {0};
@@ -1937,6 +1997,7 @@ static char *rewrite_numrefs(const char *s)
     return r;
 }
 
+/* Encodes an ARM64 or RISC-V instruction. */
 static void handle_arch_insn(const char *mn, const char *rest, IC *ic)
 {
     Sec *s = begin_emit(K_CODE);
@@ -1972,6 +2033,7 @@ static void handle_arch_insn(const char *mn, const char *rest, IC *ic)
     commit_insn(s, &out);
 }
 
+/* Encodes an x86 instruction: handles prefixes, 16/32/64 bit fixes, forgiving syntax and register promotion. */
 static void handle_insn(const char *mn, const char *rest, IC *ic)
 {
     if (A.arch != ARCH_X86) { handle_arch_insn(mn, rest, ic); return; }
@@ -1981,6 +2043,13 @@ static void handle_insn(const char *mn, const char *rest, IC *ic)
     const char *p = rest;
     if (A.bits == 64 && (!*skipws(rest) || *skipws(rest) == ';') && expand_legacy64(mn, 0, s, ic)) return;
     if (!parse_operands(&p, ops, &nops)) return;
+    if (nops == 0 && A.bits != 64 && !strcasecmp(mn, "syscall")) {
+        InsnOut raw;
+        memset(&raw, 0, sizeof raw);
+        badd(&raw.code, "\x0f\x05", 2);
+        commit_insn(s, &raw);
+        return;
+    }
     if (A.bits == 64) promote_regs(mn, ops, nops, ic);
     p = skipws(p);
     if (*p && *p != ';') { err("junk at end of line: `%.20s'", p); return; }
@@ -1991,7 +2060,6 @@ static void handle_insn(const char *mn, const char *rest, IC *ic)
             if (ops[i].kind == OK_MEM && !ops[i].base && !ops[i].index && !(ops[i].flags & OF_ABS) && ops[i].mseg != REGID(RC_SEG, 4) && ops[i].mseg != REGID(RC_SEG, 5) && !ic->segpre) ops[i].flags |= OF_REL;
     ic->line = A.cur_line;
     ic->wide = A.cur_line < A.nwide ? A.wide[A.cur_line] : 0;
-    if (!strcasecmp(mn, "syscall") && nops == 0 && !(A.bits == 64 && A.kernel == K_LINUX)) { handle_syscall(s, ic); return; }
     if (!has_vreg_op(ops, nops)) {
         encode_one(s, mn, ops, nops, ic, 0);
         return;
@@ -2036,6 +2104,7 @@ static void handle_insn(const char *mn, const char *rest, IC *ic)
     encode_one(s, mn, ops, nops, ic, 0);
 }
 
+/* True if the text after a name is equ (so it defines a constant and not a label). */
 static int lookup_kw_equ(const char *p)
 {
     char w[32];
@@ -2044,6 +2113,7 @@ static int lookup_kw_equ(const char *p)
     return !strcasecmp(w, "equ");
 }
 
+/* Handles one statement: label, equ, data, reserve, directive, macro leftovers or instruction. */
 static void do_stmt(const char *p0, int kind_hint)
 {
     (void)kind_hint;
@@ -2228,6 +2298,7 @@ static void do_stmt(const char *p0, int kind_hint)
     handle_insn(w, e, &ic);
 }
 
+/* Clears sections and counters before another pass but keeps symbols so forward references resolve. */
 static void reset_pass(void)
 {
     for (int i = 0; i < A.nsecs; i++) {
@@ -2256,6 +2327,7 @@ static void reset_pass(void)
     if (A.explicit_mode) A.cur = A.text;
 }
 
+/* True if the first word of a line is in the list. */
 static int first_word_is(const char *text, const char **words)
 {
     const char *p = skipws(text);
@@ -2269,6 +2341,7 @@ static int first_word_is(const char *text, const char **words)
     return 0;
 }
 
+/* One pass over all lines. */
 static void run_pass(void)
 {
     reset_pass();
@@ -2291,6 +2364,7 @@ static void run_pass(void)
     for (int i = 0; i < A.nsecs; i++) A.psize[i] = A.secs[i]->size;
 }
 
+/* Checksum of all section sizes. When it stops changing the layout is stable. */
 static i64 size_sum(void)
 {
     i64 t = 0;
@@ -2300,6 +2374,7 @@ static i64 size_sum(void)
 
 void obj_free(Obj *o) { (void)o; }
 
+/* Works out whether the source is 16, 32 or 64 bit from bits lines, -m and the kernel. */
 int detect_bits(AsmOpts *o)
 {
     if (o->arch != ARCH_X86) return arch_bits(o->arch);
@@ -2318,6 +2393,7 @@ int detect_bits(AsmOpts *o)
     return (o->kernel == K_BARE || flat) ? 32 : 64;
 }
 
+/* Removes empty sections nobody uses, like NASM does. */
 static void prune_sections(void)
 {
     int n = A.nsecs;
@@ -2364,6 +2440,7 @@ static void prune_sections(void)
     free(map);
 }
 
+/* Entry point of the assembler. Sets up sections, adds the runtime if syscall is used, runs passes until sizes settle, then fills the Obj for the linker. */
 int assemble(AsmOpts *o, Obj *out)
 {
     memset(&A, 0, sizeof A);
@@ -2399,35 +2476,6 @@ int assemble(AsmOpts *o, Obj *out)
     for (int i = 0; i < A.lines->n; i++)
         if (first_word_is(A.lines->v[i].text, expl)) { A.explicit_mode = 1; break; }
     if (o->flat_mode || g_nasm) A.explicit_mode = 1;
-    static const char *sysw[] = { "syscall", NULL };
-    int need_rt = 0;
-    for (int i = 0; i < A.lines->n && !need_rt; i++) {
-        const char *t = A.lines->v[i].text;
-        for (const char *q = t; *q; q++) {
-            if ((q == t || !ident_char((unsigned char)q[-1])) && !strncasecmp(q, "syscall", 7) && !ident_char((unsigned char)q[7])) { need_rt = 1; break; }
-        }
-    }
-    (void)sysw;
-    if (need_rt && A.default_bits == 64 && o->kernel == K_LINUX) need_rt = 0;
-    if (A.arch != ARCH_X86) need_rt = 0;
-    if (need_rt) {
-        Str rt = {0};
-        if (rt_build(o->kernel, o->type, A.default_bits, &rt)) {
-            const char *rf = "<runtime>";
-            const char *p = rt.s;
-            int ln = 1;
-            while (p && *p) {
-                const char *nl = strchr(p, '\n');
-                size_t len = nl ? (size_t)(nl - p) : strlen(p);
-                char *t = xstrndup(p, len);
-                lv_add(A.lines, t, rf, ln++);
-                free(t);
-                if (!nl) break;
-                p = nl + 1;
-            }
-        }
-        free(rt.s);
-    }
     A.nwide = A.lines->n;
     A.wide = xcalloc((size_t)A.nwide + 1, 1);
     if (o->list) {
@@ -2453,7 +2501,11 @@ int assemble(AsmOpts *o, Obj *out)
         g_errors = ge;
         g_warnings = gw;
         i64 sum = size_sum();
-        xlog("assemble", "pass %d: %lld bytes, %s", pass, (long long)sum, A.changed ? "layout changed" : "stable");
+        if (g_log) {
+            i64 tot = 0;
+            for (int k = 0; k < A.nsecs; k++) tot += A.secs[k]->size;
+            xlog("assemble", "pass %d: %lld bytes, %s", pass, (long long)tot, A.changed ? "layout changed" : "stable");
+        }
         if (!A.changed && sum == prev_sum) { converged = 1; break; }
         prev_sum = sum;
     }
@@ -2468,7 +2520,7 @@ int assemble(AsmOpts *o, Obj *out)
     if (g_errors != e0) return 0;
     for (int i = 0; i < A.nsyms; i++) {
         Sym *s = A.syms[i];
-        if (s->referenced && !s->defined && !s->ext && !s->common && strcmp(s->name, "__cly_syscall") && !ci_match(s->name)) {
+        if (s->referenced && !s->defined && !s->ext && !s->common && !ci_match(s->name)) {
             if (!(s->name[0] == '.' && s->name[1] != '.' && 0)) {
                 g_pos.file = s->reffile;
                 g_pos.line = s->refline;
@@ -2512,7 +2564,6 @@ int assemble(AsmOpts *o, Obj *out)
     out->has_org = A.has_org || o->flat_mode;
     out->org = (int)A.org;
     out->entry = A.entry;
-    out->uses_syscall = A.uses_syscall;
     out->src = g_nasm ? o->srcpath : NULL;
     if (o->list && o->listpath) {
         FILE *f = fopen(o->listpath, "w");

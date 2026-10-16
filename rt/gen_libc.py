@@ -1,4 +1,6 @@
-import re,os
+# Expands rt/libc.tpl and rt/libc_fmt.tpl into 32-bit and 64-bit library text and packs it into src/extras/libc_data.c.
+# Lines starting with 32| or 64| only apply to that word size; @W, @a and @d are filled in per size.
+import re,os,sys
 here=os.path.dirname(os.path.abspath(__file__))
 src=open(here+"/libc.tpl").read()+open(here+"/libc_fmt.tpl").read()
 
@@ -82,10 +84,11 @@ def expand(bits):
         out.append(pat.sub(sub,line))
     return '\n'.join(out)+'\n'
 
-def cstr(name,text):
-    r='const char %s[] =\n'%name
-    for l in text.split('\n'):
-        if l=='': continue
-        r+='    "%s\\n"\n'%l.replace('\\','\\\\').replace('"','\\"')
-    return r+';\n'
-open(here+'/../src/extras/libc_data.c','w').write('#include "cly.h"\n'+cstr('libc_src64','bits 64\n'+expand(64))+cstr('libc_src32','bits 32\n'+expand(32)))
+sys.path.insert(0,here+'/../tools')
+import lz
+def blob(name,text):
+    t=''.join(l+'\n' for l in text.split('\n') if l!='')
+    return lz.pack(name,t)
+o='/* Generated file. Do not edit; run make gen or make rt. */\n#include "cly.h"\n'+blob('libc_blob64','bits 64\n'+expand(64))+blob('libc_blob32','bits 32\n'+expand(32))
+o+='const char *libc_text(int bits)\n{\n    static char *c64, *c32;\n    if (bits == 64) { if (!c64) c64 = lz_text(libc_blob64, sizeof libc_blob64, libc_blob64_raw); return c64; }\n    if (!c32) c32 = lz_text(libc_blob32, sizeof libc_blob32, libc_blob32_raw);\n    return c32;\n}\n'
+open(here+'/../src/extras/libc_data.c','w').write(o)

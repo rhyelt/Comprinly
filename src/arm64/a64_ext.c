@@ -1,7 +1,9 @@
+/* ARM64 extension instructions: pointer authentication, memory tagging, BTI, flag manipulation, wait-for, transactional, CSSC and RCPC3 and LS64. */
 #include "a64.h"
 
 #define PASSX (-1)
 
+/* Parses operand i as a 64-bit register, optionally allowing sp and xzr. */
 static int xreg(Ctx *c, int i, GReg *g, int sp_ok, int zr_ok)
 {
     if (i >= c->n) { err("%s: missing operand %d", c->mn, i + 1); return 0; }
@@ -12,6 +14,7 @@ static int xreg(Ctx *c, int i, GReg *g, int sp_ok, int zr_ok)
     return 1;
 }
 
+/* Checks the operand count and reports a count error if it is outside lo..hi. */
 static int ncount(Ctx *c, int lo, int hi)
 {
     if (c->n < lo || c->n > hi) {
@@ -22,6 +25,7 @@ static int ncount(Ctx *c, int lo, int hi)
     return 1;
 }
 
+/* Parses a memory operand with its addressing mode for the extension loads and stores. */
 static int emem(Ctx *c, int idx, int *rn, i64 *imm, int *mode, int allow_off)
 {
     const char *s = c->tok[idx];
@@ -64,6 +68,7 @@ static int emem(Ctx *c, int idx, int *rn, i64 *imm, int *mode, int allow_off)
     return 1;
 }
 
+/* Instructions that are one fixed word. */
 static int h_word(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 0, 0)) return 0;
@@ -71,6 +76,7 @@ static int h_word(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* bti with optional c, j or jc. */
 static int h_bti(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -89,6 +95,7 @@ static int h_bti(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Pointer authentication with two registers (pacia, autia ...). */
 static int h_pac2(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -99,6 +106,7 @@ static int h_pac2(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Pointer authentication with one register (paciza, xpaci ...). */
 static int h_pac1(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 1, 1)) return 0;
@@ -108,6 +116,7 @@ static int h_pac1(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Authenticated branch with one register. */
 static int h_br1(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 1, 1)) return 0;
@@ -117,6 +126,7 @@ static int h_br1(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Authenticated branch with two registers. */
 static int h_br2(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -126,6 +136,7 @@ static int h_br2(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* pacga. */
 static int h_pacga(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -136,6 +147,7 @@ static int h_pacga(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ldraa and ldrab. */
 static int h_ldra(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 3)) return 0;
@@ -150,6 +162,7 @@ static int h_ldra(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* irg (random tag). */
 static int h_irg(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -162,6 +175,7 @@ static int h_irg(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* addg and subg (tag arithmetic). */
 static int h_addg(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 4, 4)) return 0;
@@ -176,6 +190,7 @@ static int h_addg(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* Three register tag instructions. */
 static int h_reg3(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 3, 3)) return 0;
@@ -186,6 +201,7 @@ static int h_reg3(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* cmpp and subps. */
 static int h_cmpp(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -196,6 +212,7 @@ static int h_cmpp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ldg. */
 static int h_ldg(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -210,6 +227,7 @@ static int h_ldg(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* stg family. */
 static int h_stg(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 3)) return 0;
@@ -223,6 +241,7 @@ static int h_stg(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* stgp. */
 static int h_stgp(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -237,6 +256,7 @@ static int h_stgp(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ldgm and stgm. */
 static int h_gm(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -252,6 +272,7 @@ static int h_gm(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* setf8, setf16. */
 static int h_flag(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 1, 1)) return 0;
@@ -261,6 +282,7 @@ static int h_flag(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* rmif. */
 static int h_rmif(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -276,6 +298,7 @@ static int h_rmif(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* udf. */
 static int h_udf(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -288,6 +311,7 @@ static int h_udf(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* wfet and wfit. */
 static int h_wf(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 1, 1)) return 0;
@@ -297,6 +321,7 @@ static int h_wf(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* tcancel. */
 static int h_tcancel(Ctx *c, const MnEnt *e)
 {
     (void)e;
@@ -309,6 +334,7 @@ static int h_tcancel(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* CSSC one operand forms (abs, cnt, ctz). */
 static int h_cssc1(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -319,6 +345,7 @@ static int h_cssc1(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* CSSC three operand forms (smax, smin, umax, umin). */
 static int h_cssc3(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 3, 3)) return 0;
@@ -340,6 +367,7 @@ static int h_cssc3(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* RCPC immediate offset forms. */
 static int h_rcpc9(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -357,6 +385,7 @@ static int h_rcpc9(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* RCPC3 forms. */
 static int h_rcpcx(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
@@ -372,6 +401,7 @@ static int h_rcpcx(Ctx *c, const MnEnt *e)
     return 1;
 }
 
+/* ld64b, st64b and friends. */
 static int h_ls64(Ctx *c, const MnEnt *e)
 {
     if (!ncount(c, 2, 2)) return 0;
