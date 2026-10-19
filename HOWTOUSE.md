@@ -85,6 +85,7 @@ Types:
 |------|--------------|
 | `-bin` | Native program for the kernel (default) |
 | `-elf` `-exe` `-macho` | Force that format |
+| `-o` | Same object file as `-obj`, but the file is always named `.o`, also on windows. This is a type flag, not a file name. Use `-out FILE` to name the output |
 | `-obj` | Object file: ELF for linux, mac and bare, COFF for windows (32 or 64-bit to match the code) |
 | `-coff` | COFF object file |
 | `-flat` | Raw bytes, nothing added |

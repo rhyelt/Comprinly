@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.3.1"
+#define CLY_VERSION "1.3.2"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)

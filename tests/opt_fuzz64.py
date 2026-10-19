@@ -58,6 +58,10 @@ def gen_body(nlab, funcs):
             if random.random()<0.3: out.append('lea %s, [%s]'%(r,r))
             if random.random()<0.3: out.append('%s %s, 0'%(random.choice(['rol','ror','shr','sar']),random.choice([r,R32[r]])))
             if random.random()<0.3: out.append('push %s'%r); out.append('pop %s'%r)
+        elif k<0.985:
+            d=random.choice([r,R32[r]]); m=random.choice(['1','2','3','4','5','8','9','16','0','7','-1'])
+            out.append(random.choice(['imul %s, %s'%(d,m),'imul %s, %s, %s'%(d,d,m),'imul %s, %s, %s'%(d,d if d==r else R32[r2],m)]))
+            if random.random()<0.3: out.append('mov %s, 0'%random.choice([r,R32[r]]))
         else:
             out.append('push %s'%r); out.append('pop %s'%r2)
     while placed<len(labs):

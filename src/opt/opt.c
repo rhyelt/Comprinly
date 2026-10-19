@@ -629,6 +629,23 @@ static int peephole(Ctx *c)
                 continue;
             }
         }
+        /* imul by a small constant: a shift or lea is shorter and faster. Only done when nothing reads the flags afterwards, since imul and shl set them differently. */
+        if (!strcmp(x->mn, "imul") && (x->nops == 2 || (x->nops == 3 && !strcasecmp(x->ops[0], x->ops[1]))) && is_num(x->ops[x->nops - 1], &v)) {
+            int w = regw(x->ops[0], NULL);
+            if ((w == 32 || w == 64) && v > 0 && v <= 9 && flags_dead(L, n, i, F_ALL)) {
+                int lea_ok = w == 64 || OB == 32;
+                const char *d = x->ops[0];
+                if (v == 1) snprintf(buf, sizeof buf, "%s", "");
+                else if ((v & (v - 1)) == 0) snprintf(buf, sizeof buf, "    shl %s, %d", d, v == 2 ? 1 : v == 4 ? 2 : 3);
+                else if (lea_ok && (v == 3 || v == 5 || v == 9)) snprintf(buf, sizeof buf, "    lea %s, [%s+%s*%d]", d, d, d, (int)(v - 1));
+                else buf[0] = 0, v = 0;
+                if (v) {
+                    set_line(c, i, buf);
+                    changed = 1;
+                    continue;
+                }
+            }
+        }
         if (!strcmp(x->mn, "lea") && x->nops == 2) {
             int w = regw(x->ops[0], NULL);
             const char *o = x->ops[1];

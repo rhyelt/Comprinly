@@ -55,7 +55,7 @@ static void section64(Bytes *b, const char *sect, const char *seg, u64 addr, u64
     put32(b, 0);
 }
 
-/* 64-bit Mach-O executable. Segments are page aligned; a data segment is added only when the program has writable data. */
+/* 64-bit Mach-O executable. Segments start on page boundaries and the last one is not padded; a data segment is added only when the program has writable data. */
 static int fmt_macho64(Obj *o, Bytes *out)
 {
     link_layout(o, MB64 + MHDR64, 0x1000, 1);
@@ -72,7 +72,9 @@ static int fmt_macho64(Obj *o, Bytes *out)
     i64 text_vm = rup(text_end - MB64, MB);
     i64 data_fsz = g_lay.file_end - g_lay.rw_start;
     if (data_fsz < 0) data_fsz = 0;
-    i64 data_fsz_r = rup(data_fsz, MB);
+    /* The last segment in the file keeps its real size (the loader zero fills the rest of the page), so no padding is written after it. */
+    i64 data_fsz_r = data_fsz;
+    i64 text_fsz = rw && data_fsz > 0 ? text_vm : text_end - MB64;
     i64 data_vm = rup(g_lay.end - g_lay.rw_start, MB);
     int ncmds = rw ? 4 : 3;
     u32 cmdsize = 72 + (72 + 80) + (rw ? 72 + 80 * 2 : 0) + 184;
@@ -86,7 +88,7 @@ static int fmt_macho64(Obj *o, Bytes *out)
     put32(&f, 1);
     put32(&f, 0);
     put32(&f, 0x19); put32(&f, 72); segname(&f, "__PAGEZERO"); put64(&f, 0); put64(&f, MB64); put64(&f, 0); put64(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0);
-    put32(&f, 0x19); put32(&f, 72 + 80); segname(&f, "__TEXT"); put64(&f, MB64); put64(&f, (u64)text_vm); put64(&f, 0); put64(&f, (u64)text_vm); put32(&f, 7); put32(&f, 5); put32(&f, 1); put32(&f, 0);
+    put32(&f, 0x19); put32(&f, 72 + 80); segname(&f, "__TEXT"); put64(&f, MB64); put64(&f, (u64)text_vm); put64(&f, 0); put64(&f, (u64)text_fsz); put32(&f, 7); put32(&f, 5); put32(&f, 1); put32(&f, 0);
     section64(&f, "__text", "__TEXT", (u64)g_lay.base, (u64)(text_end - g_lay.base), (u32)(g_lay.base - MB64), 4, 0x80000400);
     if (rw) {
         put32(&f, 0x19); put32(&f, 72 + 80 * 2); segname(&f, "__DATA"); put64(&f, (u64)g_lay.rw_start); put64(&f, (u64)data_vm);
@@ -99,11 +101,10 @@ static int fmt_macho64(Obj *o, Bytes *out)
     while (f.n < MHDR64) bad1(&f, 0);
     badd(&f, img.p, g_lay.a_end > g_lay.base ? (size_t)(g_lay.a_end - g_lay.base) : 0);
     if (rw) {
-        while ((i64)f.n < g_lay.rw_start - MB64) bad1(&f, 0);
-        if (data_fsz > 0) badd(&f, img.p + (g_lay.rw_start - g_lay.base), (size_t)data_fsz);
-        while ((i64)f.n < g_lay.rw_start - MB64 + data_fsz_r) bad1(&f, 0);
-    } else {
-        while ((i64)f.n < text_vm) bad1(&f, 0);
+        if (data_fsz > 0) {
+            while ((i64)f.n < g_lay.rw_start - MB64) bad1(&f, 0);
+            badd(&f, img.p + (g_lay.rw_start - g_lay.base), (size_t)data_fsz);
+        }
     }
     badd(out, f.p, f.n);
     return 1;

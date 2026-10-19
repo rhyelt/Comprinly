@@ -58,6 +58,7 @@ The system is one of `linux`, `windows`, `mac` or `bare`. A few examples:
     cly bare hello.cly -hex
     cly linux hello.cly -O0
     cly linux hello.cly -obj
+    cly linux hello.cly -o
 
 Run `cly -h` to see every option.
 

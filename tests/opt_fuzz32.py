@@ -55,6 +55,10 @@ def gen_body(nlab, funcs):
             out.append('shl %s, %d'%(r, random.randint(0,3)))
         elif k<0.97:
             out.append('lea %s, [%s+%d]'%(r2,r,random.randint(-9,9)))
+        elif k<0.985:
+            m=random.choice(['1','2','3','4','5','8','9','16','0','7','-1'])
+            out.append(random.choice(['imul %s, %s'%(r,m),'imul %s, %s, %s'%(r,r,m),'imul %s, %s, %s'%(r,r2,m)]))
+            if random.random()<0.3: out.append('mov %s, 0'%r)
         else:
             out.append('push %s'%r); out.append('pop %s'%r2)
     while placed<len(labs):

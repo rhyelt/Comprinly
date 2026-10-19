@@ -2,6 +2,11 @@
 C=${CLY:-./cly}
 T=$(mktemp -d)
 bad=0
+chkn() {
+    printf "$1" > $T/e.cly
+    out=$($C linux $T/e.cly -nasm -flat -q -out $T/o 2>&1)
+    case "$out" in *"$2"*) ;; *) echo "FAIL nasm wanted '$2' got: $out"; bad=$((bad+1));; esac
+}
 chk() {
     cpu=$1; src=$2; want=$3
     printf "$src" > $T/e.cly
@@ -19,9 +24,11 @@ chk x86-64 'start:\n ldr x0, [x1]\n' 'ARM64 instruction'
 chk rv64 'start:\n ldr x0, [x1]\n' 'ARM64 instruction'
 chk x86-64 '%%macro m 1\n nop\n%%endmacro\nstart:\n m\n' 'takes 1 parameter'
 chk x86-64 '%%macro m 1\n nop\n%%endmacro\nstart:\n m 1, 2\n' 'takes 1 parameter'
+chkn 'bits 64\nmov [x], 5\nx dd 0\n' 'operation size not specified'
 chk x86-64 '%%if 1\nstart: ret\n' 'never closed'
 chk x86-64 'start:\nstart:\n ret\n' 'first defined at'
 chk x86-64 'start:\n mov eax, msgg\nmsg db 1\n' 'did you mean `msg'
+chk x86-64 'n equ 10\nstart:\n mov eax, n0\n' 'did you mean `n'
 chk arm64 'start:\n adr x0, msgg\nmsg: db 1\n' 'did you mean `msg'
 chk x86-64 'start:\n jmp short away\n times 300 nop\naway: ret\n' 'bytes away'
 chk arm64 'start:\n add x0, x1\n' 'expected 3 to 4 operands'

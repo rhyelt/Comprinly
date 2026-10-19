@@ -330,6 +330,13 @@ static const char *sym_suggest(const char *name)
         Sym *t = A.syms[i];
         if (t->defined && strncmp(t->name, "__", 2) != 0 && edit1(name, t->name)) return t->name;
     }
+    /* Short names are too small for the edit test, so also catch a defined name with one or two stray characters on the end (n0 for n, len_ for len). */
+    size_t ln = strlen(name);
+    for (int i = 0; i < A.nsyms; i++) {
+        Sym *t = A.syms[i];
+        size_t lt = strlen(t->name);
+        if (t->defined && lt >= 1 && strncmp(t->name, "__", 2) != 0 && ln > lt && ln - lt <= 2 && !strncasecmp(name, t->name, lt)) return t->name;
+    }
     return NULL;
 }
 

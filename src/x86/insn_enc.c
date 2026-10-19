@@ -949,6 +949,22 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
         }
         return 0;
     }
+    /* NASM does not guess the size of a lone memory operand ("mov [x], 5"), so strict mode asks for it with a hint. */
+    if (g_nasm && !ic->quiet) {
+        static const char *const sized[] = { "mov", "add", "sub", "and", "or", "xor", "cmp", "adc", "sbb", "test", "inc", "dec", "neg", "not", "mul", "div", "imul", "idiv", "shl", "shr", "sar", "sal", "rol", "ror", NULL };
+        int is_sized = 0, is_shift = !strcasecmp(mn, "shl") || !strcasecmp(mn, "shr") || !strcasecmp(mn, "sar") || !strcasecmp(mn, "sal") || !strcasecmp(mn, "rol") || !strcasecmp(mn, "ror");
+        for (int k = 0; sized[k]; k++) if (!strcasecmp(mn, sized[k])) is_sized = 1;
+        int unsized_mem = 0, sizing_reg = 0;
+        for (int k = 0; k < nops; k++) {
+            if (ops[k].kind == OK_MEM && ops[k].size == 0 && !ops[k].bcst) unsized_mem = 1;
+            if (ops[k].kind == OK_REG && !(is_shift && k > 0)) sizing_reg = 1;
+            if (ops[k].kind == OK_IMM && ops[k].size) sizing_reg = 1;
+        }
+        if (is_sized && unsized_mem && !sizing_reg) {
+            err("operation size not specified: put byte, word, dword or qword before the memory operand");
+            return 0;
+        }
+    }
     const Ent *e = choose(cands, nc, ops, nops, ic);
     Op *use = ops;
     int un = nops;

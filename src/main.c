@@ -3,7 +3,7 @@
 #include <errno.h>
 
 static int g_dumpopt;
-static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-bin|-elf|-exe|-macho|-obj|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
+static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-bin|-elf|-exe|-macho|-obj|-o|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
 
 static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
 
@@ -13,7 +13,8 @@ static const char *usage_text =
     "usage: cly <kernel> <file> [-type] [modes] [options]\n"
     "\n"
     "kernels: bare, windows, linux, mac\n"
-    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -coff\n"
+    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff\n"
+    "         (-o writes an object file named .o on every kernel; use -out FILE to name any output)\n"
     "\n"
     "modes (any order, any number):\n"
     "  -nasm         behave exactly like NASM: x86 only, no library, no leak check, no optimizer,\n"
@@ -75,6 +76,7 @@ static int parse_type(const char *s)
 }
 
 /* Default file extension for a kernel and output type, used when -out is not given. */
+static int g_dot_o;
 static const char *ext_for(int kernel, int type)
 {
     switch (type) {
@@ -90,7 +92,7 @@ static const char *ext_for(int kernel, int type)
     case T_COM: return ".com";
     case T_HEX: return ".hex";
     case T_SREC: return ".srec";
-    case T_OBJ: return kernel == K_WINDOWS ? ".obj" : ".o";
+    case T_OBJ: return kernel == K_WINDOWS && !g_dot_o ? ".obj" : ".o";
     case T_COFF: return ".obj";
     }
     return "";
@@ -196,7 +198,7 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
 /* Entry point. Reads options in any order, finds the kernel, source file and output type, picks the CPU, then calls build_image and the leak check. */
 int main(int argc, char **argv)
 {
-    int kernel = -1, type = T_BIN, type_set = 0;
+    int kernel = -1, type = T_BIN, type_set = 0, saw_o = 0;
     const char *file = NULL, *outpath = NULL;
     PPOpts po;
     memset(&po, 0, sizeof po);
@@ -232,7 +234,8 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
         if (!strcmp(a, "--dump-insns")) { dump = 1; continue; }
         if (!strcmp(a, "--dump-opt")) { g_dumpopt = 1; continue; }
-        if (!strcmp(a, "-out") || !strcmp(a, "-o") || !strcmp(a, "--out")) {
+        if (!strcmp(a, "-o")) { type = T_OBJ; type_set = 1; g_dot_o = 1; saw_o = 1; continue; }
+        if (!strcmp(a, "-out") || !strcmp(a, "--out")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a file name\n", a); return 1; }
             outpath = argv[++i];
             continue;
@@ -303,6 +306,7 @@ int main(int argc, char **argv)
             if (t >= 0) { type = t; type_set = 1; continue; }
         }
         fprintf(stderr, "cly: unexpected argument `%s'\n", pos[i]);
+        if (saw_o) fprintf(stderr, "cly: -o means write an object file (.o); use -out FILE to name the output\n");
         return 1;
     }
     if (kernel < 0 && file && !file_exists(file) && !dump) {

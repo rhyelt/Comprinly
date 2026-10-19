@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.2
+
+- New: `-o` writes an object file named `.o` on every kernel, Windows included. It is a type flag like `-obj`, not a file name. Use `-out FILE` to name any output. The error for a stray file name after `-o` now says so.
+- Smaller Mac programs: the last segment of a 64-bit Mach-O file is no longer padded to a full page. A program with no file data went from 4096 bytes to about 1100.
+- Smarter optimizer: `imul` by 1, 2, 4, 8 becomes nothing or a shift, and `imul` by 3, 5, 9 becomes one `lea`, when nothing reads the flags afterwards.
+- Better errors: in `-nasm` mode a memory operand with no size next to an immediate (`mov [x], 5`) asks for `byte`, `word`, `dword` or `qword`. A misspelled name that is a defined name plus one or two extra characters (`n0` for `n`) now gets a "did you mean" hint, also for one letter names.
+- Fixed: `dd sym - label` where the label is in the section being written now becomes a PC relative relocation in object files, as NASM does, instead of failing with "cannot be expressed as an ELF relocation".
+- Fixed: the test scripts used `-o` as a file name, they use `-out` now.
+
 ## 1.3.1
 
 - Changed: `syscall` is now a plain pass-through. It sends the registers to the system the program runs on and returns whatever comes back. The built-in per-system runtimes, the number translation tables and the call checks for Windows, Mac and bare are gone, so programs carry no support code. Use the call numbers of the system you build for. Linux numbers are still checked.

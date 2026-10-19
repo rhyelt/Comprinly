@@ -52,7 +52,7 @@ for name, src, want, opts in T:
     p = os.path.join(d, 'x.cly')
     open(p, 'w').write(src)
     out = os.path.join(d, 'x.elf')
-    r = subprocess.run(['./cly', 'linux', p, '-q', '-o', out] + list(opts), capture_output=True, text=True)
+    r = subprocess.run(['./cly', 'linux', p, '-q', '-out', out] + list(opts), capture_output=True, text=True)
     if r.returncode:
         print('FAIL build', name, r.stderr.strip().split('\n')[0]); bad += 1; continue
     st = elf_emu.run(out, limit=3000000)

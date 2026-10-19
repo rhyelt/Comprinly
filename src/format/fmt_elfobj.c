@@ -171,6 +171,16 @@ int fmt_elfobj(Obj *o, Bytes *out)
     for (int i = 0; i < o->nrelocs; i++) {
         Reloc *r = &o->relocs[i];
         Val *v = &r->v;
+        Reloc diffrel;
+        /* `sym - here_section_label`: the subtracted label sits in the section being written, so the difference is a PC relative relocation with the distance back to that label folded into the addend (this is what NASM does). */
+        if (!narch && v->neg == r->sec && v->neg >= 0 && r->kind == RK_ABS && !(v->pos >= 0 && v->ext) && (v->pos >= 0 || v->ext)) {
+            diffrel = *r;
+            diffrel.kind = RK_REL;
+            diffrel.relbase = 0;
+            diffrel.v.neg = -1;
+            r = &diffrel;
+            v = &r->v;
+        }
         if (v->neg >= 0 || (v->pos >= 0 && v->ext)) {
             g_pos.file = "<link>";
             g_pos.line = r->line;
