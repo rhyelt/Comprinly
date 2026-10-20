@@ -80,7 +80,7 @@ The programs are Hello World, and a loop that counts the primes below 300,000 wi
 |---|---|---|---|
 | C (gcc 13.3) | 35.5 ms | 2.3 ms | 15,960 bytes |
 | NASM 2.16 + ld | 6.4 ms | 1.5 ms | 8,864 bytes |
-| Comprinly | 9.6 ms | 1.5 ms | **274 bytes** |
+| Comprinly 1.3.2 | 9.6 ms | 1.5 ms | **274 bytes** |
 
 **Count primes below 300,000**
 
@@ -88,7 +88,7 @@ The programs are Hello World, and a loop that counts the primes below 300,000 wi
 |---|---|---|---|
 | C (gcc 13.3) | 38.6 ms | 50.2 ms | 15,960 bytes |
 | NASM 2.16 + ld | **6.6 ms** | 48.4 ms | 5,032 bytes |
-| Comprinly | 10.7 ms | 48.4 ms | **361 bytes** |
+| Comprinly 1.3.2 | 10.7 ms | 48.4 ms | **361 bytes** |
 
 What it shows:
 
