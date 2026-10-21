@@ -93,13 +93,33 @@ static int rv_ext_parse(const char *s, int *mask)
     return 0;
 }
 
+/* Set when the target is a 32-bit Intel cpu (i386 ... i686, IA-32). 64-bit register names are then errors and `syscall' is not available. */
+int g_ia32;
+/* Instruction level every file starts at (a `cpu' line can still change it): 3 is the 80386, 4 the 486, 5 the Pentium, 6 the Pentium Pro, 99 everything. */
+int g_cpu_lvl = 99;
+/* Set by -O3 and -Ofast: also use rewrites that make the program run faster but a little larger. */
+int g_speed;
+
+/* True for the 32-bit Intel cpu names (i386, i486, i586, i686, ia32, ia-32, x86-32). Gives the instruction level of that cpu. */
+int ia32_cpu(const char *name, int *level)
+{
+    char s[32];
+    lower(s, name, sizeof s);
+    static const struct { const char *n; int lvl; } t[] = {
+        { "i386", 3 }, { "i486", 4 }, { "i586", 5 }, { "i686", 6 },
+        { "ia32", 99 }, { "ia-32", 99 }, { "x86-32", 99 }, { "x86_32", 99 }, { NULL, 0 }
+    };
+    for (int i = 0; t[i].n; i++) if (!strcmp(s, t[i].n)) { if (level) *level = t[i].lvl; return 1; }
+    return 0;
+}
+
 /* Turns a CPU name (x86-64, arm64, rv64gc, rv32imac ...) into an ARCH_* value and an extension mask. */
 int arch_parse(const char *name, int *rvext)
 {
     char s[64];
     lower(s, name, sizeof s);
     if (rvext) *rvext = RVX_DEFAULT;
-    static const char *x86n[] = { "x86-64", "x86_64", "x64", "amd64", "x86", "ia32", "i386", "i486", "i586", "i686", "intel64", "em64t", "x86-32", "x86_32", NULL };
+    static const char *x86n[] = { "x86-64", "x86_64", "x64", "amd64", "x86", "ia32", "ia-32", "i386", "i486", "i586", "i686", "intel64", "em64t", "x86-32", "x86_32", NULL };
     for (int i = 0; x86n[i]; i++) if (!strcmp(s, x86n[i])) return ARCH_X86;
     static const char *a64n[] = { "arm64", "aarch64", "armv8", "armv8-a", "armv8a", "armv8.0-a", "arm64e", "armv9", "armv9-a", "armv9a", "arm-64", "a64", "armv8.1-a", "armv8.2-a", "armv8.3-a", "armv8.4-a", "armv8.5-a", "armv8.6-a", "armv8.7-a", "armv8.8-a", "armv9.0-a", "armv9.1-a", "armv9.2-a", NULL };
     for (int i = 0; a64n[i]; i++) if (!strcmp(s, a64n[i])) return ARCH_A64;

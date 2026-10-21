@@ -778,6 +778,13 @@ static int parse_operand0(const char **pp, Op *o)
         *pp = p;
         return 1;
     }
+    if (e != p && w[0] != '$' && reg_bad32(w)) {
+        err("`%s' is a 64-bit register; i386 / IA-32 code has eax, ecx, edx, ebx, esp, ebp, esi and edi", w);
+        o->kind = OK_REG;
+        o->reg = REGID(RC_R32, 0);
+        *pp = e;
+        return 1;
+    }
     if (e != p && w[0] != '$') {
         int rsz;
         int rid = reg_lookup(w, &rsz);
@@ -1770,7 +1777,7 @@ static void do_directive(const char *w, const char *rest)
             else if (a != A.arch && !(arch_rv_generic(n) && A.arch > ARCH_A64)) err("`cpu %s' does not match the target (%s) chosen on the command line", n, arch_name(A.arch));
         } else if (a == ARCH_X86) {
             if (A.arch != ARCH_X86) err("`cpu %s' does not match the target (%s)", n, arch_name(A.arch));
-            else insn_cpu_set(n, &A.cpu);
+            else if (!ia32_cpu(n, &A.cpu)) insn_cpu_set(n, &A.cpu);
         } else if (A.arch != ARCH_X86) {
             err("unknown cpu `%s' (use x86-64, arm64 or risc-v)", n);
         } else insn_cpu_set(n, &A.cpu);
@@ -2051,6 +2058,7 @@ static void handle_insn(const char *mn, const char *rest, IC *ic)
     if (A.bits == 64 && (!*skipws(rest) || *skipws(rest) == ';') && expand_legacy64(mn, 0, s, ic)) return;
     if (!parse_operands(&p, ops, &nops)) return;
     if (nops == 0 && A.bits != 64 && !strcasecmp(mn, "syscall")) {
+        if (g_ia32) { err("`syscall' does not exist on i386 / IA-32; use `int 0x80' (or `sysenter' on a Pentium Pro and later)"); return; }
         InsnOut raw;
         memset(&raw, 0, sizeof raw);
         badd(&raw.code, "\x0f\x05", 2);
@@ -2323,7 +2331,7 @@ static void reset_pass(void)
     A.bits = A.default_bits;
     reg_mode(A.bits);
     A.defrel = A.o->kernel == K_MAC && A.default_bits == 64;
-    A.cpu = 99;
+    A.cpu = g_cpu_lvl;
     A.pend_align = 0;
     A.has_pend_fill = 0;
     A.struc_active = 0;

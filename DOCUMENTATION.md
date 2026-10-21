@@ -184,6 +184,8 @@ You can add your own on the command line with `-D NAME=value` and remove one wit
 
 Order of choice: `-cpu` on the command line, the `cpu` line, a guess from the code (the first instruction or register that belongs to one CPU only), then x86-64. After that, anything that clearly belongs to another CPU is an error that names the line the choice came from. A name Comprinly does not know gets a warning and Comprinly falls back to guessing. Old 32-bit ARM names (`arm`, `armv7`, `thumb`) are recognised and rejected with a clear message.
 
+`i386`, `i486`, `i586`, `i686`, `ia32`, `ia-32` and `x86-32` are x86 names for 32-bit Intel code: 32-bit by default, only the 32-bit registers, no `syscall`, and an instruction set that stops at that chip (`i386` is the 80386, `ia32` is everything). HOWTOUSE.md has the table.
+
 RISC-V names carry the extensions: `rv64gc`, `rv32imac`, `rv64imafdc_zba_zbb`. Leaving out `c` turns off compressed code, leaving out `m`, `a`, `f` or `d` makes those instructions an error. `risc-v` and `riscv` alone mean the default feature set, 64-bit, and follow `-m32`.
 
 ## Directives shared by every CPU

@@ -1000,9 +1000,137 @@ static int should_skip(LineVec *lv, int *bits_out)
     return 0;
 }
 
+/* Case insensitive search for a short piece of text inside a string. */
+static int has_word(const char *s, const char *w)
+{
+    size_t n = strlen(w);
+    for (; *s; s++) if (!strncasecmp(s, w, n)) return 1;
+    return 0;
+}
+
+/* True if the register name is the accumulator (al, ax, eax or rax), which the kernel reads as the system call number. */
+static int is_acc(const char *r)
+{
+    return !strcasecmp(r, "rax") || !strcasecmp(r, "eax") || !strcasecmp(r, "ax") || !strcasecmp(r, "al") || !strcasecmp(r, "ah");
+}
+
+/* Decides whether the finished program can never write to its own memory. If it can not, the data can sit in the same read and execute segment as the code, and a program that never touches the stack needs no stack header. This saves two program headers in a small program. The test is strict on purpose: only simple register and jump instructions are allowed, no memory operands, no stack, and every system call must follow a constant load of a number that is known not to write memory (write, exit, getpid). Anything else keeps the normal layout. */
+static void ro_analyze(LineVec *lv, int bits)
+{
+    g_ro_prog = 0;
+    if (bits != 32 && bits != 64) return;
+    static const char *const ok_mn[] = { "mov", "xor", "and", "or", "add", "sub", "inc", "dec", "neg", "not", "cmp", "test", "shl", "shr", "sar", "nop", "jmp", NULL };
+    static const long safe64[] = { 1, 60, 231, 39, 0 };
+    static const long safe32[] = { 4, 1, 252, 20, 0 };
+    const long *safe = bits == 64 ? safe64 : safe32;
+    int n = lv->n, ok = 1, nsys = 0;
+    Ln *L = xcalloc((size_t)n + 1, sizeof(Ln));
+    for (int i = 0; i < n; i++) parse_line(lv->v[i].text, &L[i]);
+    for (int i = 0; i < n && ok; i++) {
+        Ln *x = &L[i];
+        if (x->kind == LK_BLANK || x->kind == LK_LABEL) continue;
+        if (x->kind == LK_OTHER) {
+            const char *w = x->w1;
+            if (x->name && in_list(x->w2, datad)) w = x->w2;
+            if (!strncmp(w, "res", 3) || !strcmp(w, "extern") || !strcmp(w, "extrn") || !strcmp(w, "times") || !strcmp(w, "org")) ok = 0;
+            else if (!in_list(w, datad) && strcmp(w, "[bits")) ok = 0;
+            continue;
+        }
+        const char *cc;
+        int is_sys = (bits == 64 && !strcmp(x->mn, "syscall") && x->nops == 0) || (bits == 32 && !strcmp(x->mn, "int") && x->nops == 1 && !strcmp(x->ops[0], "0x80"));
+        if (!is_sys && !in_list(x->mn, ok_mn) && !is_jcc(x->mn, &cc)) { ok = 0; break; }
+        for (int k = 0; k < x->nops; k++) {
+            if (strchr(x->ops[k], '[') || has_word(x->ops[k], "sp") || has_word(x->ops[k], "bp")) ok = 0;
+        }
+        int is_jump = !strcmp(x->mn, "jmp") || is_jcc(x->mn, &cc);
+        if (!is_jump && !is_sys && strcmp(x->mn, "nop")) {
+            if (x->nops < 1 || !regw(x->ops[0], NULL)) ok = 0;
+        }
+        if (!is_sys) continue;
+        nsys++;
+        int found = 0;
+        for (int k = i - 1; k >= 0; k--) {
+            Ln *y = &L[k];
+            if (y->kind == LK_BLANK) continue;
+            if (y->kind != LK_INSN) break;
+            int hits_acc = y->nops > 0 && is_acc(y->ops[0]);
+            if (!strcmp(y->mn, "syscall") || !strcmp(y->mn, "int")) break;
+            if (!hits_acc) continue;
+            long v;
+            if (!strcmp(y->mn, "mov") && y->nops == 2 && (!strcasecmp(y->ops[0], "eax") || !strcasecmp(y->ops[0], "rax")) && is_num(y->ops[1], &v))
+                for (int t = 0; safe[t]; t++) if (safe[t] == v) found = 1;
+            break;
+        }
+        if (!found) ok = 0;
+    }
+    for (int i = 0; i < n; i++) free_ln(&L[i]);
+    free(L);
+    g_ro_prog = ok;
+}
+
+/* Speed pass, only with -O3 or -Ofast. On many Intel cpus a 64-bit `div' is several times slower than a 32-bit one, and most divisions are of small numbers. So `xor edx, edx` followed by `div r64` becomes: if neither the dividend (rax) nor the divisor has bits above bit 31, do the 32-bit `div`, otherwise the 64-bit one. Both give the same quotient and remainder. rdx is free to use as scratch because it is zero here and `div' overwrites it. The flags a `div' leaves are undefined, so this is only done when nothing reads them afterwards. Signed `cqo' + `idiv' gets the same treatment for numbers from 0 to 2^31-1. It adds about 20 bytes per division. */
+static int speed_pass(Ctx *c, LineVec *out)
+{
+    Ln *L = c->L;
+    int n = c->n, did = 0, id = 0;
+    for (int i = 0; i < n; i++) {
+        Ln *x = &L[i];
+        int k = -1;
+        if (x->kind == LK_INSN && !strcmp(x->mn, "xor") && x->nops == 2 && !strcasecmp(x->ops[0], x->ops[1]) && (!strcasecmp(x->ops[0], "edx") || !strcasecmp(x->ops[0], "rdx")))
+            k = next_insn(c, i, 0, NULL, NULL);
+        char r32n[16];
+        if (k > 0 && !strcmp(L[k].mn, "div") && L[k].nops == 1 && regw(L[k].ops[0], r32n) == 64 && strcasecmp(L[k].ops[0], "rax") && strcasecmp(L[k].ops[0], "rdx") && flags_dead(L, n, k, F_ALL)) {
+            const char *d = L[k].ops[0];
+            const char *f = c->lv->v[i].file;
+            int ln = c->lv->v[i].line;
+            char b[160];
+            id++;
+            snprintf(b, sizeof b, "    mov rdx, rax"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    or rdx, %s", d); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    shr rdx, 32"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    jnz .cly_dv%d_s", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    div %s", r32n); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    jmp .cly_dv%d_e", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, ".cly_dv%d_s:", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    xor edx, edx"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    div %s", d); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, ".cly_dv%d_e:", id); lv_add(out, b, f, ln);
+            did++;
+            i = k;
+            continue;
+        }
+        /* Signed version: `cqo' then `idiv r64' takes the 32-bit path when both numbers are between 0 and 2^31-1. */
+        k = -1;
+        if (x->kind == LK_INSN && !strcmp(x->mn, "cqo") && x->nops == 0) k = next_insn(c, i, 0, NULL, NULL);
+        if (k > 0 && !strcmp(L[k].mn, "idiv") && L[k].nops == 1 && regw(L[k].ops[0], r32n) == 64 && strcasecmp(L[k].ops[0], "rax") && strcasecmp(L[k].ops[0], "rdx") && flags_dead(L, n, k, F_ALL)) {
+            const char *d = L[k].ops[0];
+            const char *f = c->lv->v[i].file;
+            int ln = c->lv->v[i].line;
+            char b[160];
+            id++;
+            snprintf(b, sizeof b, "    mov rdx, rax"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    or rdx, %s", d); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    shr rdx, 31"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    jnz .cly_dv%d_s", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    idiv %s", r32n); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    jmp .cly_dv%d_e", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, ".cly_dv%d_s:", id); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    cqo"); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, "    idiv %s", d); lv_add(out, b, f, ln);
+            snprintf(b, sizeof b, ".cly_dv%d_e:", id); lv_add(out, b, f, ln);
+            did++;
+            i = k;
+            continue;
+        }
+        lv_add(out, c->lv->v[i].text, c->lv->v[i].file, c->lv->v[i].line);
+    }
+    return did;
+}
+
 /* Runs the optimizer: peephole, forward constants and dead function removal in a loop until nothing changes. */
 void opt_run(LineVec *lv, int bits, int kernel, int type)
 {
+    g_ro_prog = 0;
     if (bits == 16) return;
     if (type == T_FLAT || type == T_COM || type == T_HEX || type == T_SREC || type == T_IMG) return;
     if (should_skip(lv, NULL)) return;
@@ -1051,4 +1179,26 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
         free(c.L);
         free(c.scope);
     }
+    if (g_speed && bits == 64) {
+        Ctx c;
+        c.lv = lv;
+        c.n = lv->n;
+        c.L = xcalloc((size_t)c.n + 1, sizeof(Ln));
+        c.scope = xcalloc((size_t)c.n + 1, sizeof(char *));
+        reparse(&c);
+        LineVec nl = {0};
+        int did = speed_pass(&c, &nl);
+        for (int i = 0; i < c.n; i++) { free_ln(&c.L[i]); free(c.scope[i]); }
+        free(c.L);
+        free(c.scope);
+        if (did) {
+            for (int i = 0; i < lv->n; i++) free(lv->v[i].text);
+            free(lv->v);
+            *lv = nl;
+        } else {
+            for (int i = 0; i < nl.n; i++) free(nl.v[i].text);
+            free(nl.v);
+        }
+    }
+    if (kernel == K_LINUX && (type == T_ELF || type == T_BIN)) ro_analyze(lv, bits);
 }

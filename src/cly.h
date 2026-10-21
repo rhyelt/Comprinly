@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.3.2"
+#define CLY_VERSION "1.3.3"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)
@@ -384,6 +384,9 @@ int arch_parse(const char *s, int *rvext);
 int arch_rv_generic(const char *name);
 int arch_cpu_line(const char *text, char *arg, size_t sz);
 int arch_first_cpu(const LineVec *lv, char *arg, size_t sz, int *lineno);
+int ia32_cpu(const char *name, int *level);
+int reg_bad32(const char *name);
+extern int g_ia32, g_cpu_lvl, g_speed;
 int arch_guess(const LineVec *lv, int *rvext);
 extern int g_no_abs32;
 void sysval_run(const LineVec *lv, int arch, int kernel, int bits);
@@ -412,6 +415,7 @@ typedef struct {
 } Layout;
 extern Layout g_lay;
 extern int g_compact;
+extern int g_ro_prog;
 
 /* The functions imported from one DLL, with their slots in the import address table. */
 typedef struct {

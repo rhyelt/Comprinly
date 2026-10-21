@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.3.3
+
+- New: i386 and IA-32 CPUs. `-cpu i386`, `i486`, `i586`, `i686` and `ia32` (also `ia-32`, `x86-32`; a `cpu` line in the source does the same) mean 32-bit Intel code. Code is 32-bit by default, `-m64` is an error, and the name sets how far the instruction set goes (`i386` is the 80386 only, `ia32` is everything that exists in 32-bit mode). The 64-bit registers (`rax`, `r8d`, `sil`) and `syscall` are errors with a message that names the 32-bit way. The built-in C library needs SSE2, so it is only offered with `ia32`.
+- Fix: `rdpid` did not assemble in 32-bit mode.
+- Fix: `vreducesh` had its operands in the wrong order, and `vcvtneps2bf16` took the wrong operand sizes.
+- Fix: the 8-bit disp8 shrink for FP16 scalar instructions (`vmovsh`, `vmovw`, `vcvtsh2si`, `vucomish` and friends) used the wrong scale, so a memory operand such as `[rax+0x40]` got a different displacement than other assemblers. Checked against LLVM.
+- Docs: the benchmarks moved from the README to `BENCHMARKS.md`, organized by version starting at 1.3.2.
+- Fix: the static Linux build could crash on ARM64 and RISC-V sources whose text ended exactly at a memory page boundary (a libc string function read past the end). The optimizer now copies that text itself.
+- New: `vpdpbssd`, `vpdpbssds`, `vpdpbsud`, `vpdpbsuds`, `vpdpbuud`, `vpdpbuuds` (AVX-VNNI-INT8).
+- New: `-O3` and `-Ofast`. They add a division shortcut: `xor edx, edx` + `div r64` and `cqo` + `idiv r64` take the faster 32-bit instruction when both numbers fit, and fall back to the 64-bit one otherwise. Results are identical. A primes loop dominated by `div` ran about 35 percent faster on an Intel Xeon. Costs about 20 bytes per division. The default optimizer is unchanged.
+- New: `linux32` kernel. `cly linux32 file.cly` builds a 32-bit Linux program, the same as `cly linux file.cly -m32`. `linux64` is accepted too. Mixing `linux32` with `-m64` is an error.
+- Faster start: the instruction tables are no longer fully built at start. The generated rows are filed by name and each instruction's rows are built the first time it is used. The table lookups, the 64-bit mode marks and `--dump-insns` give exactly the same result as before. A Hello World compiles in about half the time (the time before the first pass went from about 7 ms to about 1.5 ms).
+- Smaller programs: when the optimizer can prove a Linux program never writes to its own memory, the data goes into the same read and execute segment as the code, and the stack header is left out if the program has no stack use. Hello World went from 274 to 162 bytes (64-bit) and is 129 bytes as a 32-bit program.
+- The proof is strict. The program may only use register and jump instructions with no memory operands and no stack, and every `syscall` (or `int 0x80` in 32-bit code) must follow a constant load of `write`, `exit`, `exit_group` or `getpid`. Anything else, such as a store, a `read`, a `push` or a `call`, keeps the normal layout with a writable data segment.
+
 ## 1.3.2
 
 - New: `-o` writes an object file named `.o` on every kernel, Windows included. It is a type flag like `-obj`, not a file name. Use `-out FILE` to name any output. The error for a stray file name after `-o` now says so.

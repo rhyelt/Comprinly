@@ -27,7 +27,13 @@ if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ]; then
         if [ "$(cat "$T/o")" = "$want" ]; then note "linux64 run $ex" ok; else note "linux64 run $ex" FAIL; fail=1; fi
     done
     printf 'start:\n mov eax, 4\n mov ebx, 1\n mov ecx, m\n mov edx, 14\n int 0x80\n mov eax, 1\n xor ebx, ebx\n int 0x80\nm db "Hello, World!", 10\n' > "$T/l32.cly"
-    if ./cly linux "$T/l32.cly" -m32 -q -out "$T/p" && "$T/p" >"$T/o" 2>/dev/null && [ "$(cat "$T/o")" = "Hello, World!" ]; then note "linux32 run" ok; else note "linux32 run" skipped; fi
+    if ./cly linux32 "$T/l32.cly" -q -out "$T/p" && "$T/p" >"$T/o" 2>/dev/null && [ "$(cat "$T/o")" = "Hello, World!" ]; then note "linux32 run" ok; else note "linux32 run" skipped; fi
+    for c in i386 i486 i686 ia32; do
+        if ./cly linux "$T/l32.cly" -cpu $c -q -out "$T/p" && "$T/p" >"$T/o" 2>/dev/null && [ "$(cat "$T/o")" = "Hello, World!" ]; then note "cpu $c run" ok; else note "cpu $c run" FAIL; fail=1; fi
+    done
+    printf 'start:\n mov r12, 0x9E3779B97F4A7C15\n mov r15, 3000\n xor r14, r14\n.l:\n imul r12, r12, 69069\n add r12, 12345\n mov rax, r12\n shr rax, 20\n mov rbx, r12\n shr rbx, 40\n or rbx, 1\n xor edx, edx\n div rbx\n add r14, rax\n xor r14, rdx\n mov rax, r12\n shr rax, 33\n mov rbx, r12\n shr rbx, 45\n or rbx, 1\n cqo\n idiv rbx\n add r14, rax\n xor r14, rdx\n dec r15\n jnz .l\n mov rdi, r14\n and edi, 127\n mov eax, 60\n syscall\n' > "$T/dv.cly"
+    ./cly linux "$T/dv.cly" -O0 -q -out "$T/d0" && ./cly linux "$T/dv.cly" -O3 -q -out "$T/d3" && "$T/d0"; r0=$?; "$T/d3"; r3=$?
+    if [ $r0 = $r3 ]; then note "O3 division paths" ok; else note "O3 division paths" FAIL; fail=1; fi
 else
     note "linux run" skipped
 fi

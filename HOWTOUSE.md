@@ -77,7 +77,7 @@ The same source can work in both modes if you stick to `eax`, `ebx`, `ecx`, `edx
 
     cly <kernel> <file> [-type] [modes] [options]
 
-Kernels: `linux`, `windows`, `mac`, `bare`.
+Kernels: `linux`, `linux32`, `windows`, `mac`, `bare`. `linux32` is 32-bit Linux (`cly linux32 file.cly`), the same as `cly linux file.cly -m32`. `linux64` is also accepted and means `-m64`.
 
 Types:
 
@@ -118,7 +118,7 @@ Options:
     -P FILE       include a file first
     -l [FILE]     write a listing
     -m32 -m64     force 32-bit or 64-bit code
-    -cpu NAME     x86-64, arm64, risc-v, rv32, rv64, rv64gc, rv32imac ...
+    -cpu NAME     x86-64, i386, ia32, arm64, risc-v, rv32, rv64, rv64gc, rv32imac ...
     -E            only run the preprocessor
     -w            hide warnings
     -q            hide everything but errors
@@ -166,6 +166,14 @@ Like on x86, raw outputs and files with `org` are left alone. Memory-mapped regi
 It does not touch raw outputs (`-flat`, `-com`, `-hex`, `-srec`, `-img`), 16-bit code, files with `org`, or code that uses `$` arithmetic inside instructions, because those depend on exact layout. Object files (`-obj`, `-coff`) keep every function so other files can link to them.
 
 It does not move values between registers or rewrite your algorithm. You chose those registers, and an assembler cannot know what else relies on them.
+
+### Speed mode: -O3 and -Ofast
+
+The default optimizer puts size first. `-O3` (or `-Ofast`) adds rewrites that make the program run faster and cost a few bytes. There is one so far, in 64-bit code: a division shortcut.
+
+On many Intel CPUs a 64-bit `div` is several times slower than a 32-bit one, and most divisions are of small numbers. With `-O3`, `xor edx, edx` followed by `div reg` (and `cqo` followed by `idiv reg`) first checks that the dividend and divisor fit in 32 bits (31 for `idiv`). If they do, it runs the 32-bit division, which gives the same quotient and remainder. If not, it runs the 64-bit one. A division by zero or an overflow still faults exactly as before.
+
+It is only done when no later instruction reads the flags, because `div` leaves them undefined. It costs about 20 bytes per division. On a counting-primes loop that spends its time in `div`, the program ran about 35 percent faster on an Intel Xeon. On CPUs with a fast 64-bit divider (Ice Lake and newer, Zen 3 and newer) the gain is small, and the extra check can cost a cycle or two, so measure before you rely on it.
 
 ## 6. What it does for you
 
@@ -246,7 +254,8 @@ Names that work:
 
 | Family | Names |
 |--------|-------|
-| x86 | `x86-64`, `x86_64`, `amd64`, `x64`, `x86`, `i386`, `i686`, `ia32` |
+| x86 (64-bit) | `x86-64`, `x86_64`, `amd64`, `x64`, `x86` |
+| x86 (32-bit, see below) | `i386`, `i486`, `i586`, `i686`, `ia32`, `ia-32`, `x86-32` |
 | ARM64 | `arm64`, `aarch64`, `armv8`, `armv8-a`, `armv9-a`, `a64` and the numbered `armv8.x-a` names |
 | RISC-V | `risc-v`, `riscv`, `rv32`, `rv64`, or a full name such as `rv64gc`, `rv32imac`, `rv64imafd_zba_zbb` |
 
@@ -269,6 +278,25 @@ Your code can check the choice with predefined macros: `__CLY_ARCH__`, `__ARCH_X
     %ifdef __ARCH_ARM64__
         mov x0, 0
     %endif
+
+### i386 and IA-32
+
+`-cpu i386`, `i486`, `i586`, `i686`, `ia32` (also `ia-32` and `x86-32`) mean 32-bit Intel code. Code is 32-bit by default and `-m64` is an error. The names set how far the instruction set goes:
+
+| Name | Instructions allowed |
+|------|----------------------|
+| `i386` | 80386 only |
+| `i486` | adds `bswap`, `cmpxchg`, `xadd`, `invlpg` |
+| `i586` | adds `cpuid`, `rdtsc`, `cmpxchg8b`, MMX |
+| `i686` | adds `cmov` and `sysenter` |
+| `ia32` | everything that exists in 32-bit mode, including `fxsave`, SSE to SSE4 and AVX |
+
+Registers are the 32-bit set (`eax ecx edx ebx esp ebp esi edi`, their 16 and 8-bit parts, segment, control, debug, x87 and MMX). `rax`, `r8d`, `sil` and the other 64-bit names are errors, and so is `syscall`; use `int 0x80` or `sysenter`. Without one of these names, 32-bit code is more forgiving and quietly reads `rax` as `eax`.
+
+    cly linux hello.cly -cpu i386
+    cly linux32 hello.cly -cpu ia32
+
+The built-in C library uses SSE2, so it is only available with `ia32`. With `i386` to `i686` write the function yourself or use `-nolibc`.
 
 ## 13. ARM64
 

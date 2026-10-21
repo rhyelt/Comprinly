@@ -17,7 +17,7 @@ static int sec_group(const Sec *s)
 {
     if (!s->alloc) return 3;
     if (s->nobits) return 2;
-    if (s->write) return 1;
+    if (s->write) return g_ro_prog ? 0 : 1;
     return 0;
 }
 
@@ -121,6 +121,7 @@ static void order_secs(Obj *o)
 }
 
 int g_compact;
+int g_ro_prog;
 
 /* Assigns addresses to every section for a given base and page size. Computes where the file image ends. */
 int link_layout(Obj *o, i64 base, i64 pagesz, int mode)

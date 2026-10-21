@@ -676,6 +676,10 @@ void libc_run(LineVec *lv, int kernel, int type, int defbits)
     int has_entry = has_def(&defs, "_start") || has_def(&defs, "start") || has_def(&defs, "..start");
     int want_stub = main_def && !has_entry;
     if (!refs.n && !want_stub) return;
+    if (g_ia32 && g_cpu_lvl < 8) {
+        err("the built-in C library needs SSE2, which this cpu does not have; use -cpu ia32 (Pentium 4 and later) or write the function yourself");
+        return;
+    }
     strip_extern(lv, &L, &defs);
     for (int i = 0; i < refs.n; i++) {
         int bi;

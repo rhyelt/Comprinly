@@ -46,7 +46,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
     g_compact = g_strip && o->arch == ARCH_X86;
     link_layout(o, ELF64_BASE + hdr, 0x1000, 3);
     if (g_compact && !g_lay.has_rw) {
-        hdr = 64 + 56 * 2;
+        hdr = 64 + 56 * (g_ro_prog ? 1 : 2);
         link_layout(o, ELF64_BASE + hdr, 0x1000, 3);
     }
     if (!link_apply(o)) return 0;
@@ -58,7 +58,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
     Bytes img = {0};
     link_range(o, &img, g_lay.base, g_lay.a_end);
     int rw = g_lay.has_rw;
-    int nph = rw ? 3 : 2;
+    int nph = (rw ? 3 : 2) - (g_ro_prog ? 1 : 0);
     Bytes f = {0};
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', 2, 1, 1, 0 };
     badd(&f, ident, 16);
@@ -87,7 +87,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
         put32(&f, 1); put32(&f, 6); put64(&f, (u64)(g_lay.rw_lma - ELF64_BASE)); put64(&f, (u64)g_lay.rw_start); put64(&f, (u64)g_lay.rw_start);
         put64(&f, (u64)fsz); put64(&f, (u64)(g_lay.end - g_lay.rw_start)); put64(&f, 0x1000);
     }
-    put32(&f, 0x6474E551); put32(&f, 6); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 16);
+    if (!g_ro_prog) { put32(&f, 0x6474E551); put32(&f, 6); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 0); put64(&f, 16); }
     while ((int)f.n < hdr) bad1(&f, 0);
     badd(&f, img.p, img.n);
     if (rw) {
@@ -185,7 +185,7 @@ int fmt_elf(Obj *o, Bytes *out)
     g_compact = g_strip && o->arch == ARCH_X86;
     link_layout(o, ELF_BASE + hdr, 0x1000, 3);
     if (g_compact && !g_lay.has_rw) {
-        hdr = 52 + 32 * 2;
+        hdr = 52 + 32 * (g_ro_prog ? 1 : 2);
         link_layout(o, ELF_BASE + hdr, 0x1000, 3);
     }
     if (!link_apply(o)) return 0;
@@ -197,7 +197,7 @@ int fmt_elf(Obj *o, Bytes *out)
     Bytes img = {0};
     link_range(o, &img, g_lay.base, g_lay.a_end);
     int rw = g_lay.has_rw;
-    int nph = rw ? 3 : 2;
+    int nph = (rw ? 3 : 2) - (g_ro_prog ? 1 : 0);
     Bytes f = {0};
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', 1, 1, 1, 0 };
     badd(&f, ident, 16);
@@ -226,7 +226,7 @@ int fmt_elf(Obj *o, Bytes *out)
         put32(&f, 1); put32(&f, (u32)(g_lay.rw_lma - ELF_BASE)); put32(&f, (u32)g_lay.rw_start); put32(&f, (u32)g_lay.rw_start);
         put32(&f, (u32)fsz); put32(&f, (u32)(g_lay.end - g_lay.rw_start)); put32(&f, 6); put32(&f, 0x1000);
     }
-    put32(&f, 0x6474E551); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 6); put32(&f, 16);
+    if (!g_ro_prog) { put32(&f, 0x6474E551); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 0); put32(&f, 6); put32(&f, 16); }
     while ((int)f.n < hdr) bad1(&f, 0);
     size_t base_off = f.n;
     badd(&f, img.p, img.n);

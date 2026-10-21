@@ -53,14 +53,29 @@ static int vec_spec(const char *n, int len)
 /* Maps an operand spec name (r8, rm32, imm8, ...) to its numeric id. */
 static int spec_id(const char *n, int len)
 {
-    {
-        int v = vec_spec(n, len);
-        if (v >= 0) return v;
+    /* Small direct mapped cache: the same few dozen spec names repeat thousands of times while the table is built. */
+    static struct { char key[12]; int len, id; } cache[256];
+    unsigned h = (unsigned)len;
+    for (int i = 0; i < len; i++) h = h * 31 + (unsigned char)n[i];
+    h &= 255;
+    if (len < 12 && cache[h].len == len && !memcmp(cache[h].key, n, (size_t)len)) return cache[h].id;
+    int id = -1;
+    int v = vec_spec(n, len);
+    if (v >= 0) id = v;
+    else {
+        for (int i = 0; specnames[i].n; i++)
+            if (specnames[i].n[0] == n[0] && !strncmp(specnames[i].n, n, (size_t)len) && !specnames[i].n[len]) { id = specnames[i].id; break; }
+        if (id < 0) {
+            fprintf(stderr, "cly: internal: bad spec %.*s\n", len, n);
+            exit(3);
+        }
     }
-    for (int i = 0; specnames[i].n; i++)
-        if ((int)strlen(specnames[i].n) == len && !strncmp(specnames[i].n, n, (size_t)len)) return specnames[i].id;
-    fprintf(stderr, "cly: internal: bad spec %.*s\n", len, n);
-    exit(3);
+    if (len < 12) {
+        memcpy(cache[h].key, n, (size_t)len);
+        cache[h].len = len;
+        cache[h].id = id;
+    }
+    return id;
 }
 
 /* Memory size in bytes that a spec expects. */
@@ -78,31 +93,111 @@ int spec_msize(int s)
     }
 }
 
-/* Reads the decompressed generated table text and adds each row with T(). Scans by hand because strchr is slow on musl. */
+/* Rows of the generated tables that are not parsed yet. They are grouped by mnemonic and only turned into entries when that mnemonic is first looked up, which keeps start up short. */
+typedef struct Pend {
+    char *ops, *enc;
+    int level;
+    struct Pend *next;
+} Pend;
+typedef struct { const char *mn; Pend *head, *tail; } PendList;
+static HT g_pend;
+static PendList **g_pl;
+static size_t g_npl, g_cpl;
+static void mark_entry(Ent *e);
+
+/* Reads the decompressed generated table text and files each row under its mnemonic. Scans by hand because strchr is slow on musl. */
 void tab_blob(const unsigned char *b, size_t cn, size_t rn)
 {
     char *t = lz_text(b, cn, rn);
     char *end = t + rn;
     char *p = t;
+    Pend *pool = NULL;
+    size_t used = 0, cap = 0;
+    int level = cur_level;
+    PendList *lastpl = NULL;
     while (p < end) {
-        char *f[2] = { NULL, NULL };
-        int nf = 0;
-        char *q = p;
-        for (; q < end && *q != '\n'; q++) if (*q == '\t' && nf < 2) f[nf++] = q;
+        char *q = memchr(p, '\n', (size_t)(end - p));
+        if (!q) q = end;
         *q = 0;
-        if (*p == '#') tab_lv(atoi(p + 1));
-        else if (nf == 2) {
-            *f[0] = 0;
-            *f[1] = 0;
-            T(p, f[0] + 1, f[1] + 1);
+        if (*p == '#') level = atoi(p + 1);
+        else {
+            char *f0 = memchr(p, '\t', (size_t)(q - p));
+            char *f1 = f0 ? memchr(f0 + 1, '\t', (size_t)(q - f0 - 1)) : NULL;
+            if (f1) {
+                *f0 = 0;
+                *f1 = 0;
+                if (used == cap) { cap = cap ? cap * 2 : 4096; pool = xmalloc(cap * sizeof(Pend)); used = 0; }
+                Pend *r = &pool[used++];
+                r->ops = f0 + 1;
+                r->enc = f1 + 1;
+                r->level = level;
+                r->next = NULL;
+                PendList *pl = lastpl && !strcmp(lastpl->mn, p) ? lastpl : ht_get(&g_pend, p);
+                if (!pl) {
+                    if (g_npl == g_cpl) { g_cpl = g_cpl ? g_cpl * 2 : 512; g_pl = xrealloc(g_pl, g_cpl * sizeof *g_pl); }
+                    pl = g_pl[g_npl++] = xcalloc(1, sizeof *pl);
+                    pl->mn = p;
+                    ht_put(&g_pend, p, pl);
+                }
+                lastpl = pl;
+                if (pl->tail) pl->tail->next = r;
+                else pl->head = r;
+                pl->tail = r;
+            }
         }
         p = q + 1;
     }
+    cur_level = level;
+}
+
+/* Turns the waiting rows of one mnemonic into table entries, in their original order. */
+static void tab_load(const char *mn)
+{
+    PendList *pl = g_pend.b ? ht_get(&g_pend, mn) : NULL;
+    if (!pl || !pl->head) return;
+    int saved = cur_level;
+    if (!strcmp(mn, "vcvtneps2bf16")) {
+        /* The generated rows give this conversion a third operand and the same size on both sides. It has two operands and the destination is half as wide as the source: xmm from xmm or ymm, ymm from zmm. */
+        pl->head = pl->tail = NULL;
+        cur_level = 15;
+        T(pl->mn, "vx|mask|z,vx16|b32", "xv:E:0:2:2:0:fv 72 /r rl:rm");
+        T(pl->mn, "vx|mask|z,vy32|b32", "xv:E:1:2:2:0:fv 72 /r rl:rm");
+        T(pl->mn, "vy|mask|z,vz64|b32", "xv:E:2:2:2:0:fv 72 /r rl:rm");
+        cur_level = 14;
+        T(pl->mn, "vx,vx16", "xv:V:0:2:2:0:x 72 /r rl:rm late sf");
+        T(pl->mn, "vx,vy32", "xv:V:1:2:2:0:x 72 /r rl:rm late sf");
+        cur_level = saved;
+        for (Ent *e = ht_get(&g_etab, mn); e; e = e->next) mark_entry(e);
+        return;
+    }
+    Ent *last = ht_get(&g_etab, mn);
+    while (last && last->next) last = last->next;
+    for (Pend *r = pl->head; r; r = r->next) {
+        cur_level = r->level;
+        T(pl->mn, r->ops, r->enc);
+    }
+    pl->head = pl->tail = NULL;
+    cur_level = saved;
+    for (Ent *e = last ? last->next : ht_get(&g_etab, mn); e; e = e->next) mark_entry(e);
+}
+
+/* Looks up the entries of a mnemonic, loading its generated rows first. */
+Ent *tab_lookup(const char *mn)
+{
+    tab_load(mn);
+    return ht_get(&g_etab, mn);
+}
+
+/* Loads every waiting row. Used by the commands that list or search the whole table. */
+static void tab_load_all(void)
+{
+    for (size_t i = 0; i < g_npl; i++) if (g_pl[i]->head) tab_load(g_pl[i]->mn);
 }
 
 /* Adds one instruction table row: mnemonic, comma separated operand specs, and the encoding string. */
 void T(const char *mn, const char *ops, const char *enc)
 {
+#define TK(lit) (t[0] == (lit)[0] && !strncmp(t, lit, sizeof(lit) - 1))
     Ent *e = xcalloc(1, sizeof *e);
     e->mn = mn;
     e->level = (u8)cur_level;
@@ -138,16 +233,16 @@ void T(const char *mn, const char *ops, const char *enc)
     }
     e->nops = n;
     for (const char *t = enc; *t; ) {
-        if (!strncmp(t, "o16", 3)) e->osz = 16;
-        else if (!strncmp(t, "o32", 3)) e->osz = 32;
-        else if (!strncmp(t, "only64", 6)) e->mode = 1;
-        else if (!strncmp(t, "no64", 4)) e->mode = 2;
+        if (TK("o16")) e->osz = 16;
+        else if (TK("o32")) e->osz = 32;
+        else if (TK("only64")) e->mode = 1;
+        else if (TK("no64")) e->mode = 2;
         while (*t && *t != ' ') t++;
         while (*t == ' ') t++;
     }
     for (int i = 0; i < n; i++) if (!e->msize) e->msize = (u8)spec_msize(e->sp[i]);
     for (const char *t = enc; *t; ) {
-        if (!strncmp(t, "xv:", 3)) {
+        if (TK("xv:")) {
             char k = t[3];
             int L, pp, mp, W;
             char tu[8] = "";
@@ -160,12 +255,24 @@ void T(const char *mn, const char *ops, const char *enc)
                 { "qvm", TU_QVM }, { "ovm", TU_OVM }, { "m128", TU_M128 }, { "dup", TU_DUP }, { NULL, 0 }
             };
             for (int i = 0; tt[i].n; i++) if (!strcmp(tt[i].n, tu)) e->tuple = (u8)tt[i].v;
-        } else if (!strncmp(t, "rl:", 3)) {
+            /* A scalar tuple with a 2 or 1 byte memory operand scales disp8 by that size. The generated data says plain t1s for the FP16 scalar rows (vaddsh and friends), which scales by 4 and addresses the wrong bytes. */
+            if (e->tuple == TU_T1S) {
+                for (int q = 0; q < e->nops; q++) {
+                    int ms = 0;
+                    if (IS_SV(e->sp[q])) ms = SV_VSIB(e->sp[q]) ? 0 : (SV_MEM(e->sp[q]) ? 1 << (SV_MEM(e->sp[q]) - 1) : 0);
+                    else ms = spec_msize(e->sp[q]);
+                    if (ms == 2) e->tuple = TU_T1S16;
+                    else if (ms == 1) e->tuple = TU_T1S8;
+                }
+            }
+        } else if (TK("rl:")) {
             size_t l = 0;
             while (t[3 + l] && t[3 + l] != ' ' && l < 7) { e->rl[l] = t[3 + l]; l++; }
-        } else if (!strncmp(t, "dup", 3) && (t[3] == ' ' || !t[3])) e->dup = 1;
-        else if (!strncmp(t, "late", 4) && (t[4] == ' ' || !t[4])) e->late = 1;
-        else if (!strncmp(t, "sf", 2) && (t[2] == ' ' || !t[2])) e->sflag = 1;
+            /* The generated data spells the operand order of vreducesh rmvi; it is rvmi, like vreducess and vreducesd. */
+            if (!strcmp(e->rl, "rmvi")) memcpy(e->rl, "rvmi", 5);
+        } else if (TK("dup") && (t[3] == ' ' || !t[3])) e->dup = 1;
+        else if (TK("late") && (t[4] == ' ' || !t[4])) e->late = 1;
+        else if (TK("sf") && (t[2] == ' ' || !t[2])) e->sflag = 1;
         while (*t && *t != ' ') t++;
         while (*t == ' ') t++;
     }
@@ -174,7 +281,7 @@ void T(const char *mn, const char *ops, const char *enc)
         int tl = 0;
         while (t[tl] && t[tl] != ' ') tl++;
         if (t[0] == '=') len++;
-                else if (isxdigit((unsigned char)t[0]) && isxdigit((unsigned char)t[1]) && (t[2] == ' ' || t[2] == 0 || t[2] == '+') && !(tl == 2 && !strncmp(t, "cb", 2)) && !(tl == 2 && !strncmp(t, "cd", 2))) len++;
+                else if (isxdigit((unsigned char)t[0]) && isxdigit((unsigned char)t[1]) && (t[2] == ' ' || t[2] == 0 || t[2] == '+') && !(tl == 2 && TK("cb")) && !(tl == 2 && TK("cd"))) len++;
         while (*t && *t != ' ') t++;
         while (*t == ' ') t++;
     }
@@ -182,6 +289,7 @@ void T(const char *mn, const char *ops, const char *enc)
     Ent *h = ht_get(&g_etab, mn);
     if (!h) ht_put(&g_etab, mn, e);
     else { while (h->next) h = h->next; h->next = e; }
+#undef TK
 }
 
 /* printf style version of T for rows made in loops. */
@@ -1005,6 +1113,7 @@ void insn_tab_init(void)
 /* Prints the table for --dump-insns. */
 void insn_dump(FILE *f)
 {
+    tab_load_all();
     for (size_t i = 0; i < g_etab.nb; i++)
         for (HEnt *h = g_etab.b[i]; h; h = h->next)
             for (Ent *e = h->val; e; e = e->next) {
@@ -1042,7 +1151,7 @@ int insn_known(const char *mn)
     if (n >= sizeof b) return 0;
     for (size_t i = 0; i <= n; i++) b[i] = (char)tolower((unsigned char)mn[i]);
     if (!strcmp(b, "syscall")) return 1;
-    return ht_get(&g_etab, b) != NULL;
+    return tab_lookup(b) != NULL;
 }
 
 /* Closest instruction or directive name for the did you mean hint. */
@@ -1051,6 +1160,7 @@ const char *insn_suggest(const char *mn)
     static const char *dirs[] = { "section", "segment", "global", "extern", "bits", "org", "align", "times", "equ", "resb", "resw", "resd", "db", "dw", "dd", "dq", "incbin", "default", "absolute", "common", "struc", "endstruc", "istruc", "iend", "cpu", NULL };
     size_t n = strlen(mn);
     if (n < 3) return NULL;
+    tab_load_all();
     const char *best = NULL;
     int bd = n <= 4 ? 1 : 2;
     for (size_t i = 0; i < g_etab.nb; i++)
@@ -1084,27 +1194,38 @@ static int has_spec(const Ent *e, int a)
     return 0;
 }
 
-/* Marks instructions that do not exist in 64-bit mode (aaa, daa, pusha ...). */
-static void mark_nolong(void)
+/* Marks one instruction that does not exist in 64-bit mode (aaa, daa, pusha ...). */
+static void mark_entry(Ent *e)
 {
     static const char *nl[] = {
         "aaa", "aad", "aam", "aas", "daa", "das", "bound", "into", "pusha", "popa", "pushad", "popad", "pushaw", "popaw",
         "arpl", "les", "lds", "salc", "pushfd", "popfd", "retd", "retnd", NULL
     };
+    if (e->mode || e->vkind) return;
+    int bad = 0;
+    for (int k = 0; nl[k]; k++) if (nl[k][0] == e->mn[0] && !strcmp(e->mn, nl[k])) bad = 1;
+    /* One pass over the encoding words looking for the short 32-bit register forms (40+r, 48+r) and the a16 prefix. */
+    for (const char *t = e->enc; *t && !bad; ) {
+        const char *w = t;
+        while (*t && *t != ' ') t++;
+        size_t l = (size_t)(t - w);
+        if ((l == 4 && (w[0] == '4') && (w[1] == '0' || w[1] == '8') && w[2] == '+' && w[3] == 'r') || (l == 3 && w[0] == 'a' && w[1] == '1' && w[2] == '6')) bad = 1;
+        while (*t == ' ') t++;
+    }
+    if (!strcmp(e->mn, "push") || !strcmp(e->mn, "pop")) {
+        if (has_spec(e, S_R32) || has_spec(e, S_RM32) || has_spec(e, S_SB32) || has_spec(e, S_IMM32) || has_spec(e, S_ES) || has_spec(e, S_CS) || has_spec(e, S_SS) || has_spec(e, S_DS)) bad = 1;
+    }
+    if (!strcmp(e->mn, "call") || !strcmp(e->mn, "jmp")) {
+        if (has_spec(e, S_RM16) || has_spec(e, S_RM32) || has_spec(e, S_FARPTR)) bad = 1;
+    }
+    if (!strcmp(e->mn, "mov") && (has_spec(e, S_CR) || has_spec(e, S_DR) || has_spec(e, S_TR))) bad = 1;
+    if (bad) e->mode = 2;
+}
+
+/* Marks the hand written entries; generated ones are marked as they load. */
+static void mark_nolong(void)
+{
     for (size_t i = 0; i < g_etab.nb; i++)
         for (HEnt *h = g_etab.b[i]; h; h = h->next)
-            for (Ent *e = h->val; e; e = e->next) {
-                if (e->mode || e->vkind) continue;
-                int bad = 0;
-                for (int k = 0; nl[k]; k++) if (!strcmp(e->mn, nl[k])) bad = 1;
-                if (has_tok(e, "40+r") || has_tok(e, "48+r") || has_tok(e, "a16")) bad = 1;
-                if (!strcmp(e->mn, "push") || !strcmp(e->mn, "pop")) {
-                    if (has_spec(e, S_R32) || has_spec(e, S_RM32) || has_spec(e, S_SB32) || has_spec(e, S_IMM32) || has_spec(e, S_ES) || has_spec(e, S_CS) || has_spec(e, S_SS) || has_spec(e, S_DS)) bad = 1;
-                }
-                if (!strcmp(e->mn, "call") || !strcmp(e->mn, "jmp")) {
-                    if (has_spec(e, S_RM16) || has_spec(e, S_RM32) || has_spec(e, S_FARPTR)) bad = 1;
-                }
-                if (!strcmp(e->mn, "mov") && (has_spec(e, S_CR) || has_spec(e, S_DR) || has_spec(e, S_TR))) bad = 1;
-                if (bad) e->mode = 2;
-            }
+            for (Ent *e = h->val; e; e = e->next) mark_entry(e);
 }

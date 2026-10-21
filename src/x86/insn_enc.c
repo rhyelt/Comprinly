@@ -885,7 +885,7 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     if (n >= sizeof key) { err("unknown instruction `%s'", mn); return 0; }
     for (size_t i = 0; i <= n; i++) key[i] = (char)tolower((unsigned char)mn[i]);
     cur_bits = ic->bits;
-    const Ent *head = ht_get(&g_etab, key);
+    const Ent *head = tab_lookup(key);
     if (!head) { err("unknown instruction `%s'", mn); ic->nomatch = 2; return 0; }
     Op mib[2];
     if (nops == 3 && (!strcmp(key, "bndldx") || !strcmp(key, "bndstx"))) {

@@ -556,6 +556,7 @@ static int parse_primary(EP *e, Val *v)
                 }
             }
             int sz;
+            if (reg_bad32(name)) { err("`%s' is a 64-bit register; i386 / IA-32 code has eax, ecx, edx, ebx, esp, ebp, esi and edi", name); return 0; }
             int rid = reg_lookup(name, &sz);
             if (rid) {
                 if (!(e->flags & EF_EA)) { err("register `%s' not allowed in this expression", name); return 0; }

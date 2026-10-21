@@ -159,6 +159,25 @@ int reg_lookup(const char *name, int *size)
     return REGID(d->cls, d->num);
 }
 
+/* True if the name is a register that only exists in 64-bit mode (rax, r8d, sil ...) and the target is i386 / IA-32 code. The caller reports the error. */
+int reg_bad32(const char *name)
+{
+    if (!g_ia32 || rmode64) return 0;
+    if (!reg_ready) reg_init();
+    char b[16];
+    size_t n = strlen(name);
+    if (n >= sizeof b || n < 3) return 0;
+    for (size_t i = 0; i <= n; i++) b[i] = (char)tolower((unsigned char)name[i]);
+    static const char *r64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "spl", "bpl", "sil", "dil", NULL };
+    for (int i = 0; r64[i]; i++) if (!strcmp(b, r64[i])) return 1;
+    if (b[0] == 'r' && isdigit((unsigned char)b[1])) {
+        char *e;
+        long v = strtol(b + 1, &e, 10);
+        if (v >= 8 && v <= 15 && (!*e || ((*e == 'd' || *e == 'w' || *e == 'b' || *e == 'l') && !e[1]))) return 1;
+    }
+    return 0;
+}
+
 /* Name of a register id. */
 const char *reg_name(int id)
 {

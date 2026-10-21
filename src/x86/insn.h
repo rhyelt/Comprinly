@@ -51,6 +51,7 @@ typedef struct Ent {
 } Ent;
 
 extern HT g_etab;
+Ent *tab_lookup(const char *mn);
 void insn_tab_init(void);
 int spec_msize(int s);
 void T(const char *mn, const char *ops, const char *enc);

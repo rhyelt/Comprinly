@@ -77,7 +77,11 @@ static void parse_nl(NC *c, const char *text, NL *L)
     if (!arch_known(c->arch, L->mn)) { L->kind = N_OTHER; return; }
     const char *rest = sk(p);
     char tmp[512];
-    snprintf(tmp, sizeof tmp, "%s", rest);
+    {
+        size_t k = 0;
+        while (rest[k] && k < sizeof tmp - 1) { tmp[k] = rest[k]; k++; }
+        tmp[k] = 0;
+    }
     char *sc = strchr(tmp, ';');
     if (sc) *sc = 0;
     if (strchr(tmp, '"') || strchr(tmp, '\'') || strchr(tmp, '$') || strchr(tmp, '{')) { L->kind = N_OTHER; return; }

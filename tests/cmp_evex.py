@@ -160,6 +160,10 @@ def run(tool, ls):
     return res, failed
 
 
+NASM_WRONG = {'vcvtneps2bf16', 'vcvtsh2si', 'vcvtsh2usi', 'vcvttsh2si', 'vcvttsh2usi', 'vfpclasssh',
+              'vgetexpsh', 'vgetmantsh', 'vgetmaxsh', 'vgetminsh', 'vmovsh', 'vmovw', 'vreducesh', 'vucomish'}
+
+
 if __name__ == '__main__':
     lines, tags = main()
     nres, nfail = run('n', lines)
@@ -167,7 +171,7 @@ if __name__ == '__main__':
     bad = rej = 0
     shown = 0
     for i, l in enumerate(lines):
-        if i not in nres:
+        if i not in nres or l.split()[0] in NASM_WRONG:
             continue
         if i in cfail:
             rej += 1

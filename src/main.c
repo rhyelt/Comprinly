@@ -3,16 +3,16 @@
 #include <errno.h>
 
 static int g_dumpopt;
-static const char *short_usage = "usage: cly <bare|windows|linux|mac> <file> [-bin|-elf|-exe|-macho|-obj|-o|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
+static const char *short_usage = "usage: cly <bare|windows|linux|linux32|mac> <file> [-bin|-elf|-exe|-macho|-obj|-o|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
 
-static const char *kernel_names[] = { "bare", "windows", "linux", "mac" };
+static const char *kernel_names[] = { "bare", "windows", "linux", "linux32", "mac" };
 
 static const char *usage_text =
     "Comprinly " CLY_VERSION "\n"
     "\n"
     "usage: cly <kernel> <file> [-type] [modes] [options]\n"
     "\n"
-    "kernels: bare, windows, linux, mac\n"
+    "kernels: bare, windows, linux, linux32 (32-bit Linux), mac\n"
     "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff\n"
     "         (-o writes an object file named .o on every kernel; use -out FILE to name any output)\n"
     "\n"
@@ -24,6 +24,7 @@ static const char *usage_text =
     "  -fix          make the leak-free copy the main output\n"
     "  -fixsrc       also write the source of the leak-free copy\n"
     "  -O0           turn the optimizer off (it is on by default)\n"
+    "  -O3, -Ofast   also make the program faster at the cost of a few bytes (32-bit division shortcut)\n"
     "  -Werror       treat warnings as errors\n"
     "  -M, -MD       print a make rule with the files used, or write it to <output>.d\n"
     "  -log[=FILE]   log every compile step with timestamps (screen or file)\n"
@@ -36,7 +37,7 @@ static const char *usage_text =
     "  -P FILE       pre-include a file\n"
     "  -l [FILE]     write a listing\n"
     "  -m32, -m64    force 32-bit or 64-bit code (default: 64 for linux, windows, mac; 32 for bare)\n"
-    "  -cpu NAME     target cpu: x86-64, arm64 or risc-v (rv64gc, rv32imac, ...); a `cpu' line on\n"
+    "  -cpu NAME     target cpu: x86-64, i386 / ia32 (32-bit Intel), arm64 or risc-v (rv64gc, rv32imac, ...); a `cpu' line on\n"
     "                the first line of the source does the same, otherwise it is guessed\n"
     "  -E            preprocess only\n"
     "  -w            hide warnings\n"
@@ -51,7 +52,7 @@ static int parse_kernel(const char *s)
 {
     if (!strcasecmp(s, "bare") || !strcasecmp(s, "baremetal") || !strcasecmp(s, "bare-metal") || !strcasecmp(s, "none")) return K_BARE;
     if (!strcasecmp(s, "windows") || !strcasecmp(s, "win") || !strcasecmp(s, "win32") || !strcasecmp(s, "nt")) return K_WINDOWS;
-    if (!strcasecmp(s, "linux") || !strcasecmp(s, "lin")) return K_LINUX;
+    if (!strcasecmp(s, "linux") || !strcasecmp(s, "lin") || !strcasecmp(s, "linux32") || !strcasecmp(s, "linux64")) return K_LINUX;
     if (!strcasecmp(s, "mac") || !strcasecmp(s, "macos") || !strcasecmp(s, "osx") || !strcasecmp(s, "darwin")) return K_MAC;
     return -1;
 }
@@ -214,19 +215,22 @@ int main(int argc, char **argv)
     int mbits = 0;
     int optimize = 1, depmode = 0;
     int cli_arch = -1, cli_rvext = 0, rv_generic = 0;
+    const char *ia32_name = NULL;
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
         if (!strcmp(a, "-h") || !strcmp(a, "--help") || !strcmp(a, "-?")) { fputs(usage_text, stdout); return 0; }
         if (!strcmp(a, "-v") || !strcmp(a, "--version") || !strcmp(a, "-version")) { printf("Comprinly %s\n", CLY_VERSION); return 0; }
         if (!strcmp(a, "-O0")) { optimize = 0; continue; }
-        if (!strcmp(a, "-O") || !strcmp(a, "-O1") || !strcmp(a, "-O2") || !strcmp(a, "-O3") || !strcmp(a, "-Os")) { optimize = 1; continue; }
+        if (!strcmp(a, "-O") || !strcmp(a, "-O1") || !strcmp(a, "-O2") || !strcmp(a, "-Os")) { optimize = 1; continue; }
+        if (!strcmp(a, "-O3") || !strcmp(a, "-Ofast")) { optimize = 1; g_speed = 1; continue; }
         if (!strcmp(a, "-cpu") || !strcmp(a, "--cpu") || !strcmp(a, "-arch") || !strcmp(a, "--arch")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a cpu name\n", a); return 1; }
             const char *nm = argv[++i];
             cli_arch = arch_parse(nm, &cli_rvext);
             rv_generic = arch_rv_generic(nm);
             if (cli_arch == -2) { fprintf(stderr, "cly: `%s' is not supported (32-bit ARM is not available; use arm64)\n", nm); return 1; }
-            if (cli_arch < 0) { fprintf(stderr, "cly: unknown cpu `%s'; use x86-64, arm64 or risc-v\n", nm); return 1; }
+            if (cli_arch < 0) { fprintf(stderr, "cly: unknown cpu `%s'; use x86-64, i386, ia32, arm64 or risc-v\n", nm); return 1; }
+            if (cli_arch == ARCH_X86 && ia32_cpu(nm, &g_cpu_lvl)) { g_ia32 = 1; ia32_name = nm; }
             continue;
         }
         if (!strcmp(a, "-m32")) { mbits = 32; continue; }
@@ -298,7 +302,14 @@ int main(int argc, char **argv)
     }
     for (int i = 0; i < npos; i++) {
         int k = parse_kernel(pos[i]);
-        if (k >= 0 && kernel < 0 && !file_exists(pos[i])) { kernel = k; continue; }
+        if (k >= 0 && kernel < 0 && !file_exists(pos[i])) {
+            kernel = k;
+            /* linux32 and linux64 are Linux with the code size already chosen, the same as -m32 and -m64. */
+            int want = !strcasecmp(pos[i], "linux32") ? 32 : !strcasecmp(pos[i], "linux64") ? 64 : 0;
+            if (want && mbits && mbits != want) { fprintf(stderr, "cly: `%s' conflicts with -m%d\n", pos[i], mbits); return 1; }
+            if (want) mbits = want;
+            continue;
+        }
         if (!file) { file = pos[i]; continue; }
         if (kernel < 0 && !type_set && parse_type(pos[i]) < 0) break;
         if (!type_set) {
@@ -396,12 +407,17 @@ int main(int argc, char **argv)
                     rvext = fx;
                     rv_generic = arch_rv_generic(arg);
                     arch_from_file = 1;
+                    if (fa == ARCH_X86 && !ia32_name && ia32_cpu(arg, &g_cpu_lvl)) { g_ia32 = 1; ia32_name = xstrdup(arg); }
                 }
             }
             for (int i = 0; i < tmp.n; i++) free(tmp.v[i].text);
             free(tmp.v);
             free(raw);
         }
+    }
+    if (g_ia32) {
+        if (mbits == 64) { fprintf(stderr, "cly: cpu %s is a 32-bit cpu; -m64 does not apply\n", ia32_name); return 1; }
+        if (!mbits) mbits = 32;
     }
     int guessed = 0;
     if (arch < 0) arch = ARCH_X86;
