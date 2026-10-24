@@ -12,7 +12,30 @@ static int add_str(Bytes *tab, const char *s)
     return off;
 }
 
+static int add_str_tail(Bytes *tab, const char *s)
+{
+    size_t n = strlen(s) + 1;
+    for (size_t i = 0; i + n <= tab->n; i++) {
+        if (!memcmp((char *)tab->p + i, s, n) && (i + n == tab->n || ((char *)tab->p)[i + n - 1] == 0)) return (int)i;
+    }
+    return add_str(tab, s);
+}
+
 static int W64;
+static int X32;
+
+static void put_rela(Bytes *b, u64 off, u64 sym, u64 type, u64 add)
+{
+    if (W64) {
+        badle(b, off, 8);
+        badle(b, (sym << 32) | type, 8);
+        badle(b, add, 8);
+    } else {
+        put32(b, (u32)off);
+        put32(b, (u32)((sym << 8) | (type & 255)));
+        put32(b, (u32)add);
+    }
+}
 
 static void putwd(Bytes *b, u64 v) { badle(b, v, W64 ? 8 : 4); }
 
@@ -32,12 +55,44 @@ static void shdr(Bytes *f, u32 name, u32 type, u64 flags, u64 off, u64 size, u32
 }
 
 static int g_other;
+typedef struct { size_t at; char *name; } NameRef;
+static NameRef *g_nr;
+static int g_nnr, g_cnr;
+
+static void name_ref(Bytes *st, const char *name)
+{
+    if (!name || !*name) { put32(st, 0); return; }
+    if (g_nnr == g_cnr) { g_cnr = g_cnr ? g_cnr * 2 : 64; g_nr = xrealloc(g_nr, sizeof(NameRef) * (size_t)g_cnr); }
+    g_nr[g_nnr].at = st->n;
+    g_nr[g_nnr].name = xstrdup(name);
+    g_nnr++;
+    put32(st, 0);
+}
+
+static int nr_cmp(const void *a, const void *b)
+{
+    size_t la = strlen(((const NameRef *)a)->name), lb = strlen(((const NameRef *)b)->name);
+    return la < lb ? 1 : la > lb ? -1 : 0;
+}
+
+static void name_flush(Bytes *st, Bytes *str)
+{
+    if (!g_nnr) return;
+    qsort(g_nr, (size_t)g_nnr, sizeof(NameRef), nr_cmp);
+    for (int i = 0; i < g_nnr; i++) {
+        int off = add_str_tail(str, g_nr[i].name);
+        bputle(st, g_nr[i].at, (u64)off, 4);
+        free(g_nr[i].name);
+    }
+    g_nnr = 0;
+}
 
 /* Writes one symbol table entry (32 or 64-bit layout). */
 static void put_sym(Bytes *st, Bytes *str, const char *name, u64 value, u64 size, int info, int shn)
 {
     if (W64) {
-        put32(st, name && *name ? (u32)add_str(str, name) : 0);
+        (void)str;
+        name_ref(st, name);
         bad1(st, (u8)info);
         bad1(st, (u8)g_other);
         put16(st, (u16)shn);
@@ -45,7 +100,7 @@ static void put_sym(Bytes *st, Bytes *str, const char *name, u64 value, u64 size
         badle(st, size, 8);
         return;
     }
-    put32(st, name && *name ? (u32)add_str(str, name) : 0);
+    name_ref(st, name);
     put32(st, value);
     put32(st, size);
     bad1(st, (u8)info);
@@ -99,19 +154,54 @@ static int rv_elf_type(Reloc *r, int *ok)
     return 0;
 }
 
+void obj_live_secs(Obj *o, int *keep, int *secsym)
+{
+    int narch = o->arch != ARCH_X86;
+    for (int i = 0; i < o->nsecs; i++) {
+        Sec *s = o->secs[i];
+        keep[i] = s->size > 0 || s->data.n > 0 || i == 0;
+        secsym[i] = 0;
+        if (g_nasm) keep[i] = secsym[i] = 1;
+    }
+    for (int i = 0; i < o->nrelocs; i++) {
+        Reloc *r = &o->relocs[i];
+        if (r->sec >= 0 && r->sec < o->nsecs) keep[r->sec] = 1;
+        if (!r->v.ext && r->v.pos >= 0 && r->v.pos < o->nsecs) {
+            keep[r->v.pos] = 1;
+            if (!(narch && (r->kind == RK_RV_PCLO12I || r->kind == RK_RV_PCLO12S))) secsym[r->v.pos] = 1;
+        }
+        if (r->v.neg >= 0 && r->v.neg < o->nsecs) { keep[r->v.neg] = 1; secsym[r->v.neg] = 1; }
+    }
+    for (int i = 0; i < o->nsyms; i++) {
+        Sym *s = o->syms[i];
+        if (s->defined && !s->isequ && !s->common && !s->ext && s->sec >= 0 && s->sec < o->nsecs) keep[s->sec] = 1;
+    }
+}
+
 /* Builds the object file: sections, symbol table with FILE symbol and section symbols, relocations and string tables. */
 int fmt_elfobj(Obj *o, Bytes *out)
 {
     int ns = o->nsecs;
+    g_nnr = 0;
     int narch = o->arch != ARCH_X86;
-    W64 = o->is64;
+    X32 = o->otype == T_X32;
+    W64 = o->is64 && !X32;
     Bytes symtab = {0}, strtab = {0}, shstr = {0};
     bad1(&strtab, 0);
     bad1(&shstr, 0);
+    int *keep = xcalloc((size_t)ns + 1, sizeof(int)), *need = xcalloc((size_t)ns + 1, sizeof(int));
+    int *secnew = xcalloc((size_t)ns + 1, sizeof(int)), *secsym = xcalloc((size_t)ns + 1, sizeof(int));
+    obj_live_secs(o, keep, need);
+    int nk = 0;
+    for (int i = 0; i < ns; i++) if (keep[i]) secnew[i] = ++nk;
     put_sym(&symtab, &strtab, NULL, 0, 0, 0, 0);
-    for (int i = 0; i < ns; i++) put_sym(&symtab, &strtab, NULL, 0, 0, 3, i + 1);
-    int nsym = 1 + ns;
-    if (o->src) {
+    int nsym = 1;
+    for (int i = 0; i < ns; i++) {
+        if (!keep[i] || !need[i]) continue;
+        put_sym(&symtab, &strtab, NULL, 0, 0, 3, secnew[i]);
+        secsym[i] = nsym++;
+    }
+    if (o->src && g_nasm) {
         const char *fn = o->src;
         put_sym(&symtab, &strtab, fn, 0, 0, 4, 0xfff1);
         nsym++;
@@ -139,7 +229,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
         for (int k = 0; k < nsyn; k++) {
             char nm[40];
             snprintf(nm, sizeof nm, ".Lpcrel_hi%d", k);
-            put_sym(&symtab, &strtab, nm, (u64)syn_off[k], 0, 0, syn_sec[k] + 1);
+            put_sym(&symtab, &strtab, nm, (u64)syn_off[k], 0, 0, secnew[syn_sec[k]]);
             syn_idx[k] = nsym++;
         }
         nlocal = nsym;
@@ -157,11 +247,11 @@ int fmt_elfobj(Obj *o, Bytes *out)
             g_other = s->svis;
             int ty = s->stype;
             if (s->defined && !s->common && !s->ext) {
-                if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, s->name, (u64)(s->isequ ? s->eqv.n : s->off), (u64)s->ssize, (glob ? 0x10 : 0) | ty, 0xFFF1);
-                else put_sym(&symtab, &strtab, s->name, (u64)s->off, (u64)s->ssize, (glob ? 0x10 : 0) | ty, s->sec + 1);
+                if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)(s->isequ ? s->eqv.n : s->off), (u64)s->ssize, (glob ? 0x10 : 0) | ty, 0xFFF1);
+                else put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)s->off, (u64)s->ssize, (glob ? 0x10 : 0) | ty, secnew[s->sec]);
             } else if (s->common) {
-                put_sym(&symtab, &strtab, s->name, (u64)s->commonalign, (u32)s->commonsize, 0x10 | ty, 0xFFF2);
-            } else put_sym(&symtab, &strtab, s->name, 0, 0, 0x10, 0);
+                put_sym(&symtab, &strtab, sym_mangle(s, 1), (u64)s->commonalign, (u32)s->commonsize, 0x10 | ty, 0xFFF2);
+            } else put_sym(&symtab, &strtab, sym_mangle(s, 1), 0, 0, 0x10, 0);
             g_other = 0;
             symidx[i] = nsym++;
             if (pass == 0) nlocal = nsym;
@@ -195,15 +285,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
             int ty = rv_elf_type(r, &ok2);
             Sec *s2 = o->secs[r->sec];
             if (!s2->nobits && (size_t)(r->off + 4) <= s2->data.n) {}
-            if (W64) {
-                badle(&rel[r->sec], (u64)r->off, 8);
-                badle(&rel[r->sec], ((u64)symi << 32) | (u64)ty, 8);
-                badle(&rel[r->sec], 0, 8);
-            } else {
-                put32(&rel[r->sec], (u32)r->off);
-                put32(&rel[r->sec], ((u32)symi << 8) | (u32)ty);
-                put32(&rel[r->sec], 0);
-            }
+            put_rela(&rel[r->sec], (u64)r->off, (u64)symi, (u64)ty, 0);
             continue;
         }
         if (v->ext) {
@@ -211,7 +293,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
             for (int j = 0; j < o->nsyms; j++) if (o->syms[j] == v->ext) k = j;
             if (k < 0 || !symidx[k]) { err("symbol `%s' has no ELF symbol", v->ext->name); continue; }
             symi = symidx[k];
-        } else if (v->pos >= 0) symi = 1 + v->pos;
+        } else if (v->pos >= 0) symi = secsym[v->pos];
         else continue;
         int type;
         i64 add = v->n;
@@ -226,18 +308,10 @@ int fmt_elfobj(Obj *o, Bytes *out)
                 continue;
             }
             if (!s->nobits && (size_t)(r->off + r->size) <= s->data.n && r->size > 0 && r->size <= 8 && (r->kind == RK_ABS || r->kind == RK_REL)) bputle(&s->data, (size_t)r->off, 0, r->size);
-            if (W64) {
-                badle(&rel[r->sec], (u64)r->off, 8);
-                badle(&rel[r->sec], ((u64)symi << 32) | (u64)type, 8);
-                badle(&rel[r->sec], (u64)add, 8);
-            } else {
-                put32(&rel[r->sec], (u32)r->off);
-                put32(&rel[r->sec], ((u32)symi << 8) | (u32)type);
-                put32(&rel[r->sec], (u32)add);
-            }
+            put_rela(&rel[r->sec], (u64)r->off, (u64)symi, (u64)type, (u64)add);
             continue;
         }
-        if (W64) {
+        if (o->is64) {
             if (r->kind == RK_REL) {
                 add = v->n + r->off - r->relbase;
                 type = r->size == 8 ? 24 : r->size == 4 ? 2 : r->size == 2 ? 13 : 15;
@@ -255,9 +329,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
                 else if (r->size == 4 && v->wk == 6) type = 23;
             }
             if (!s->nobits && (size_t)(r->off + r->size) <= s->data.n) bputle(&s->data, (size_t)r->off, 0, r->size);
-            badle(&rel[r->sec], (u64)r->off, 8);
-            badle(&rel[r->sec], ((u64)symi << 32) | (u64)type, 8);
-            badle(&rel[r->sec], (u64)add, 8);
+            put_rela(&rel[r->sec], (u64)r->off, (u64)symi, (u64)type, (u64)add);
             continue;
         }
         if (r->kind == RK_REL) {
@@ -275,26 +347,28 @@ int fmt_elfobj(Obj *o, Bytes *out)
         put32(&rel[r->sec], ((u32)symi << 8) | (u32)type);
     }
     if (g_errors) return 0;
+    name_flush(&symtab, &strtab);
     int *sname = xcalloc((size_t)ns + 1, sizeof(int));
     int *rname = xcalloc((size_t)ns + 1, sizeof(int));
-    for (int i = 0; i < ns; i++) sname[i] = add_str(&shstr, o->secs[i]->name);
     int nrels = 0;
-    for (int i = 0; i < ns; i++) {
-        if (rel[i].n) {
-            char buf[300];
-            snprintf(buf, sizeof buf, (W64 || narch) ? ".rela%s" : ".rel%s", o->secs[i]->name);
-            rname[i] = add_str(&shstr, buf);
-            nrels++;
-        }
-    }
+    for (int i = 0; i < ns; i++) if (keep[i] && rel[i].n) nrels++;
     int n_symtab = add_str(&shstr, ".symtab");
     int n_strtab = add_str(&shstr, ".strtab");
     int n_shstr = add_str(&shstr, ".shstrtab");
     int n_gnustack = add_str(&shstr, ".note.GNU-stack");
+    for (int i = 0; i < ns; i++) {
+        if (!keep[i]) continue;
+        if (rel[i].n) {
+            char buf[300];
+            snprintf(buf, sizeof buf, (o->is64 || narch) ? ".rela%s" : ".rel%s", o->secs[i]->name);
+            rname[i] = add_str_tail(&shstr, buf);
+        }
+        sname[i] = add_str_tail(&shstr, o->secs[i]->name);
+    }
     Bytes f = {0};
     u8 ident[16] = { 0x7F, 'E', 'L', 'F', (u8)(W64 ? 2 : 1), 1, 1, 0 };
     badd(&f, ident, 16);
-    int mach = o->arch == ARCH_A64 ? 183 : (o->arch == ARCH_RV64 || o->arch == ARCH_RV32) ? 243 : (W64 ? 62 : 3);
+    int mach = o->arch == ARCH_A64 ? 183 : (o->arch == ARCH_RV64 || o->arch == ARCH_RV32) ? 243 : (o->is64 ? 62 : 3);
     u32 eflags = 0;
     if (o->arch == ARCH_RV64 || o->arch == ARCH_RV32) {
         if (o->rvext & RVX_C) eflags |= 1;
@@ -305,21 +379,21 @@ int fmt_elfobj(Obj *o, Bytes *out)
     size_t shoff_pos = f.n;
     putwd(&f, 0); put32(&f, eflags);
     put16(&f, W64 ? 64 : 52); put16(&f, 0); put16(&f, 0); put16(&f, W64 ? 64 : 40);
-    int total = 1 + ns + 3 + nrels + 1;
+    int total = 1 + nk + 3 + nrels + 1;
     put16(&f, (u16)total);
-    put16(&f, (u16)(ns + 3));
+    put16(&f, (u16)(nk + 3));
     size_t *soff = xcalloc((size_t)ns + 1, sizeof(size_t));
     for (int i = 0; i < ns; i++) {
         Sec *s = o->secs[i];
-        if (s->nobits) continue;
-        while (f.n & 15) bad1(&f, 0);
+        if (s->nobits || !keep[i]) continue;
+        while (f.n & ((size_t)(s->align > 8 ? 8 : s->align > 4 ? 4 : s->align > 2 ? 2 : 1) - 1)) bad1(&f, 0);
         soff[i] = f.n;
         badd(&f, s->data.p, s->data.n);
     }
     size_t *roff = xcalloc((size_t)ns + 1, sizeof(size_t));
     for (int i = 0; i < ns; i++) {
-        if (!rel[i].n) continue;
-        while (f.n & 7) bad1(&f, 0);
+        if (!rel[i].n || !keep[i]) continue;
+        while (f.n & (W64 ? 7 : 3)) bad1(&f, 0);
         roff[i] = f.n;
         badd(&f, rel[i].p, rel[i].n);
     }
@@ -335,19 +409,20 @@ int fmt_elfobj(Obj *o, Bytes *out)
     for (int i = 0; i < (W64 ? 16 : 10); i++) put32(&f, 0);
     for (int i = 0; i < ns; i++) {
         Sec *s = o->secs[i];
+        if (!keep[i]) continue;
         shdr(&f, (u32)sname[i], s->nobits ? 8 : 1, (s->alloc ? 2u : 0) | (s->write ? 1u : 0) | (s->exec ? 4u : 0), soff[i], (u64)s->size, 0, 0, (u64)(s->align > 0 ? s->align : 1), 0);
     }
-    int symtab_idx = 1 + ns;
+    int symtab_idx = 1 + nk;
     shdr(&f, (u32)n_symtab, 2, 0, sym_off, symtab.n, (u32)(symtab_idx + 1), (u32)nlocal, W64 ? 8 : 4, W64 ? 24 : 16);
     shdr(&f, (u32)n_strtab, 3, 0, str_off, strtab.n, 0, 0, 1, 0);
     shdr(&f, (u32)n_shstr, 3, 0, shs_off, shstr.n, 0, 0, 1, 0);
     for (int i = 0; i < ns; i++) {
-        if (!rel[i].n) continue;
-        shdr(&f, (u32)rname[i], (W64 || narch) ? 4 : 9, 0x40, roff[i], rel[i].n, (u32)symtab_idx, (u32)(i + 1), W64 ? 8 : 4, W64 ? 24 : (narch ? 12 : 8));
+        if (!rel[i].n || !keep[i]) continue;
+        shdr(&f, (u32)rname[i], (o->is64 || narch) ? 4 : 9, 0x40, roff[i], rel[i].n, (u32)symtab_idx, (u32)secnew[i], W64 ? 8 : 4, W64 ? 24 : ((narch || X32) ? 12 : 8));
     }
     shdr(&f, (u32)n_gnustack, 1, 0, 0, 0, 0, 0, 1, 0);
     bputle(&f, shoff_pos, (u64)sh_off, W64 ? 8 : 4);
     badd(out, f.p, f.n);
-    free(sname); free(rname); free(soff); free(roff); free(rel); free(symidx);
+    free(keep); free(need); free(secnew); free(secsym); free(sname); free(rname); free(soff); free(roff); free(rel); free(symidx);
     return 1;
 }

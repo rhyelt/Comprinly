@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.3.3"
+#define CLY_VERSION "1.3.4"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)
@@ -113,6 +113,9 @@ extern int g_hidewarn;
 extern int g_strip, g_errors, g_warnings, g_nowarn, g_nasm, g_objmode;
 void err(const char *fmt, ...);
 void warn(const char *fmt, ...);
+int warn_class_set(const char *spec);
+extern FILE *g_msgout;
+extern int g_msgvc;
 void fatal(const char *fmt, ...);
 
 /* One source line with the file and line number it came from. */
@@ -147,7 +150,7 @@ int val_isconst(const Val *v);
 /* Register classes. A register id is (class << 5) | number. */
 enum {
     RC_NONE, RC_R8, RC_R16, RC_R32, RC_R64, RC_RIP, RC_SEG, RC_CR, RC_DR, RC_TR,
-    RC_MMX, RC_XMM, RC_YMM, RC_ST, RC_VREG, RC_ZMM, RC_K, RC_BND
+    RC_MMX, RC_XMM, RC_YMM, RC_ST, RC_VREG, RC_ZMM, RC_K, RC_BND, RC_TMM
 };
 #define REGID(c, n) (((c) << 5) | (n))
 #define REGCLS(r) ((r) >> 5)
@@ -226,6 +229,8 @@ typedef struct Sec {
     i64 base;
     i64 vbase;
     i64 fileoff;
+    char *cls;
+    int sbits, combine;
 } Sec;
 
 /* Relocation kinds: plain absolute, PC relative, then the ARM64 and RISC-V instruction field kinds. */
@@ -281,6 +286,12 @@ struct Sym {
     char *sexpr;
 };
 
+/* One source line that produced code: where it landed and which file and line it came from. seq keeps the order lines were assembled in. */
+typedef struct DbgLine { int sec, file, line, seq; i64 off; } DbgLine;
+
+/* An OMF segment group: its name and the names of its member segments. */
+typedef struct OGroup { char *name; char **segs; int nsegs; } OGroup;
+
 /* The assembled program handed to the linker: sections, relocations and symbols plus facts about the target. */
 typedef struct {
     Sec **secs;
@@ -291,11 +302,19 @@ typedef struct {
     int nsyms;
     int bits;
     int is64;
+    int otype;
+    int defbits;
+    struct OGroup *groups;
+    int ngroups;
     int arch, rvext;
     int org, has_org;
     Sym *entry;
     char **listing;
     int nlist;
+    struct DbgLine *dbg;
+    int ndbg, caldbg;
+    char **dbgfiles;
+    int dbgnfiles;
     const char *src;
 } Obj;
 
@@ -309,7 +328,9 @@ typedef struct {
 
 /* Kernels (targets) and output types. */
 enum { K_BARE, K_WINDOWS, K_LINUX, K_MAC };
-enum { T_BIN, T_ELF, T_EXE, T_MACHO, T_FLAT, T_IMG, T_COM, T_HEX, T_SREC, T_OBJ, T_COFF };
+enum { T_BIN, T_ELF, T_EXE, T_MACHO, T_FLAT, T_IMG, T_COM, T_HEX, T_SREC, T_OBJ, T_COFF, T_X32, T_AOUT, T_AOUTB, T_OMF, T_AS86, T_IEEE };
+/* True for the output types that are relocatable object files. */
+#define IS_OBJ(t) ((t) == T_OBJ || (t) == T_COFF || (t) == T_X32 || (t) == T_AOUT || (t) == T_AOUTB || (t) == T_OMF || (t) == T_AS86 || (t) == T_IEEE)
 
 /* Everything the assembler needs for one build: target, source lines, listing and CPU choices. */
 typedef struct {
@@ -441,6 +462,21 @@ void link_range(Obj *o, Bytes *dst, i64 lo, i64 hi);
 void link_prepare_imports(Obj *o);
 const ImpDll *link_imports(int *n);
 int link_obj(Obj *o, int kernel, int type, Bytes *out);
+int fmt_aout(Obj *o, Bytes *out);
+int fmt_omf(Obj *o, Bytes *out);
+int fmt_as86(Obj *o, Bytes *out);
+int install_global(void);
+int install_unglobal(void);
+int install_uninstall(void);
+int install_update(void);
+void install_hint(void);
+void install_cleanup_old(void);
+int ver_newer(const char *remote, const char *local);
+void obj_live_secs(Obj *o, int *keep, int *secsym);
+int ld_link(char **files, int nfiles, const char *outpath);
+int ld_link_coff(char **files, int nfiles, const char *outpath);
+int ld_is_coff(const void *buf, size_t n);
+int fmt_ieee(Obj *o, Bytes *out);
 i64 link_entry(Obj *o);
 
 int fmt_flat(Obj *o, Bytes *out);
@@ -450,6 +486,17 @@ int fmt_macho(Obj *o, Bytes *out);
 int fmt_bare(Obj *o, Bytes *out);
 int fmt_elfobj(Obj *o, Bytes *out);
 int fmt_coff(Obj *o, Bytes *out);
+void dwarf_add_obj(Obj *o);
+void *dwarf_exe_begin(Obj *o, Bytes *shstr);
+int dwarf_exe_count(void *h);
+void dwarf_exe_data(void *h, Bytes *f);
+void dwarf_exe_headers(void *h, Bytes *f, int is64);
+void dwarf_exe_end(void *h);
+extern int g_debug;
+extern const char *g_mappath;
+extern char *g_gprefix, *g_gpostfix;
+const char *sym_mangle(const Sym *s, int glob);
+void write_map(Obj *o, int kernel, int type);
 void fmt_ihex(const Bytes *in, i64 base, i64 entry, Str *out);
 void fmt_srec(const Bytes *in, i64 base, i64 entry, Str *out);
 

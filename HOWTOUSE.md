@@ -85,9 +85,14 @@ Types:
 |------|--------------|
 | `-bin` | Native program for the kernel (default) |
 | `-elf` `-exe` `-macho` | Force that format |
-| `-o` | Same object file as `-obj`, but the file is always named `.o`, also on windows. This is a type flag, not a file name. Use `-out FILE` to name the output |
-| `-obj` | Object file: ELF for linux, mac and bare, COFF for windows (32 or 64-bit to match the code) |
+| `-o` | Same object file as `-obj`, but named `.o`. This is a type flag, not a file name. Use `--o FILE` or `-out FILE` to name the output |
+| `-obj` | Object file named `.obj`: ELF for linux, mac and bare, COFF for windows (32 or 64-bit to match the code) |
 | `-coff` | COFF object file |
+| `-x32` | ELF x32 object (64-bit code, 32-bit pointers) |
+| `-aout` `-aoutb` | 32-bit a.out object, little endian or NetBSD style |
+| `-as86` | as86 object for the bin86 and dev86 toolchain (16-bit code unless you say `bits 32`) |
+| `-ieee` | IEEE-695 ASCII object |
+| `-omf` | Intel OMF `.obj` for DOS and OS/2 tools. Code is 16-bit unless you say `bits 32` or `use32` |
 | `-flat` | Raw bytes, nothing added |
 | `-img` | Disk image |
 | `-com` | DOS .com file |
@@ -119,8 +124,13 @@ Options:
     -l [FILE]     write a listing
     -m32 -m64     force 32-bit or 64-bit code
     -cpu NAME     x86-64, i386, ia32, arm64, risc-v, rv32, rv64, rv64gc, rv32imac ...
+    -g            write DWARF line information (ELF files and ELF objects)
+    -map [FILE]   write a map of sections and symbols
+    -@ FILE       read more options from FILE, one per line
     -E            only run the preprocessor
     -w            hide warnings
+    -w+NAME -w-NAME   turn one warning class on or off, `-w+error` and `-w+error=NAME` make them errors
+    -Z FILE -s    send error messages to a file or to stdout, -X gnu|vc picks the style
     -q            hide everything but errors
     -v            version
 
@@ -385,7 +395,53 @@ More in `examples/riscv/`.
 
 ## 15. Objects and linking
 
-`-obj` writes a relocatable ELF object. For ARM64 and RISC-V it is a standard RELA object, so you can link Comprinly output with LLVM or GNU objects using `ld.lld` or `ld`. Declare shared names with `global` and `extern`. The tests link Comprinly objects with LLVM-built ones both ways.
+`-obj` writes a relocatable ELF object. For ARM64 and RISC-V it is a standard RELA object, so you can link Comprinly output with LLVM or GNU objects using `ld.lld` or `ld`. Declare shared names with `global` and `extern`. The tests link Comprinly objects with LLVM-built ones both ways. Objects are written small: sections nobody uses are left out, section symbols only appear when a relocation needs them and names share their tails in the string tables. `-nasm` keeps NASM's exact layout instead.
+
+### Other object formats
+
+`-x32`, `-aout`, `-aoutb`, `-omf`, `-as86` and `-ieee` write the same layouts NASM does. a.out and OMF files from simple programs are byte for byte the same as `nasm -f aout`, `aoutb` and `obj`, and the tests check that. OMF understands `segment name use16|use32 class=X align=N stack|public|common`, `group`, `..start`, `import`, `export` and `common`. a.out is 32-bit x86 only. as86 output is byte for byte the same as NASM's. IEEE output follows NASM's record layout, including its habit of writing the stored value bytes after each fixup record; it is not byte for byte where NASM writes uninitialized memory (sections over 1 KB with fixups). `-g` is written for ELF programs, ELF objects and x32 objects, not for the other object formats.
+
+### Output names and the kernel
+
+`--o file` sets the output file. `-o` on its own writes an object named `.o`, `-obj` writes the same object named `.obj`, and an output name ending in `.o` or `.obj` also makes an object:
+
+```
+cly file.cly --o file.o
+cly file.cly -o
+```
+
+The kernel flag is optional. Without one, Comprinly uses the kernel of the machine it runs on. A long dash typed before `o` or `ld` is read as `--`.
+
+### Linking with --ld
+
+`--ld` links ELF object files into a static program:
+
+```
+cly 1.o --ld program.elf
+cly 1.o 2.o --ld program.elf
+cly 1.o --ld program
+```
+
+`--ld` links two kinds of objects. ELF objects (x86-64, i386, ARM64, RISC-V) become a static ELF program. COFF objects (`.obj` from `cly windows file.cly -obj`, 32 or 64-bit) become a Windows `.exe`:
+
+```
+cly windows 1.cly -obj
+cly windows 2.cly -obj
+cly 1.obj 2.obj --ld program.exe
+```
+
+You cannot mix the two kinds in one link. In the Windows case, names that no object defines are imported from DLLs: Comprinly picks `user32.dll`, `gdi32.dll`, `advapi32.dll`, `ws2_32.dll` or `msvcrt.dll` for the common functions of those libraries and `kernel32.dll` for everything else. The entry point is `start`, `_start` or `mainCRTStartup`.
+
+Limits: no shared libraries, no TLS, `.eh_frame` and debug sections are dropped, and the output has no section headers or symbol table. Undefined symbols and duplicate definitions are reported as errors. The output file cannot also be an input.
+
+### Installing and updating
+
+- `cly -global` moves the executable into a folder on your PATH (`/usr/local/bin`, or `~/.local/bin` without root; on Windows `%LOCALAPPDATA%\Microsoft\WindowsApps`, or `%LOCALAPPDATA%\Comprinly\bin`).
+- `cly -unglobal` moves it back where it came from, or to your Downloads folder if that is gone.
+- `cly -uninstall` removes it after a y/n question.
+- `cly -update` asks GitHub (rhyelt/Comprinly) for the latest release, and if it is newer than this one, asks before replacing the executable. It needs `curl` and a release with assets named `cly64`, `cly32` and `cly.exe`.
+
+The first time you run Comprinly in a terminal it suggests `-global` once. Set `CLY_NO_HINT=1` to turn that off. Set `CLY_GLOBAL_DIR` to a folder to use that folder instead of the default one for `-global`.
 
 ## 16. Strict NASM mode
 
@@ -424,7 +480,7 @@ It covers reading the file, includes and macros, the leak check, the library, th
 
 ## 16c. Warnings as errors and dependency rules
 
-`-Werror` makes any warning fail the build, and the output file is removed. `-M` prints a make rule such as `prog: prog.asm defs.inc data.bin` to the screen once the build works. `-MD` writes the same rule to `<output>.d`. Both list every `%include` and `incbin` file.
+`-Werror` makes any warning fail the build, and the output file is removed. `-M` prints a make rule such as `prog: prog.asm defs.inc data.bin` to the screen once the build works. `-MD` writes the same rule to `<output>.d`. Both list every `%include` and `incbin` file. `-MF FILE` picks the rule file, `-MT` and `-MQ` set the target name (`-MQ` quotes it), `-MP` adds an empty rule for every dependency, `-MG` keeps going when an include is missing.
 
 ## 17. NASM files and the built-in library
 

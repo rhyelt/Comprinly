@@ -101,6 +101,7 @@ static int match_spec(int s, const Op *o, IC *ic, const Ent *e, const Ent *head)
     switch (s) {
     case S_M512: return k == OK_MEM && memsz_ok(o, 64) && !(o->flags & OF_FAR) && !(o->index && REGCLS(o->index) >= RC_XMM);
     case S_BND: case S_BNDR: return o->kind == OK_REG && REGCLS(o->reg) == RC_BND;
+    case S_TMM: return o->kind == OK_REG && REGCLS(o->reg) == RC_TMM;
     case S_R8: case S_RR8: return cls_is(o, RC_R8);
     case S_R16: case S_RR16: return cls_is(o, RC_R16);
     case S_R32: case S_RR32: return cls_is(o, RC_R32);
@@ -244,6 +245,10 @@ static int entry_matches(const Ent *e, const Op *ops, int nops, IC *ic, const En
         if (!deco_ok(e, i, &ops[i], ic)) return 0;
         if (IS_SV(e->sp[i]) && !o_sizeok(e->sp[i], &ops[i])) return 0;
         if (e->vkind && ops[i].kind == OK_REG && REGCLS(ops[i].reg) == RC_R8 && REGNUM(ops[i].reg) >= 4 && REGNUM(ops[i].reg) < 8) { ic->why = "cannot use high register in AVX instruction"; return 0; }
+        if (e->vkind == VK_VEX || e->vkind == VK_XOP) {
+            if (ops[i].kind == OK_REG && REGCLS(ops[i].reg) >= RC_XMM && REGCLS(ops[i].reg) != RC_K && REGNUM(ops[i].reg) >= 16) return 0;
+            if (ops[i].kind == OK_MEM && ops[i].index && REGCLS(ops[i].index) >= RC_XMM && REGNUM(ops[i].index) >= 16) return 0;
+        }
         if ((e->vkind == VK_VEX || e->vkind == VK_XOP) && cur_bits != 64) {
             if (ops[i].kind == OK_REG && REGCLS(ops[i].reg) >= RC_XMM && REGCLS(ops[i].reg) != RC_K && REGNUM(ops[i].reg) >= 8) return 0;
             if (ops[i].kind == OK_MEM && ops[i].index && REGCLS(ops[i].index) >= RC_XMM && REGNUM(ops[i].index) >= 8) return 0;
@@ -261,7 +266,7 @@ static int entry_matches(const Ent *e, const Op *ops, int nops, IC *ic, const En
 static int is_reg_role(int s)
 {
     switch (s) {
-    case S_R8: case S_R16: case S_R32: case S_R64: case S_SREG: case S_CR: case S_DR: case S_TR: case S_MM: case S_XMM: case S_YMM: case S_BND: return 1;
+    case S_R8: case S_R16: case S_R32: case S_R64: case S_SREG: case S_CR: case S_DR: case S_TR: case S_MM: case S_XMM: case S_YMM: case S_BND: case S_TMM: return 1;
     }
     return 0;
 }
@@ -340,6 +345,9 @@ static void put_val(Buf *bf, const Val *v, int size, int kind, IC *ic)
 static int log2sc(int s) { return s == 1 ? 0 : (s == 2 ? 1 : (s == 4 ? 2 : 3)); }
 
 /* Encodes a memory operand: ModRM, SIB and displacement, picking the shortest form and 16/32/64-bit addressing. */
+static int g_force_sib;
+
+/* Writes a memory operand. g_force_sib makes the byte after ModRM always present (the AMX tile loads and stores need it). */
 static int emit_ea(const Op *m, int regf, IC *ic, Buf *bf, int *asz_out, int d8n)
 {
     int asz;
@@ -415,7 +423,7 @@ static int emit_ea(const Op *m, int regf, IC *ic, Buf *bf, int *asz_out, int d8n
         } else if (base < 0) {
             bad1(&bf->b, (u8)((regf << 3) | 4));
             bad1(&bf->b, (u8)((log2sc(sc) << 6) | (li << 3) | 5));
-        } else if (idx >= 0 || lb == 4) {
+        } else if (idx >= 0 || lb == 4 || g_force_sib) {
             bad1(&bf->b, (u8)((mod << 6) | (regf << 3) | 4));
             bad1(&bf->b, (u8)((log2sc(sc) << 6) | ((idx < 0 ? 4 : li) << 3) | lb));
         } else {
@@ -538,9 +546,11 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
     }
     char *enc = xstrdup(e->enc);
     char *sv = enc;
-    int regf = 0, haveR = 0, opc[4], nopc = 0, hasib = 0, post[4], npost = 0, is4 = 0;
+    int regf = 0, haveR = 0, opc[4], nopc = 0, hasib = 0, post[4], npost = 0, is4 = 0, sibf = 0, regonly = 0;
     for (char *t = nexttok(&sv); t; t = nexttok(&sv)) {
-        if (!strncmp(t, "xv:", 3) || !strncmp(t, "rl:", 3) || !strcmp(t, "dup") || !strcmp(t, "late") || !strcmp(t, "sf")) continue;
+        if (!strncmp(t, "xv:", 3) || !strncmp(t, "rl:", 3) || !strcmp(t, "dup") || !strcmp(t, "late") || !strcmp(t, "sf") || !strcmp(t, "only64") || !strcmp(t, "no64")) continue;
+        if (!strcmp(t, "sib")) { sibf = 1; continue; }
+        if (!strcmp(t, "regonly")) { regonly = 1; continue; }
         if (t[0] == '/') {
             if (t[1] == 'r') haveR = 1; else { haveR = 2; regf = t[1] - '0'; }
             continue;
@@ -562,7 +572,7 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
         regn = REGNUM(ops[regop].reg);
     } else regn = regf;
     const Op *rmo = NULL;
-    if (rmop < 0 && haveR == 1) rmop = regop;
+    if (rmop < 0 && haveR == 1 && !regonly) rmop = regop;
     if (rmop >= 0) rmo = &ops[rmop];
     if (vvop >= 0) vvn = REGNUM(ops[vvop].reg);
     int L = e->vL, b = 0, vp = 1;
@@ -600,7 +610,7 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
         bad1(pre, (u8)((!((regn >> 3) & 1) << 7) | (xbit << 6) | (bbit << 5) | e->vmap));
         bad1(pre, (u8)((W << 7) | (nv << 3) | (L << 2) | pp));
     } else {
-        if (e->vmap == 1 && !W && ic->vexpfx != 3) {
+        if (e->vmap == 1 && !W && ic->vexpfx != 3 && bbit && xbit) {
             bad1(pre, 0xC5);
             bad1(pre, (u8)((!((regn >> 3) & 1) << 7) | (nv << 3) | (L << 2) | pp));
         } else {
@@ -611,13 +621,17 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
         }
     }
     for (int i = 0; i < nopc; i++) bad1(&bf->b, (u8)opc[i]);
-    if (haveR) {
+    if (haveR && regonly) bad1(&bf->b, (u8)(0xC0 | ((regn & 7) << 3)));
+    else if (haveR) {
         if (!rmo) { err("internal: no rm operand for %s", e->mn); return 0; }
         if (rmo->kind == OK_REG) bad1(&bf->b, (u8)(0xC0 | ((regn & 7) << 3) | (rmn & 7)));
         else {
             int asz;
             int d8n = e->vkind == VK_EVEX ? tuple_n(e, rmop, rmo->bcst != 0) : 0;
-            if (!emit_ea(rmo, regn & 7, ic, bf, &asz, d8n)) return 0;
+            g_force_sib = sibf;
+            int eaok = emit_ea(rmo, regn & 7, ic, bf, &asz, d8n);
+            g_force_sib = 0;
+            if (!eaok) return 0;
             if (asz != ic->bits) *need67 = 1;
             if (rmo->mseg) *memseg = rmo->mseg;
         }
@@ -885,6 +899,28 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     if (n >= sizeof key) { err("unknown instruction `%s'", mn); return 0; }
     for (size_t i = 0; i <= n; i++) key[i] = (char)tolower((unsigned char)mn[i]);
     cur_bits = ic->bits;
+    {
+        /* Mask instructions come in b, w, d and q sizes. kmov with a general register takes its size from the register; the rest need the letter. */
+        static const char *const kgen[] = { "kmov", "kand", "kandn", "kor", "kxor", "kxnor", "knot", "kortest", "ktest", "kadd", "kunpck", "kshiftl", "kshiftr", NULL };
+        for (int i = 0; kgen[i]; i++) {
+            if (strcmp(key, kgen[i])) continue;
+            const char *sfx = NULL;
+            if (!strcmp(key, "kmov") && nops == 2) {
+                for (int k = 0; k < 2; k++) {
+                    if (ops[k].kind != OK_REG) continue;
+                    int c = REGCLS(ops[k].reg);
+                    if (c == RC_R64) sfx = "q";
+                    else if (c == RC_R32) sfx = "d";
+                    else if (c == RC_R16) sfx = "w";
+                    else if (c == RC_R8) sfx = "b";
+                }
+            }
+            if (sfx) { snprintf(key, sizeof key, "kmov%s", sfx); break; }
+            err("`%s' needs a size letter: use %sb, %sw, %sd or %sq", mn, key, key, key, key);
+            ic->nomatch = 2;
+            return 0;
+        }
+    }
     const Ent *head = tab_lookup(key);
     if (!head) { err("unknown instruction `%s'", mn); ic->nomatch = 2; return 0; }
     Op mib[2];

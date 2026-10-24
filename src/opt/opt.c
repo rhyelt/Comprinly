@@ -1138,7 +1138,7 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
     OB = bits;
     OK_KERNEL = kernel;
     OK_ABS32 = bits == 64 && kernel == K_LINUX && (type == T_ELF || type == T_BIN);
-    int allow_dce = type != T_OBJ && type != T_COFF;
+    int allow_dce = !IS_OBJ(type);
     for (int round = 0; round < 2; round++) {
         Ctx c;
         c.lv = lv;

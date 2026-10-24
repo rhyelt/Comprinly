@@ -3,7 +3,18 @@
 #include <errno.h>
 
 static int g_dumpopt;
-static const char *short_usage = "usage: cly <bare|windows|linux|linux32|mac> <file> [-bin|-elf|-exe|-macho|-obj|-o|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
+static int host_kernel(void)
+{
+#ifdef _WIN32
+    return K_WINDOWS;
+#elif defined(__APPLE__)
+    return K_MAC;
+#else
+    return K_LINUX;
+#endif
+}
+
+static const char *short_usage = "usage: cly [bare|windows|linux|linux32|mac] <file> [-bin|-elf|-exe|-macho|-obj|-o|-flat|-img|-com|-hex|-srec]\ntry `cly -h' for all options\n";
 
 static const char *kernel_names[] = { "bare", "windows", "linux", "linux32", "mac" };
 
@@ -13,8 +24,8 @@ static const char *usage_text =
     "usage: cly <kernel> <file> [-type] [modes] [options]\n"
     "\n"
     "kernels: bare, windows, linux, linux32 (32-bit Linux), mac\n"
-    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff\n"
-    "         (-o writes an object file named .o on every kernel; use -out FILE to name any output)\n"
+    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff,\n         -x32 (ELF x32 object), -aout, -aoutb (a.out objects), -omf (Intel OMF object), -as86, -ieee (IEEE-695 object)\n"
+    "         (-o writes an object file named .o on every kernel; use --o FILE or -out FILE to name any output)\n"
     "\n"
     "modes (any order, any number):\n"
     "  -nasm         behave exactly like NASM: x86 only, no library, no leak check, no optimizer,\n"
@@ -30,7 +41,10 @@ static const char *usage_text =
     "  -log[=FILE]   log every compile step with timestamps (screen or file)\n"
     "\n"
     "options:\n"
-    "  -out FILE     output file name\n"
+    "  --o FILE, -out FILE   output file name\n"
+    "  --ld FILE     link object files into a program: cly a.o b.o --ld program\n"
+    "  -global, -unglobal, -uninstall   install Comprinly as a command, move it back, or remove it\n"
+    "  -update       check GitHub for a newer release and update\n"
     "  -I DIR        add an include directory\n"
     "  -D NAME[=V]   define a macro\n"
     "  -U NAME       undefine a macro\n"
@@ -39,8 +53,12 @@ static const char *usage_text =
     "  -m32, -m64    force 32-bit or 64-bit code (default: 64 for linux, windows, mac; 32 for bare)\n"
     "  -cpu NAME     target cpu: x86-64, i386 / ia32 (32-bit Intel), arm64 or risc-v (rv64gc, rv32imac, ...); a `cpu' line on\n"
     "                the first line of the source does the same, otherwise it is guessed\n"
+    "  -g            write debug information (DWARF line table) into ELF files\n"
     "  -E            preprocess only\n"
-    "  -w            hide warnings\n"
+    "  -w            hide warnings;  -w+NAME / -w-NAME turn a class on or off (-w+error, -w+error=NAME, -w-all)\n"
+    "  -Z FILE, -s   send error messages to FILE or to stdout;  -X gnu|vc  message style\n"
+    "  -map [FILE]   write a map of the sections and symbols\n"
+    "  -MF FILE, -MT NAME, -MQ NAME, -MP   more make rule options;  -@ FILE  read options from FILE\n"
     "  -q            hide everything but errors\n"
     "  --dump-opt    print the source after optimizing, to stderr\n"
     "  --dump-insns  print the instruction table\n"
@@ -73,6 +91,12 @@ static int parse_type(const char *s)
     if (!strcasecmp(s, "srec") || !strcasecmp(s, "s19")) return T_SREC;
     if (!strcasecmp(s, "obj") || !strcasecmp(s, "o")) return T_OBJ;
     if (!strcasecmp(s, "coff") || !strcasecmp(s, "win32")) return T_COFF;
+    if (!strcasecmp(s, "x32") || !strcasecmp(s, "elfx32")) return T_X32;
+    if (!strcasecmp(s, "aout")) return T_AOUT;
+    if (!strcasecmp(s, "aoutb")) return T_AOUTB;
+    if (!strcasecmp(s, "omf")) return T_OMF;
+    if (!strcasecmp(s, "as86")) return T_AS86;
+    if (!strcasecmp(s, "ieee")) return T_IEEE;
     return -1;
 }
 
@@ -93,8 +117,11 @@ static const char *ext_for(int kernel, int type)
     case T_COM: return ".com";
     case T_HEX: return ".hex";
     case T_SREC: return ".srec";
-    case T_OBJ: return kernel == K_WINDOWS && !g_dot_o ? ".obj" : ".o";
+    case T_OBJ: return g_dot_o ? ".o" : ".obj";
     case T_COFF: return ".obj";
+    case T_X32: case T_AOUT: case T_AOUTB: case T_AS86: return ".o";
+    case T_IEEE: return ".o";
+    case T_OMF: return ".obj";
     }
     return "";
 }
@@ -110,6 +137,12 @@ static const char *fmt_name(int kernel, int type, int bits)
     case T_MACHO: return b64 ? "macho64" : "macho32";
     case T_OBJ: return kernel == K_WINDOWS ? (b64 ? "win64" : "win32") : (b64 ? "elf64" : "elf32");
     case T_COFF: return b64 ? "win64" : "win32";
+    case T_X32: return "elfx32";
+    case T_AOUT: return "aout";
+    case T_AOUTB: return "aoutb";
+    case T_OMF: return "obj";
+    case T_AS86: return "as86";
+    case T_IEEE: return "ieee";
     }
     return "bin";
 }
@@ -156,7 +189,7 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
         xlog("libc", "%s, %d lines now", a2.lines.n != n0 ? "library code added" : "nothing to add", a2.lines.n);
     } else xlog("libc", "skipped");
     /* Step 2: optimize the text (peephole rules for x86, small passes for ARM64 and RISC-V). */
-    g_strip = optimize;
+    g_strip = optimize && !g_debug;
     if (optimize) {
         int n0 = a2.lines.n;
         xlog("optimize", "running peephole passes (%d lines)", n0);
@@ -200,6 +233,18 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
 int main(int argc, char **argv)
 {
     int kernel = -1, type = T_BIN, type_set = 0, saw_o = 0;
+    const char *ldout = NULL;
+    for (int i = 1; i < argc; i++) {
+        const unsigned char *u = (const unsigned char *)argv[i];
+        if (u[0] == 0xE2 && u[1] == 0x80 && (u[2] == 0x94 || u[2] == 0x93 || u[2] == 0x92 || u[2] == 0x95)) {
+            size_t rl = strlen(argv[i] + 3);
+            char *fx = xmalloc(rl + 3);
+            fx[0] = '-'; fx[1] = '-';
+            memcpy(fx + 2, argv[i] + 3, rl + 1);
+            argv[i] = fx;
+        }
+    }
+    install_cleanup_old();
     const char *file = NULL, *outpath = NULL;
     PPOpts po;
     memset(&po, 0, sizeof po);
@@ -213,7 +258,40 @@ int main(int argc, char **argv)
     char **pre = xmalloc(sizeof(char *) * (size_t)(argc + 1));
     int ni = 0, nd = 0, nu = 0, np = 0;
     int mbits = 0;
-    int optimize = 1, depmode = 0;
+    int optimize = 1, depmode = 0, dep_phony = 0;
+    const char *dep_file = NULL, *dep_target = NULL;
+    int dep_quote = 0;
+    const char *mappath = NULL;
+    {
+        /* Response files: -@ FILE puts the options in FILE (one per line) in place of the -@ pair. */
+        int changed = 0;
+        for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "-@") || !strncmp(argv[i], "-@", 2)) changed = 1;
+        if (changed) {
+            char **na = xmalloc(sizeof(char *) * 4096);
+            int nn = 0;
+            na[nn++] = argv[0];
+            for (int i = 1; i < argc; i++) {
+                const char *rf = NULL;
+                if (!strcmp(argv[i], "-@") && i + 1 < argc) rf = argv[++i];
+                else if (!strncmp(argv[i], "-@", 2) && argv[i][2]) rf = argv[i] + 2;
+                if (!rf) { if (nn < 4090) na[nn++] = argv[i]; continue; }
+                FILE *rfp = fopen(rf, "r");
+                if (!rfp) { fprintf(stderr, "cly: cannot open response file `%s'\n", rf); return 1; }
+                char line[2048];
+                while (fgets(line, sizeof line, rfp)) {
+                    size_t ln = strlen(line);
+                    while (ln && (line[ln - 1] == '\n' || line[ln - 1] == '\r' || line[ln - 1] == ' ' || line[ln - 1] == '\t')) line[--ln] = 0;
+                    char *p = line;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (!*p || *p == '#') continue;
+                    if (nn < 4090) na[nn++] = xstrdup(p);
+                }
+                fclose(rfp);
+            }
+            argv = na;
+            argc = nn;
+        }
+    }
     int cli_arch = -1, cli_rvext = 0, rv_generic = 0;
     const char *ia32_name = NULL;
     for (int i = 1; i < argc; i++) {
@@ -238,6 +316,20 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
         if (!strcmp(a, "--dump-insns")) { dump = 1; continue; }
         if (!strcmp(a, "--dump-opt")) { g_dumpopt = 1; continue; }
+        if (!strcmp(a, "-global") || !strcmp(a, "--global")) return install_global();
+        if (!strcmp(a, "-unglobal") || !strcmp(a, "--unglobal")) return install_unglobal();
+        if (!strcmp(a, "-uninstall") || !strcmp(a, "--uninstall")) return install_uninstall();
+        if (!strcmp(a, "-update") || !strcmp(a, "--update")) return install_update();
+        if (!strcmp(a, "--o")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `--o' needs a file name\n"); return 1; }
+            outpath = argv[++i];
+            continue;
+        }
+        if (!strcmp(a, "--ld") || !strcmp(a, "-ld")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs an output file name\n", a); return 1; }
+            ldout = argv[++i];
+            continue;
+        }
         if (!strcmp(a, "-o")) { type = T_OBJ; type_set = 1; g_dot_o = 1; saw_o = 1; continue; }
         if (!strcmp(a, "-out") || !strcmp(a, "--out")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs a file name\n", a); return 1; }
@@ -256,6 +348,13 @@ int main(int argc, char **argv)
             else pre[np++] = (char *)val;
             continue;
         }
+        if (!strcmp(a, "-g") || !strcmp(a, "-gdwarf") || !strcmp(a, "-gdwarf4") || !strcmp(a, "-gdwarf2") || !strcmp(a, "-gdwarf3")) { g_debug = 1; continue; }
+        if (!strcmp(a, "-F")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `-F' needs a debug format (dwarf)\n"); return 1; }
+            const char *fm = argv[++i];
+            if (strcasecmp(fm, "dwarf")) { fprintf(stderr, "cly: debug format `%s' is not supported; use dwarf\n", fm); return 1; }
+            continue;
+        }
         if (!strcmp(a, "-E")) { pponly = 1; continue; }
         if (!strcmp(a, "-nasm")) { g_nasm = 1; continue; }
         if (!strcmp(a, "-nolibc")) { g_nolibc = 1; continue; }
@@ -265,6 +364,46 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-fix")) { fix_main = 1; continue; }
         if (!strcmp(a, "-fixsrc")) { fix_src = 1; continue; }
         if (!strcmp(a, "-w")) { g_nowarn = 1; continue; }
+        if (!strncmp(a, "-w", 2) && (a[2] == '+' || a[2] == '-')) {
+            if (!warn_class_set(a + 2)) { fprintf(stderr, "cly: unknown warning class `%s'\n", a + 3); return 1; }
+            continue;
+        }
+        if (!strcmp(a, "-s")) { g_msgout = stdout; continue; }
+        if (!strncmp(a, "-Z", 2)) {
+            const char *zp = a + 2;
+            if (!*zp) {
+                if (i + 1 >= argc) { fprintf(stderr, "cly: option `-Z' needs a file name\n"); return 1; }
+                zp = argv[++i];
+            }
+            g_msgout = fopen(zp, "w");
+            if (!g_msgout) { fprintf(stderr, "cly: cannot open `%s'\n", zp); return 1; }
+            continue;
+        }
+        if (!strncmp(a, "-X", 2)) {
+            const char *xp = a + 2;
+            if (!*xp) {
+                if (i + 1 >= argc) { fprintf(stderr, "cly: option `-X' needs gnu or vc\n"); return 1; }
+                xp = argv[++i];
+            }
+            if (!strcmp(xp, "vc")) g_msgvc = 1;
+            else if (!strcmp(xp, "gnu")) g_msgvc = 0;
+            else { fprintf(stderr, "cly: unknown error format `%s'; use gnu or vc\n", xp); return 1; }
+            continue;
+        }
+        if (!strcmp(a, "-MF") || !strcmp(a, "-MT") || !strcmp(a, "-MQ")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs an argument\n", a); return 1; }
+            if (a[2] == 'F') dep_file = argv[++i];
+            else { dep_target = argv[++i]; dep_quote = a[2] == 'Q'; }
+            if (!depmode) depmode = 2;
+            continue;
+        }
+        if (!strcmp(a, "-MP")) { dep_phony = 1; continue; }
+        if (!strcmp(a, "-MG")) { continue; }
+        if (!strcmp(a, "-map")) {
+            mappath = "";
+            if (i + 1 < argc && argv[i + 1][0] != '-' && parse_kernel(argv[i + 1]) < 0 && !strstr(argv[i + 1], ".cly") && !strstr(argv[i + 1], ".asm")) mappath = argv[++i];
+            continue;
+        }
         if (!strcmp(a, "-Werror")) { g_werror = 1; continue; }
         if (!strcmp(a, "-M")) { depmode = 1; continue; }
         if (!strcmp(a, "-MD")) { depmode = 2; continue; }
@@ -295,6 +434,17 @@ int main(int argc, char **argv)
         if (fix_main || fix_src) { fprintf(stderr, "cly: -fix and -fixsrc do not work with -nasm\n"); return 1; }
         if (cli_arch > 0) { fprintf(stderr, "cly: -nasm is x86 only; `-cpu' chose %s\n", arch_name(cli_arch)); return 1; }
     }
+    if (outpath && !type_set && !ldout) {
+        size_t ol = strlen(outpath);
+        if ((ol > 2 && !strcmp(outpath + ol - 2, ".o")) || (ol > 4 && !strcasecmp(outpath + ol - 4, ".obj"))) { type = T_OBJ; type_set = 1; }
+    }
+    if (ldout) {
+        if (!npos) { fprintf(stderr, "cly: --ld needs at least one object file\n"); return 1; }
+        int lc = 0;
+        for (int i = 0; i < npos; i++) if (parse_kernel(pos[i]) < 0 || file_exists(pos[i])) pos[lc++] = pos[i];
+        if (!lc) { fprintf(stderr, "cly: --ld needs at least one object file\n"); return 1; }
+        return ld_link(pos, lc, outpath ? outpath : ldout) ? 0 : 1;
+    }
     if (dump) {
         insn_init();
         insn_dump(stdout);
@@ -317,7 +467,7 @@ int main(int argc, char **argv)
             if (t >= 0) { type = t; type_set = 1; continue; }
         }
         fprintf(stderr, "cly: unexpected argument `%s'\n", pos[i]);
-        if (saw_o) fprintf(stderr, "cly: -o means write an object file (.o); use -out FILE to name the output\n");
+        if (saw_o) fprintf(stderr, "cly: -o means write an object file (.o); use --o FILE (or -out FILE) to name the output\n");
         return 1;
     }
     if (kernel < 0 && file && !file_exists(file) && !dump) {
@@ -331,8 +481,7 @@ int main(int argc, char **argv)
         return 1;
     }
     if (kernel < 0) {
-        fprintf(stderr, "cly: missing kernel (bare, windows, linux or mac)\n%s", short_usage);
-        return 1;
+        kernel = host_kernel();
     }
     if (!file) {
         fprintf(stderr, "cly: missing input file\n%s", short_usage);
@@ -435,7 +584,7 @@ int main(int argc, char **argv)
             arch = ARCH_RV64;
         }
         if (arch == ARCH_A64 && mbits && mbits != 64) { fprintf(stderr, "cly: ARM64 is 64-bit only; -m%d does not apply\n", mbits); return 1; }
-        defbits = arch != ARCH_X86 ? arch_bits(arch) : (mbits ? mbits : (g_nasm && rawtype) ? 16 : ((kernel == K_BARE || rawtype) ? 32 : 64));
+        defbits = arch != ARCH_X86 ? arch_bits(arch) : (mbits ? mbits : (g_nasm && (rawtype || type == T_OMF || type == T_AS86 || type == T_IEEE)) ? 16 : (g_nasm && (type == T_AOUT || type == T_AOUTB)) ? 32 : ((kernel == K_BARE || rawtype) ? 32 : 64));
         po.outfmt = fmt_name(kernel, type, defbits);
         po.bits = defbits;
         po.arch = arch;
@@ -530,6 +679,10 @@ int main(int argc, char **argv)
         ao.lines = fixed;
         nleaks = 0;
     }
+    if (mappath) {
+        if (!*mappath) { Str mn = {0}; sfmt(&mn, "%s.map", oname); mappath = sget(&mn); }
+        g_mappath = mappath;
+    }
     xlog("target", "kernel %d, output type %d, file `%s'", kernel, type, oname);
     int rc = build_image(&ao, arch, kernel, type, oname, file, quiet, optimize);
     if (!rc && g_werror && g_warnings) {
@@ -539,16 +692,28 @@ int main(int argc, char **argv)
     }
     if (!rc && depmode) {
         Str ds = {0};
-        sfmt(&ds, "%s: %s", oname, file);
+        const char *tgt = dep_target ? dep_target : oname;
+        if (dep_quote) {
+            for (const char *q = tgt; *q; q++) {
+                if (*q == '$') sadc(&ds, '$');
+                else if (*q == ' ' || *q == '#') sadc(&ds, '\\');
+                sadc(&ds, *q);
+            }
+        } else sadd(&ds, tgt);
+        sadd(&ds, ": ");
+        sadd(&ds, file);
         for (int i = 0; i < dep_count(); i++) { sadd(&ds, " "); sadd(&ds, dep_get(i)); }
         sadc(&ds, '\n');
-        if (depmode == 1) fputs(ds.s, stdout);
+        if (dep_phony) for (int i = 0; i < dep_count(); i++) { sadd(&ds, dep_get(i)); sadd(&ds, ":\n"); }
+        if (depmode == 1 && !dep_file) fputs(ds.s, stdout);
+        else if (dep_file) write_file(dep_file, ds.s, ds.n, 0);
         else {
             Str dn = {0};
             sfmt(&dn, "%s.d", oname);
             write_file(sget(&dn), ds.s, ds.n, 0);
         }
     }
+    if (!rc) install_hint();
     if (rc) { xlog("done", "failed with %d error%s, %d warning%s", g_errors, g_errors == 1 ? "" : "s", g_warnings, g_warnings == 1 ? "" : "s"); return rc; }
     if (nleaks && canfix && !fix_main) {
         Str fs = {0};

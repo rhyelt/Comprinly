@@ -2,7 +2,18 @@
 #include "cly.h"
 
 Pos g_pos;
-int g_hidewarn, g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode;
+int g_hidewarn, g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode, g_debug;
+const char *g_mappath;
+char *g_gprefix, *g_gpostfix;
+
+/* The name written to an object file for a symbol: global and external names get the prefix and postfix set by the prefix and postfix directives. */
+const char *sym_mangle(const Sym *s, int glob)
+{
+    static char buf[600];
+    if (!glob || (!g_gprefix && !g_gpostfix)) return s->name;
+    snprintf(buf, sizeof buf, "%s%s%s", g_gprefix ? g_gprefix : "", s->name, g_gpostfix ? g_gpostfix : "");
+    return buf;
+}
 
 /* malloc that never returns NULL. Exits with an out of memory message instead. */
 void *xmalloc(size_t n)
@@ -397,24 +408,32 @@ static const char *src_line(const char *file, int line, size_t *len)
     return p;
 }
 
+enum { WC_OTHER, WC_OVERFLOW, WC_ORPHAN, WC_USER, WC_LEAK, WC_HINT, WC_ALIGN, WC_N };
+extern unsigned g_wc_off, g_wc_err;
+static int warn_classify(const char *m);
+
 /* Prints one diagnostic: file:line, a colored kind (error, warning ...), the message, the source line and a caret. */
+FILE *g_msgout;
+int g_msgvc;
+
 static void vmsg(const char *kind, const char *fmt, va_list ap)
 {
-    int col = use_color();
+    FILE *out = g_msgout ? g_msgout : stderr;
+    int col = !g_msgout && use_color();
     const char *cs = "", *ce = "";
     if (col) {
         ce = "\033[0m";
         cs = kind[0] == 'w' ? "\033[1;33m" : "\033[1;31m";
     }
-    if (g_pos.file) fprintf(stderr, "%s:%d: %s%s:%s ", g_pos.file, g_pos.line, cs, kind, ce);
-    else fprintf(stderr, "cly: %s%s:%s ", cs, kind, ce);
-    vfprintf(stderr, fmt, ap);
-    fputc('\n', stderr);
+    if (g_pos.file) { if (g_msgvc) fprintf(out, "%s(%d) : %s%s:%s ", g_pos.file, g_pos.line, cs, kind, ce); else fprintf(out, "%s:%d: %s%s:%s ", g_pos.file, g_pos.line, cs, kind, ce); }
+    else fprintf(out, "cly: %s%s:%s ", cs, kind, ce);
+    vfprintf(out, fmt, ap);
+    fputc('\n', out);
     size_t n = 0;
     const char *t = g_pos.file ? src_line(g_pos.file, g_pos.line, &n) : NULL;
     if (t) {
         while (n && (*t == ' ' || *t == '\t')) { t++; n--; }
-        if (n) fprintf(stderr, "  %5d | %.*s\n", g_pos.line, (int)(n > 100 ? 100 : n), t);
+        if (n) fprintf(out, "  %5d | %.*s\n", g_pos.line, (int)(n > 100 ? 100 : n), t);
     }
 }
 
@@ -449,6 +468,51 @@ static int warn_seen(const char *msg)
     return 0;
 }
 
+/* Warning classes for -w+name and -w-name and the warning directive. */
+static const char *const wc_names[WC_N] = { "other", "number-overflow", "orphan-labels", "user", "leak", "hint", "align" };
+unsigned g_wc_off, g_wc_err;
+
+static int warn_classify(const char *m)
+{
+    if (strstr(m, "exceeds bounds") || strstr(m, "truncated")) return WC_OVERFLOW;
+    if (strstr(m, "alone on a line")) return WC_ORPHAN;
+    if (!strncmp(m, "%warning", 8)) return WC_USER;
+    if (strstr(m, "potential memory leak")) return WC_LEAK;
+    if (strstr(m, "aligned")) return WC_ALIGN;
+    if (strstr(m, "int 0x80") || strstr(m, "svc") || strstr(m, "system call number") || strstr(m, "$ -")) return WC_HINT;
+    return WC_OTHER;
+}
+
+/* Applies "+class", "-class", "+error", "-error", "+error=class", "-error=class" or "all". Returns 0 for an unknown class. */
+int warn_class_set(const char *spec)
+{
+    int on = 1;
+    if (*spec == '+') spec++;
+    else if (*spec == '-') { on = 0; spec++; }
+    int err_mode = 0;
+    if (!strncmp(spec, "error", 5) && (spec[5] == 0 || spec[5] == '=')) {
+        err_mode = 1;
+        if (!spec[5]) { g_werror = on; return 1; }
+        spec += 6;
+    }
+    if (!strcmp(spec, "all")) {
+        for (int i = 0; i < WC_N; i++) {
+            if (err_mode) { if (on) g_wc_err |= 1u << i; else g_wc_err &= ~(1u << i); }
+            else { if (on) g_wc_off &= ~(1u << i); else g_wc_off |= 1u << i; }
+        }
+        return 1;
+    }
+    for (int i = 0; i < WC_N; i++) {
+        if (strcmp(spec, wc_names[i])) continue;
+        if (err_mode) { if (on) g_wc_err |= 1u << i; else g_wc_err &= ~(1u << i); }
+        else { if (on) g_wc_off &= ~(1u << i); else g_wc_off |= 1u << i; }
+        return 1;
+    }
+    static const char *const nasm_only[] = { "macro-params", "macro-selfref", "macro-defaults", "gnu-elf-extensions", "float-overflow", "float-denorm", "float-underflow", "float-toolong", "lock", "hle", "bnd", "zeroing", "forward", "ptr", "bad-pragma", "unknown-pragma", "not-my-pragma", "unknown-warning", "zext-reloc", "ea-absolute", "ea-dispmul", "phase", "label-redef", "label-redef-late", "prefix-ineffective", "reloc-abs-byte", "reloc-abs-word", "reloc-abs-dword", "reloc-abs-qword", "reloc-rel-byte", "reloc-rel-word", "reloc-rel-dword", "reloc-rel-qword", "environment", "regsize", "pragma-bad", "pragma-unknown", NULL };
+    for (int i = 0; nasm_only[i]; i++) if (!strcmp(spec, nasm_only[i])) return 1;
+    return 0;
+}
+
 /* Reports a warning unless warnings are off (-w) or hidden (-q). Counts it for -Werror. */
 void warn(const char *fmt, ...)
 {
@@ -458,11 +522,18 @@ void warn(const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(msg, sizeof msg, fmt, ap);
     va_end(ap);
+    int wc = warn_classify(msg);
+    if (g_wc_off & (1u << wc)) return;
     if (g_pos.file && warn_seen(msg)) return;
     va_start(ap, fmt);
-    vmsg("warning", fmt, ap);
+    if (g_wc_err & (1u << wc)) {
+        vmsg("error", fmt, ap);
+        g_errors++;
+    } else {
+        vmsg("warning", fmt, ap);
+        g_warnings++;
+    }
     va_end(ap);
-    g_warnings++;
 }
 
 /* Reports an error that cannot be recovered from and exits. */

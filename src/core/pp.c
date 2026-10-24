@@ -640,7 +640,7 @@ static void expand_text(const char *in, Str *out, Active *act)
             const char *q = p + 2;
             int d = 1;
             while (*q && d) { if (*q == '[') d++; else if (*q == ']') d--; q++; }
-            char *inner = xstrndup(p + 2, (size_t)(q - p - 3));
+            char *inner = xstrndup(p + 2, (size_t)(d ? q - p - 2 : q - p - 3));
             Str t = {0};
             expand_text(inner, &t, act);
             sadd(&res, sget(&t));
@@ -1855,6 +1855,13 @@ static void handle_directive(char *tt, Src *s, const char *file, int line)
             while (*r2 && *r2 != ',' && ai < sizeof arg1 - 1) arg1[ai++] = *r2++;
             arg1[ai] = 0;
             if (try_eval(arg1, &v)) st = (long)v.n;
+            else {
+                char *sp = strchr(arg1, ' ');
+                if (sp) {
+                    *sp = 0;
+                    if (try_eval(arg1, &v)) st = (long)v.n;
+                }
+            }
             if (st < 1) st = 1;
             if (*r2 == ',' && try_eval(r2 + 1, &v)) {
                 cnt = (long)v.n;

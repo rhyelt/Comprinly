@@ -41,12 +41,18 @@ static int alog(i64 a)
 /* Builds the COFF file: header, section headers, raw data, relocations, symbol table and string table. */
 int fmt_coff(Obj *o, Bytes *out)
 {
-    int ns = o->nsecs;
+    int ns0 = o->nsecs;
     Bytes symtab = {0}, strtab = {0};
     int nsym = 0;
-    for (int i = 0; i < ns; i++) {
-        put_sym(&symtab, &strtab, o->secs[i]->name, 0, i + 1, 3);
-        nsym++;
+    int *keep = xcalloc((size_t)ns0 + 1, sizeof(int)), *need = xcalloc((size_t)ns0 + 1, sizeof(int));
+    int *secnew = xcalloc((size_t)ns0 + 1, sizeof(int)), *secsym = xcalloc((size_t)ns0 + 1, sizeof(int));
+    obj_live_secs(o, keep, need);
+    int ns = 0;
+    for (int i = 0; i < ns0; i++) if (keep[i]) secnew[i] = ++ns;
+    for (int i = 0; i < ns0; i++) {
+        if (!keep[i] || !need[i]) continue;
+        put_sym(&symtab, &strtab, o->secs[i]->name, 0, secnew[i], 3);
+        secsym[i] = nsym++;
     }
     int *symidx = xcalloc((size_t)o->nsyms + 1, sizeof(int));
     for (int i = 0; i < o->nsyms; i++) {
@@ -56,14 +62,14 @@ int fmt_coff(Obj *o, Bytes *out)
         if (s->isequ && !s->isabs && !glob) continue;
         if (!s->defined && !s->ext && !s->common && !s->referenced && !s->import) continue;
         if (s->defined && !s->common && !s->ext) {
-            if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, s->name, (u32)(s->isequ ? s->eqv.n : s->off), -1, glob ? 2 : 3);
-            else put_sym(&symtab, &strtab, s->name, (u32)s->off, s->sec + 1, glob ? 2 : 3);
-        } else if (s->common) put_sym(&symtab, &strtab, s->name, (u32)s->commonsize, 0, 2);
-        else put_sym(&symtab, &strtab, s->name, 0, 0, 2);
-        symidx[i] = nsym++;
+            if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, sym_mangle(s, glob), (u32)(s->isequ ? s->eqv.n : s->off), -1, glob ? 2 : 3);
+            else put_sym(&symtab, &strtab, sym_mangle(s, glob), (u32)s->off, secnew[s->sec], glob ? 2 : 3);
+        } else if (s->common) put_sym(&symtab, &strtab, sym_mangle(s, 1), (u32)s->commonsize, 0, 2);
+        else put_sym(&symtab, &strtab, sym_mangle(s, 1), 0, 0, 2);
+        symidx[i] = ++nsym;
     }
-    Bytes *rel = xcalloc((size_t)ns + 1, sizeof(Bytes));
-    int *nrel = xcalloc((size_t)ns + 1, sizeof(int));
+    Bytes *rel = xcalloc((size_t)ns0 + 1, sizeof(Bytes));
+    int *nrel = xcalloc((size_t)ns0 + 1, sizeof(int));
     for (int i = 0; i < o->nrelocs; i++) {
         Reloc *r = &o->relocs[i];
         Val *v = &r->v;
@@ -78,8 +84,8 @@ int fmt_coff(Obj *o, Bytes *out)
             int k = -1;
             for (int j = 0; j < o->nsyms; j++) if (o->syms[j] == v->ext) k = j;
             if (k < 0 || !symidx[k]) { err("symbol `%s' has no COFF symbol", v->ext->name); continue; }
-            symi = symidx[k];
-        } else if (v->pos >= 0) symi = v->pos;
+            symi = symidx[k] - 1;
+        } else if (v->pos >= 0) symi = secsym[v->pos];
         else continue;
         if (r->size != 4 && !(o->is64 && r->size == 8 && r->kind != RK_REL)) { g_pos.file = "<link>"; g_pos.line = r->line; err("COFF supports only 32-bit relocations%s", o->is64 ? " and absolute 64-bit addresses" : ""); continue; }
         i64 add = v->n;
@@ -100,9 +106,10 @@ int fmt_coff(Obj *o, Bytes *out)
     Bytes f = {0};
     size_t hdr = 20 + 40 * (size_t)ns;
     size_t pos = hdr;
-    size_t *rawoff = xcalloc((size_t)ns + 1, sizeof(size_t));
-    size_t *reloff = xcalloc((size_t)ns + 1, sizeof(size_t));
-    for (int i = 0; i < ns; i++) {
+    size_t *rawoff = xcalloc((size_t)ns0 + 1, sizeof(size_t));
+    size_t *reloff = xcalloc((size_t)ns0 + 1, sizeof(size_t));
+    for (int i = 0; i < ns0; i++) {
+        if (!keep[i]) continue;
         Sec *s = o->secs[i];
         if (!s->nobits && s->data.n) { rawoff[i] = pos; pos += s->data.n; }
         if (nrel[i]) { reloff[i] = pos; pos += rel[i].n; }
@@ -116,7 +123,8 @@ int fmt_coff(Obj *o, Bytes *out)
     put16(&f, 0);
     put16(&f, 0);
     Bytes secstr = {0};
-    for (int i = 0; i < ns; i++) {
+    for (int i = 0; i < ns0; i++) {
+        if (!keep[i]) continue;
         Sec *s = o->secs[i];
         const char *nm = s->name;
         if (strlen(nm) <= 8) {
@@ -149,7 +157,8 @@ int fmt_coff(Obj *o, Bytes *out)
         ch |= (u32)al << 20;
         put32(&f, ch);
     }
-    for (int i = 0; i < ns; i++) {
+    for (int i = 0; i < ns0; i++) {
+        if (!keep[i]) continue;
         Sec *s = o->secs[i];
         if (!s->nobits && s->data.n) badd(&f, s->data.p, s->data.n);
         if (nrel[i]) badd(&f, rel[i].p, rel[i].n);
@@ -159,7 +168,7 @@ int fmt_coff(Obj *o, Bytes *out)
     badd(&f, strtab.p, strtab.n);
     badd(&f, secstr.p, secstr.n);
     badd(out, f.p, f.n);
-    free(rawoff); free(reloff); free(rel); free(nrel); free(symidx);
+    free(keep); free(need); free(secnew); free(secsym); free(rawoff); free(reloff); free(rel); free(nrel); free(symidx);
     (void)shstr;
     return 1;
 }

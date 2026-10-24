@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.3.4
+
+- New: `--o file` output flag. `-o` alone writes `name.o`, `-obj` writes `name.obj`. The kernel flag is optional (host default).
+- New: `--ld` lightweight linker. ELF objects (x86-64, i386, ARM64, RISC-V) make a static ELF, COFF objects (32 and 64-bit) make a Windows exe.
+- New: `-global`, `-unglobal`, `-uninstall`, `-update`, and a one-time `-global` hint on first run. `CLY_GLOBAL_DIR` picks another folder.
+- New: smaller object files (empty sections, unneeded section symbols and repeated string tails are not written; `-nasm` keeps NASM's layout).
+- New: two sets of 500 batched checks at the end of `tests/run_all.sh`. The first set is 10 batches of 50 (link and run, NASM comparison, install and update, format checks, fuzzing). The second set is 5 batches of 100 and tests different things: expressions and data layout against a model, macros and the preprocessor against NASM, assembly linked into C programs with gcc and run (also at `-O0` and `-O3`), ARM64 and RISC-V encodings against llvm-mc, and disassembly with objdump plus identical output on every run.
+- Fix: `%substr` with a space between the start and the length (`%substr s 'abc' 2 1`) always returned the first character. It now reads the start like NASM does.
+- Fix: 2 byte VEX prefix used with `ymm8` to `ymm15` or `r8` to `r15` in the last operand, which wrote the wrong register.
+- Fix: `movbe` with 64-bit registers was rejected.
+- Fix: `fadd`, `fmul`, `fsub`, `fsubr`, `fdiv`, `fdivr` with `st0, st0` picked a different (equal) encoding than NASM.
+- Fix: `-nasm` accepted 64-bit register names in 16-bit and 32-bit code and read them as 32-bit. It is an error now.
+- Fix: `-nasm` with `-omf`, `-as86`, `-ieee`, `-aout` and `-aoutb` used 64-bit defaults. They use NASM's defaults (16-bit, 32-bit for a.out).
+- Fix: an unterminated `%[` crashed the preprocessor.
+- Fix: `times` with huge counts of data took minutes.
+- Fix: `--ld` crashed on damaged or truncated ELF input, and `-update` ran release data through a shell.
+
+- Fix: vector instructions (VEX) with `xmm16` to `xmm31`, `ymm16` to `ymm31` as an operand were written with the wrong register (for example `vaddps xmm16, xmm1, xmm2` came out as `vaddps xmm0, xmm1, xmm2`). They now use the EVEX form, or are an error when the instruction has none.
+- Fix: the 64-bit forms of the BMI and TBM instructions were missing: `andn`, `bextr`, `bzhi`, `blsi`, `blsmsk`, `blsr`, `mulx`, `pdep`, `pext`, `rorx`, `sarx`, `shlx`, `shrx`, `blcfill`, `blci`, `blcic`, `blcmsk`, `blcs`, `blsfill`, `blsic`, `t1mskc`, `tzmsk`, and `llwpcb`, `slwpcb`, `lwpins`, `lwpval` with 64-bit registers.
+- Fix: 64-bit registers were rejected, or the wrong form was picked, in `kmovq`, `vmovq`, `vmovmskps`, `vmovmskpd`, `vpmovmskb`, `vpbroadcastb`, `vpbroadcastw`, `vpbroadcastq`, `vcvtsd2si`, `vcvtss2si`, `vcvttsd2si`, `vcvttss2si`, `vcvtsd2usi`, `vcvtss2usi`, `vcvttsd2usi`, `vcvttss2usi`, `vcvtsh2si`, `vcvtsh2usi`, `vcvttsh2si`, `vcvttsh2usi`, `vcvtsi2sd`, `vcvtsi2ss`, `vcvtusi2sd`, `vcvtusi2ss`, `vcvtsi2sh` and `vcvtusi2sh`. A memory operand with `qword` now picks the shorter VEX form where one exists.
+- Fix: `vpinsrq` and `vpextrq` with a 64-bit register, and `vpextrb`, `vpextrw`, `vpextrd`, `vextractps` with a 64-bit destination register, were rejected. `vpinsrq` and `vpextrq` with memory now use the shorter VEX form.
+- New: Intel AMX. The `tmm0` to `tmm7` registers and `ldtilecfg`, `sttilecfg`, `tilezero`, `tilerelease`, `tileloadd`, `tileloaddt1`, `tilestored`, `tdpbssd`, `tdpbsud`, `tdpbusd`, `tdpbuud`, `tdpbf16ps`. The tile loads and stores always get the SIB byte they need.
+- New: `clac`, `stac`, `enclv`, `pconfig`, `xresldtrk`, `xsusldtrk`, `aadd`, `aand`, `axor`, `hreset`, `prefetchit0`, `prefetchit1`, and the immediate forms of `retnw`, `retfw`, `retfd`, `movntss`, `movntsd`, and `prefetch` and `prefetchw` with a sized memory operand. Before, a lone instruction name like `clac` was silently taken as a label.
+- New: `-g` writes a DWARF 4 line table (`.debug_line`, `.debug_info`, `.debug_abbrev`, `.debug_str`) into ELF programs and ELF objects, for x86, ARM64 and RISC-V. gdb and `readelf --debug-dump=decodedline` read it. The optimizer keeps the original file and line of every instruction. With `-g` the section headers are kept in the output.
+- New: output formats `-x32` (ELF x32), `-aout`, `-aoutb` and `-omf` (Intel OMF with `use16`/`use32`, `class=`, `group`, `..start`, `import`, `export`, `common`). a.out and OMF output matches `nasm -f aout`, `aoutb` and `obj` byte for byte on the test programs.
+- New: `-map [FILE]` and the `map` directive write a section and symbol map.
+- New: warning classes `-w+NAME` and `-w-NAME` (and `-w+error`, `-w+error=NAME`, `-w-all`), the `warning` directive, `-Z FILE` and `-s` for the error stream, `-X gnu|vc` for the message style.
+- New: dependency options `-MF`, `-MT`, `-MQ`, `-MP`, `-MG` next to `-M` and `-MD`.
+- New: `-@ FILE` response files.
+- New: the `prefix`, `postfix`, `gprefix` and `gpostfix` directives add text to every global symbol name in object files.
+- New: mask register shorthand. `kmov`, `kand`, `kor` and the other mask instructions without a size letter pick the size from the operands (`kmovw k1, ax`, `kmov k1, eax` is `kmovd`). NASM reads the last one as `kmovw`, this is a deliberate difference.
+- Fix: `-nasm` mode no longer turns `[esp+4]` and `[ebp-8]` in 64-bit code into `[rsp+4]` and `[rbp-8]`. It now writes the 67 address size prefix like NASM. The default mode keeps the friendly conversion.
+- Fix: `movdir64b`, `enqcmd` and `enqcmds` with a 32-bit register now get the address size prefix NASM writes (in 64-bit code and, for `enqcmd`, in 32-bit code).
+- New: `-as86` (byte for byte like NASM) and `-ieee` (IEEE-695, same records as NASM), and `-g` for x32 objects.
+
 ## 1.3.3
 
 - New: i386 and IA-32 CPUs. `-cpu i386`, `i486`, `i586`, `i686` and `ia32` (also `ia-32`, `x86-32`; a `cpu` line in the source does the same) mean 32-bit Intel code. Code is 32-bit by default, `-m64` is an error, and the name sets how far the instruction set goes (`i386` is the 80386 only, `ia32` is everything that exists in 32-bit mode). The 64-bit registers (`rax`, `r8d`, `sil`) and `syscall` are errors with a message that names the 32-bit way. The built-in C library needs SSE2, so it is only offered with `ia32`.

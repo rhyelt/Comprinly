@@ -55,6 +55,11 @@ typedef struct {
     Sym *entry;
     i64 totalsize;
     Chunk *lst_chunks;
+    DbgLine *dbg;
+    int ndbg, capdbg;
+    char **dbgfiles;
+    int ndbgfiles;
+    u8 *dbgseen;
     i64 *lst_off;
     int *lst_sec;
     u8 **lst_bytes;
@@ -63,6 +68,8 @@ typedef struct {
     int type;
     int arch, rvext;
     int cpu_first;
+    OGroup *groups;
+    int ngroups;
     int numlab[10000];
 } AS;
 
@@ -533,8 +540,33 @@ static void commit_chunk(Sec *s, Chunk *c, i64 size_only)
 }
 
 /* Saves bytes of a line for the -l listing (final pass only). */
+/* Remembers where the current source line put its first byte, for the debug line table (final pass only). */
+static void note_dbg(Sec *s, i64 off)
+{
+    int i = A.cur_line;
+    if (i < 0 || i >= A.nwide || A.dbgseen[i]) return;
+    SLine *l = &A.lines->v[i];
+    if (!l->file || l->file[0] == '<' || l->line <= 0) return;
+    A.dbgseen[i] = 1;
+    int f = -1;
+    for (int k = 0; k < A.ndbgfiles; k++) if (!strcmp(A.dbgfiles[k], l->file)) { f = k; break; }
+    if (f < 0) {
+        A.dbgfiles = xrealloc(A.dbgfiles, sizeof(char *) * (size_t)(A.ndbgfiles + 1));
+        A.dbgfiles[A.ndbgfiles] = xstrdup(l->file);
+        f = A.ndbgfiles++;
+    }
+    if (A.ndbg == A.capdbg) {
+        A.capdbg = A.capdbg ? A.capdbg * 2 : 256;
+        A.dbg = xrealloc(A.dbg, sizeof(DbgLine) * (size_t)A.capdbg);
+    }
+    DbgLine *d = &A.dbg[A.ndbg];
+    d->sec = s->idx; d->off = off; d->file = f; d->line = l->line; d->seq = A.ndbg;
+    A.ndbg++;
+}
+
 static void note_list(Sec *s, i64 off, const u8 *p, size_t n)
 {
+    if (g_debug && A.final) note_dbg(s, off);
     if (!A.o->list || !A.final) return;
     int i = A.cur_line;
     A.lst_sec[i] = s->idx;
@@ -1396,6 +1428,7 @@ static void cb_extern(const char *name, const char *attr, void *ud)
     Sym *s = get_sym(fn);
     if (s->defined && s->defpass >= 0) { free(fn); return; }
     s->ext = 1;
+    if (!s->defline) s->defline = A.cur_line;
     free(fn);
 }
 
@@ -1410,6 +1443,38 @@ static void cb_static(const char *name, const char *attr, void *ud)
 }
 
 
+/* Handles the group directive: names a set of segments for OMF output. */
+static void handle_group(const char *rest)
+{
+    const char *p = skipws(rest);
+    char w[256];
+    int k = 0;
+    OGroup *g = NULL;
+    for (;;) {
+        p = skipws(p);
+        size_t n = 0;
+        while (*p && *p != ' ' && *p != '\t' && *p != ';' && n < sizeof w - 1) w[n++] = *p++;
+        w[n] = 0;
+        if (!n) break;
+        if (k++ == 0) {
+            for (int i = 0; i < A.ngroups; i++) if (!strcmp(A.groups[i].name, w)) g = &A.groups[i];
+            if (!g) {
+                A.groups = xrealloc(A.groups, sizeof(OGroup) * (size_t)(A.ngroups + 1));
+                g = &A.groups[A.ngroups++];
+                memset(g, 0, sizeof *g);
+                g->name = xstrdup(w);
+            }
+            continue;
+        }
+        int have = 0;
+        for (int i = 0; i < g->nsegs; i++) if (!strcmp(g->segs[i], w)) have = 1;
+        if (have) continue;
+        g->segs = xrealloc(g->segs, sizeof(char *) * (size_t)(g->nsegs + 1));
+        g->segs[g->nsegs++] = xstrdup(w);
+    }
+    if (k < 1) err("`group' expects a group name");
+}
+
 /* Handles section/segment: opens or creates a section and applies its attributes (align=, progbits, nobits, exec, write ...). */
 static void handle_section(const char *rest)
 {
@@ -1422,7 +1487,7 @@ static void handle_section(const char *rest)
     if (A.npending) flush_labels(A.cur ? A.cur : (A.last ? A.last : A.text));
     Sec *s = find_sec(name);
     int created = 0;
-    if (!s) { s = new_sec(name); sec_defaults(s); created = 1; }
+    if (!s) { s = new_sec(name); sec_defaults(s); created = 1; s->sbits = A.bits; }
     s->declared = 1;
     if (!s->order) s->order = ++A.ordcnt;
     if (s == A.text || s == A.data || s == A.bss) created = created;
@@ -1441,7 +1506,7 @@ static void handle_section(const char *rest)
             *eq = 0;
             Val v;
             const char *vp = eq + 1;
-            if (strcasecmp(w, "follows") && strcasecmp(w, "vfollows") && expr_eval_str(vp, &v, 0) && val_isconst(&v)) val = v.n;
+            if (strcasecmp(w, "follows") && strcasecmp(w, "vfollows") && strcasecmp(w, "class") && expr_eval_str(vp, &v, 0) && val_isconst(&v)) val = v.n;
         }
         if (!strcasecmp(w, "progbits")) s->nobits = 0;
         else if (!strcasecmp(w, "nobits")) s->nobits = 1;
@@ -1457,12 +1522,20 @@ static void handle_section(const char *rest)
         else if (!strcasecmp(w, "follows")) { free(s->follows); s->follows = xstrdup(eq ? eq + 1 : ""); }
         else if (!strcasecmp(w, "vfollows")) { free(s->vfollows); s->vfollows = xstrdup(eq ? eq + 1 : ""); }
         else if (!strcasecmp(w, "code") || !strcasecmp(w, "text")) s->exec = 1;
+        else if (!strcasecmp(w, "class") && eq) { free(s->cls); s->cls = xstrdup(eq + 1); }
+        else if (!strcasecmp(w, "use16")) s->sbits = 16;
+        else if (!strcasecmp(w, "use32")) s->sbits = 32;
+        else if (!strcasecmp(w, "private")) s->combine = 1;
+        else if (!strcasecmp(w, "public")) s->combine = 2;
+        else if (!strcasecmp(w, "common")) s->combine = 7;
+        else if (!strcasecmp(w, "stack")) s->combine = 6;
         else if (!strcasecmp(w, "data") || !strcasecmp(w, "bss") || !strcasecmp(w, "rdata") || !strcasecmp(w, "private") || !strcasecmp(w, "public") || !strcasecmp(w, "stack") || !strcasecmp(w, "common") || !strcasecmp(w, "use16") || !strcasecmp(w, "use32") || !strcasecmp(w, "flat") || !strcasecmp(w, "class") || !strcasecmp(w, "info") || !strcasecmp(w, "tls") || !strcasecmp(w, "lib") || !strcasecmp(w, "comdat") || !strcasecmp(w, "discard") || !strcasecmp(w, "read") || !strcasecmp(w, "execute") || !strcasecmp(w, "remove") || !strcasecmp(w, "shared") || !strcasecmp(w, "nodiscard")) {
             if (!strcasecmp(w, "bss")) { s->nobits = 1; s->write = 1; }
             if (!strcasecmp(w, "execute")) s->exec = 1;
             if (!strcasecmp(w, "read")) {}
         } else warn("unknown section attribute `%s'", w);
     }
+    if (A.type == T_OMF && A.arch == ARCH_X86 && s->sbits) set_bits(s->sbits);
     A.cur = s;
     A.last = s;
     {
@@ -1556,10 +1629,46 @@ static void handle_times(const char *rest)
     if (cnt > ((i64)1 << 28)) { err("`times' count is too large"); return; }
     p = skipws(p);
     if (!*p || *p == ';') { err("`times' needs an instruction or data"); return; }
+    int simple = 0;
+    {
+        char w[64];
+        scan_word(p, w, sizeof w);
+        int unit = 0;
+        int k = word_kind(w, &unit);
+        simple = k >= 0 && unit > 0 && !strpbrk(p, "$%") && !(A.o->list && A.final) && !(g_debug && A.final) && !A.struc_active && !A.istruc_name;
+    }
     for (i64 i = 0; i < cnt; i++) {
         int before = g_errors;
+        i64 sz0 = 0;
+        size_t dn0 = 0;
+        int nr0 = A.nrelocs;
+        Sec *sc0 = A.cur;
+        if (simple && i >= 2 && cnt - i > 4096) {
+            Sec *s = A.stmt ? A.stmt : A.cur;
+            if (s) { sz0 = s->size; dn0 = s->data.n; }
+            else simple = 0;
+        }
         do_stmt(p, 0);
         if (g_errors != before) break;
+        if (simple && i >= 2 && cnt - i > 4096) {
+            Sec *s = A.stmt ? A.stmt : A.cur;
+            i64 dsz = s->size - sz0;
+            size_t ddn = s->data.n - dn0;
+            if (A.nrelocs == nr0 && A.cur == sc0 && dsz > 0 && (ddn == 0 || ddn == (size_t)dsz) && !A.npending) {
+                i64 more = cnt - i - 1;
+                if (ddn == 0) s->size += dsz * more;
+                else {
+                    size_t total = ddn * (size_t)more, start = s->data.n;
+                    bfill(&s->data, 0, total);
+                    u8 *pat = s->data.p + start - ddn;
+                    u8 *dst = s->data.p + start;
+                    if (ddn == 1) memset(dst, pat[0], total);
+                    else for (i64 m = 0; m < more; m++) memcpy(dst + (size_t)m * ddn, pat, ddn);
+                    s->size += dsz * more;
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -1725,6 +1834,7 @@ static void do_directive(const char *w, const char *rest)
             char *cn = full_name(name);
             Sym *cs = get_sym(cn);
             cs->common = 1;
+            if (!cs->defline) cs->defline = A.cur_line;
             cs->commonsize = size;
             cs->commonalign = g_nasm && !alset ? 0 : (int)al;
             cs->global = 1;
@@ -1789,6 +1899,7 @@ static void do_directive(const char *w, const char *rest)
         char *fn = full_name(n);
         Sym *s = get_sym(fn);
         s->ext = 1;
+        if (!s->defline) s->defline = A.cur_line;
         s->import = 1;
         free(s->impdll);
         free(s->impname);
@@ -1824,7 +1935,38 @@ static void do_directive(const char *w, const char *rest)
             q = skipws(e2);
             if (*q == ',') q = skipws(q + 1);
         }
-    } else if (is_kw(w, "group") || is_kw(w, "uppercase") || is_kw(w, "float") || is_kw(w, "warning") || is_kw(w, "list") || is_kw(w, "map") || is_kw(w, "debug") || is_kw(w, "sectalign") || is_kw(w, "prefix") || is_kw(w, "postfix") || is_kw(w, "gprefix") || is_kw(w, "gpostfix") || is_kw(w, "lprefix") || is_kw(w, "lpostfix") || is_kw(w, "required")) {
+    } else if (is_kw(w, "warning")) {
+        const char *p = skipws(rest);
+        while (*p) {
+            char tok[64];
+            int k = 0;
+            while (*p && !isspace((unsigned char)*p) && k < 63) tok[k++] = *p++;
+            tok[k] = 0;
+            if (k && !warn_class_set(tok)) warn("unknown warning class `%s'", tok);
+            p = skipws(p);
+        }
+    } else if (is_kw(w, "map")) {
+        const char *p = skipws(rest);
+        char tok[512];
+        while (*p) {
+            int k = 0;
+            while (*p && !isspace((unsigned char)*p) && k < 511) tok[k++] = *p++;
+            tok[k] = 0;
+            p = skipws(p);
+            if (!strcmp(tok, "all") || !strcmp(tok, "brief") || !strcmp(tok, "sections") || !strcmp(tok, "segments") || !strcmp(tok, "symbols")) continue;
+            if (!g_mappath) g_mappath = xstrdup(tok);
+        }
+    } else if (is_kw(w, "prefix") || is_kw(w, "gprefix") || is_kw(w, "postfix") || is_kw(w, "gpostfix")) {
+        const char *p = skipws(rest);
+        char tok[128];
+        int k = 0;
+        while (*p && !isspace((unsigned char)*p) && k < 127) tok[k++] = *p++;
+        tok[k] = 0;
+        if (is_kw(w, "prefix") || is_kw(w, "gprefix")) g_gprefix = xstrdup(tok);
+        else g_gpostfix = xstrdup(tok);
+    } else if (is_kw(w, "group")) {
+        handle_group(rest);
+    } else if (is_kw(w, "uppercase") || is_kw(w, "float") || is_kw(w, "list") || is_kw(w, "debug") || is_kw(w, "sectalign") || is_kw(w, "lprefix") || is_kw(w, "lpostfix") || is_kw(w, "required")) {
     } else err("unknown directive `%s'", w);
 }
 
@@ -1899,7 +2041,7 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
 /* In object output, treats names that are used but never defined as extern. */
 static void auto_extern(void)
 {
-    if (A.type != T_OBJ || g_nasm) return;
+    if (!(A.type == T_OBJ || A.type == T_X32 || A.type == T_AOUT || A.type == T_AOUTB || A.type == T_OMF || A.type == T_AS86 || A.type == T_IEEE) || g_nasm) return;
     for (int i = 0; i < A.nsyms; i++) {
         Sym *s = A.syms[i];
         if (s->referenced && !s->defined && !s->ext && !s->common && strncmp(s->name, "__num_", 6)) s->ext = 1;
@@ -2065,7 +2207,7 @@ static void handle_insn(const char *mn, const char *rest, IC *ic)
         commit_insn(s, &raw);
         return;
     }
-    if (A.bits == 64) promote_regs(mn, ops, nops, ic);
+    if (A.bits == 64 && !g_nasm) promote_regs(mn, ops, nops, ic);
     p = skipws(p);
     if (*p && *p != ';') { err("junk at end of line: `%.20s'", p); return; }
     ic->bits = A.bits;
@@ -2404,6 +2546,9 @@ int detect_bits(AsmOpts *o)
         if (!strncasecmp(t, "use64", 5) && !ident_char((unsigned char)t[5])) return 64;
         if (!strncasecmp(t, "use32", 5) && !ident_char((unsigned char)t[5])) return 32;
     }
+    if (o->type == T_X32) return 64;
+    if (o->type == T_OMF || o->type == T_AS86 || o->type == T_IEEE) return 16;
+    if (o->type == T_AOUT || o->type == T_AOUTB) return 32;
     int flat = o->type == T_FLAT || o->type == T_COM || o->type == T_HEX || o->type == T_SREC || o->type == T_IMG;
     return (o->kernel == K_BARE || flat) ? 32 : 64;
 }
@@ -2464,7 +2609,7 @@ int assemble(AsmOpts *o, Obj *out)
     A.kernel = o->kernel;
     g_no_abs32 = o->kernel == K_MAC;
     A.type = o->type;
-    g_objmode = o->type == T_OBJ || o->type == T_COFF;
+    g_objmode = IS_OBJ(o->type);
     A.arch = o->arch;
     A.rvext = o->rvext ? o->rvext : RVX_DEFAULT;
     A.default_bits = detect_bits(o);
@@ -2493,6 +2638,7 @@ int assemble(AsmOpts *o, Obj *out)
     if (o->flat_mode || g_nasm) A.explicit_mode = 1;
     A.nwide = A.lines->n;
     A.wide = xcalloc((size_t)A.nwide + 1, 1);
+    if (g_debug) A.dbgseen = xcalloc((size_t)A.nwide + 1, 1);
     if (o->list) {
         A.lst_off = xcalloc((size_t)A.nwide + 1, sizeof(i64));
         A.lst_sec = xcalloc((size_t)A.nwide + 1, sizeof(int));
@@ -2564,7 +2710,7 @@ int assemble(AsmOpts *o, Obj *out)
         Val v;
         if (expr_eval_str(s->sexpr, &v, 0) && val_isconst(&v)) s->ssize = v.n;
     }
-    if (g_nasm && (A.type == T_OBJ || A.type == T_COFF)) prune_sections();
+    if (g_nasm && IS_OBJ(A.type)) prune_sections();
     if (st) st->global = 1;
     out->secs = A.secs;
     out->nsecs = A.nsecs;
@@ -2576,10 +2722,18 @@ int assemble(AsmOpts *o, Obj *out)
     out->arch = A.arch;
     out->rvext = A.rvext;
     out->is64 = A.default_bits == 64;
+    out->otype = A.type;
+    out->defbits = A.default_bits;
+    out->groups = A.groups;
+    out->ngroups = A.ngroups;
     out->has_org = A.has_org || o->flat_mode;
     out->org = (int)A.org;
     out->entry = A.entry;
-    out->src = g_nasm ? o->srcpath : NULL;
+    out->src = (g_nasm || A.type == T_OMF || A.type == T_AS86 || A.type == T_IEEE) ? o->srcpath : NULL;
+    out->dbg = A.dbg;
+    out->ndbg = A.ndbg;
+    out->dbgfiles = A.dbgfiles;
+    out->dbgnfiles = A.ndbgfiles;
     if (o->list && o->listpath) {
         FILE *f = fopen(o->listpath, "w");
         if (f) {

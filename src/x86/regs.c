@@ -65,6 +65,9 @@ static void reg_init(void)
         snprintf(b, sizeof b, "ymm%d", i); radd(b, RC_YMM, i, 32);
         snprintf(b, sizeof b, "zmm%d", i); radd(b, RC_ZMM, i, 64);
     }
+    for (int i = 0; i < 8; i++) {
+        snprintf(b, sizeof b, "tmm%d", i); radd(b, RC_TMM, i, 1024);
+    }
     for (int i = 0; i < 4; i++) {
         snprintf(b, sizeof b, "bnd%d", i); radd(b, RC_BND, i, 16);
     }
@@ -162,7 +165,7 @@ int reg_lookup(const char *name, int *size)
 /* True if the name is a register that only exists in 64-bit mode (rax, r8d, sil ...) and the target is i386 / IA-32 code. The caller reports the error. */
 int reg_bad32(const char *name)
 {
-    if (!g_ia32 || rmode64) return 0;
+    if ((!g_ia32 && !g_nasm) || rmode64) return 0;
     if (!reg_ready) reg_init();
     char b[16];
     size_t n = strlen(name);

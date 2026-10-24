@@ -23,7 +23,7 @@ static const struct { const char *n; int id; } specnames[] = {
     { "st0", S_ST0 }, { "sti", S_STI }, { "xmm0", S_XMM0 },
     { "rel8", S_REL8 }, { "rel", S_REL }, { "far", S_FARPTR },
     { "r32m16", S_R32M16 }, { "r32m8", S_R32M8 },
-    { "m512", S_M512 }, { "bnd", S_BND }, { "bndr", S_BNDR },
+    { "m512", S_M512 }, { "bnd", S_BND }, { "bndr", S_BNDR }, { "tmm", S_TMM },
     { "r64", S_R64 }, { "rr64", S_RR64 }, { "rm64", S_RM64 }, { "rax", S_RAX }, { "rcx", S_RCX },
     { "imm64", S_IMM64 }, { "sd", S_SD }, { "ud", S_UD }, { "mo64", S_MO64 }, { "r32x", S_R32X }, { "rm32x", S_RM32X }, { "sb64", S_SB64 }, { "ecx", S_ECX }, { "edx", S_EDX }, { "cx", S_CX }, { "ibs", S_IBS }, { "ibu", S_IBU },
     { NULL, 0 }
@@ -714,6 +714,8 @@ static void int_tab(void)
     T("movbe", "r32,m32", "o32 0f 38 f0 /r");
     T("movbe", "m16,r16", "o16 0f 38 f1 /r");
     T("movbe", "m32,r32", "o32 0f 38 f1 /r");
+    T("movbe", "r64,m64", "only64 o64 0f 38 f0 /r");
+    T("movbe", "m64,r64", "only64 o64 0f 38 f1 /r");
     LV(12);
     T("popcnt", "r16,rm16", "o16 f3 0f b8 /r");
     T("popcnt", "r32,rm32", "o32 f3 0f b8 /r");
@@ -819,8 +821,8 @@ static void fpu_tab(void)
             TF(ar[i], "m32", "d8 /%d", i);
             TF(ar[i], "m64", "dc /%d", i);
             TF(ar[i], "sti", "d8 %02x+i", d8_lo[i]);
-            TF(ar[i], "st0,sti", "d8 %02x+i", d8_lo[i]);
             TF(ar[i], "sti,st0", "dc %02x+i", dc_lo[i]);
+            TF(ar[i], "st0,sti", "d8 %02x+i", d8_lo[i]);
             TF(arp[i], "sti", "de %02x+i", dc_lo[i]);
             TF(arp[i], "sti,st0", "de %02x+i", dc_lo[i]);
             TF(arp[i], "", "de %02x", dc_lo[i] + 1);
@@ -1151,6 +1153,8 @@ int insn_known(const char *mn)
     if (n >= sizeof b) return 0;
     for (size_t i = 0; i <= n; i++) b[i] = (char)tolower((unsigned char)mn[i]);
     if (!strcmp(b, "syscall")) return 1;
+    static const char *const kgen[] = { "kmov", "kand", "kandn", "kor", "kxor", "kxnor", "knot", "kortest", "ktest", "kadd", "kunpck", "kshiftl", "kshiftr", NULL };
+    for (int i = 0; kgen[i]; i++) if (!strcmp(b, kgen[i])) return 1;
     return tab_lookup(b) != NULL;
 }
 

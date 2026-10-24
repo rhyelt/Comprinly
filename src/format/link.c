@@ -488,7 +488,7 @@ void fmt_srec(const Bytes *in, i64 base, i64 entry, Str *out)
 }
 
 /* Picks the right writer for the kernel and output type and produces the final bytes. */
-int link_obj(Obj *o, int kernel, int type, Bytes *out)
+static int link_obj_inner(Obj *o, int kernel, int type, Bytes *out)
 {
     int plainbin = type == T_BIN;
     if (o->arch != ARCH_X86) {
@@ -504,12 +504,23 @@ int link_obj(Obj *o, int kernel, int type, Bytes *out)
         type = kernel == K_WINDOWS ? T_EXE : kernel == K_MAC ? T_MACHO : kernel == K_LINUX ? T_ELF : T_IMG;
         if (kernel == K_BARE) type = T_IMG;
     }
+    if (g_debug && !(type == T_ELF || (type == T_OBJ && kernel != K_WINDOWS) || type == T_X32)) warn("debug information (-g) is only written for ELF output (not a.out, OMF, as86 or IEEE objects); ignored");
     switch (type) {
     case T_ELF: return fmt_elf(o, out);
     case T_EXE: return fmt_pe(o, out);
     case T_MACHO: return fmt_macho(o, out);
-    case T_OBJ: return kernel == K_WINDOWS ? fmt_coff(o, out) : fmt_elfobj(o, out);
+    case T_OBJ:
+        if (kernel == K_WINDOWS) return fmt_coff(o, out);
+        if (g_debug) dwarf_add_obj(o);
+        return fmt_elfobj(o, out);
     case T_COFF: return fmt_coff(o, out);
+    case T_OMF: return fmt_omf(o, out);
+    case T_AS86: return fmt_as86(o, out);
+    case T_IEEE: return fmt_ieee(o, out);
+    case T_AOUT: case T_AOUTB: return fmt_aout(o, out);
+    case T_X32:
+        if (g_debug) dwarf_add_obj(o);
+        return fmt_elfobj(o, out);
     case T_FLAT:
     case T_COM:
     case T_HEX:
@@ -538,4 +549,70 @@ int link_obj(Obj *o, int kernel, int type, Bytes *out)
     }
     }
     return 0;
+}
+
+static int map_cmp_sec(const void *a, const void *b)
+{
+    const Sec *x = *(Sec *const *)a, *y = *(Sec *const *)b;
+    return x->base < y->base ? -1 : x->base > y->base;
+}
+
+typedef struct { i64 addr; const Sym *s; } MapSym;
+
+static int map_cmp_sym(const void *a, const void *b)
+{
+    const MapSym *x = a, *y = b;
+    if (x->addr != y->addr) return x->addr < y->addr ? -1 : 1;
+    return strcmp(x->s->name, y->s->name);
+}
+
+/* Writes the map file (-map): the sections and then the symbols, both by address. */
+void write_map(Obj *o, int kernel, int type)
+{
+    (void)kernel;
+    FILE *f = fopen(g_mappath, "w");
+    if (!f) { warn("cannot write map file `%s'", g_mappath); return; }
+    int w = o->is64 ? 16 : 8;
+    fprintf(f, "Comprinly %s map file\n\n", CLY_VERSION);
+    fprintf(f, "-- Sections (by address) --\n\n");
+    fprintf(f, "%-*s  %-*s  %-*s  %-6s %s\n", w, "Start", w, "End", w, "Size", "Align", "Name");
+    Sec **sl = xmalloc(sizeof(Sec *) * (size_t)(o->nsecs + 1));
+    int n = 0;
+    for (int i = 0; i < o->nsecs; i++) if (o->secs[i]->size || o->secs[i]->data.n) sl[n++] = o->secs[i];
+    qsort(sl, (size_t)n, sizeof *sl, map_cmp_sec);
+    for (int i = 0; i < n; i++) {
+        Sec *s = sl[i];
+        fprintf(f, "%0*llX  %0*llX  %0*llX  %-6d %s%s\n", w, (unsigned long long)s->base, w, (unsigned long long)(s->base + (s->size ? s->size - 1 : 0)), w, (unsigned long long)s->size, s->align > 0 ? s->align : 1, s->name, s->nobits ? " (nobits)" : "");
+    }
+    free(sl);
+    fprintf(f, "\n-- Symbols (by address) --\n\n");
+    fprintf(f, "%-*s  %-7s %-8s %s\n", w, "Address", "Scope", "Section", "Name");
+    MapSym *ms = xmalloc(sizeof(MapSym) * (size_t)(o->nsyms + 1));
+    int m = 0;
+    for (int i = 0; i < o->nsyms; i++) {
+        Sym *s = o->syms[i];
+        if (!s->defined || !s->name[0] || s->ext || s->common || s->import) continue;
+        if (s->isequ && !s->isabs) continue;
+        if (!strncmp(s->name, ".cly_", 5)) continue;
+        ms[m].s = s;
+        ms[m].addr = (s->isequ || s->sec < 0) ? (s->isequ ? s->eqv.n : s->off) : sym_addr(o, s);
+        m++;
+    }
+    qsort(ms, (size_t)m, sizeof *ms, map_cmp_sym);
+    for (int i = 0; i < m; i++) {
+        const Sym *s = ms[i].s;
+        const char *sn = (s->isequ || s->sec < 0) ? "abs" : o->secs[s->sec]->name;
+        fprintf(f, "%0*llX  %-7s %-8s %s\n", w, (unsigned long long)ms[i].addr, s->global ? "global" : "local", sn, s->name);
+    }
+    free(ms);
+    (void)type;
+    fclose(f);
+}
+
+/* Picks the right writer, then writes the map file if one was asked for. */
+int link_obj(Obj *o, int kernel, int type, Bytes *out)
+{
+    int r = link_obj_inner(o, kernel, type, out);
+    if (r && g_mappath) write_map(o, kernel, type);
+    return r;
 }

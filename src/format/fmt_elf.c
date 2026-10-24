@@ -138,6 +138,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
     int n_symtab = add_str(&shstr, ".symtab");
     int n_strtab = add_str(&shstr, ".strtab");
     int n_shstr = add_str(&shstr, ".shstrtab");
+    void *dw = dwarf_exe_begin(o, &shstr);
     while (f.n & 7) bad1(&f, 0);
     size_t sym_off = f.n;
     badd(&f, symtab.p, symtab.n);
@@ -145,6 +146,7 @@ static int fmt_elf64(Obj *o, Bytes *out)
     badd(&f, strtab.p, strtab.n);
     size_t shs_off = f.n;
     badd(&f, shstr.p, shstr.n);
+    dwarf_exe_data(dw, &f);
     while (f.n & 7) bad1(&f, 0);
     size_t sh_off = f.n;
     for (int i = 0; i < 16; i++) put32(&f, 0);
@@ -168,10 +170,12 @@ static int fmt_elf64(Obj *o, Bytes *out)
     put64(&f, (u64)str_off); put64(&f, (u64)strtab.n); put32(&f, 0); put32(&f, 0); put64(&f, 1); put64(&f, 0);
     put32(&f, (u32)n_shstr); put32(&f, 3); put64(&f, 0); put64(&f, 0);
     put64(&f, (u64)shs_off); put64(&f, (u64)shstr.n); put32(&f, 0); put32(&f, 0); put64(&f, 1); put64(&f, 0);
+    dwarf_exe_headers(dw, &f, 1);
     bputle(&f, shoff_pos, (u64)sh_off, 8);
-    bputle(&f, shnum_pos, (u64)(ns + 4), 2);
+    bputle(&f, shnum_pos, (u64)(ns + 4 + dwarf_exe_count(dw)), 2);
     bputle(&f, shstr_pos, (u64)(ns + 3), 2);
     badd(out, f.p, f.n);
+    dwarf_exe_end(dw);
     free(shidx);
     free(secname);
     return 1;
@@ -282,6 +286,7 @@ int fmt_elf(Obj *o, Bytes *out)
     int n_symtab = add_str(&shstr, ".symtab");
     int n_strtab = add_str(&shstr, ".strtab");
     int n_shstr = add_str(&shstr, ".shstrtab");
+    void *dw = dwarf_exe_begin(o, &shstr);
     while (f.n & 3) bad1(&f, 0);
     size_t sym_off = f.n;
     badd(&f, symtab.p, symtab.n);
@@ -289,6 +294,7 @@ int fmt_elf(Obj *o, Bytes *out)
     badd(&f, strtab.p, strtab.n);
     size_t shs_off = f.n;
     badd(&f, shstr.p, shstr.n);
+    dwarf_exe_data(dw, &f);
     while (f.n & 3) bad1(&f, 0);
     size_t sh_off = f.n;
     for (int i = 0; i < 10; i++) put32(&f, 0);
@@ -312,10 +318,12 @@ int fmt_elf(Obj *o, Bytes *out)
     put32(&f, (u32)str_off); put32(&f, (u32)strtab.n); put32(&f, 0); put32(&f, 0); put32(&f, 1); put32(&f, 0);
     put32(&f, (u32)n_shstr); put32(&f, 3); put32(&f, 0); put32(&f, 0);
     put32(&f, (u32)shs_off); put32(&f, (u32)shstr.n); put32(&f, 0); put32(&f, 0); put32(&f, 1); put32(&f, 0);
+    dwarf_exe_headers(dw, &f, 0);
     bputle(&f, shoff_pos, (u64)sh_off, 4);
-    bputle(&f, shnum_pos, (u64)(ns + 4), 2);
+    bputle(&f, shnum_pos, (u64)(ns + 4 + dwarf_exe_count(dw)), 2);
     bputle(&f, shstr_pos, (u64)(ns + 3), 2);
     badd(out, f.p, f.n);
+    dwarf_exe_end(dw);
     free(shidx);
     free(secname);
     return 1;

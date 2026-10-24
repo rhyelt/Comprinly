@@ -9,6 +9,8 @@ Comprinly is open to collaborators. Bug reports, fixes, new instruction forms, t
 
 The test run skips what your machine does not have. Real NASM, llvm-mc and unicorn unlock the comparison and emulator tests.
 
+`run_all.sh` ends with 500 checks in 10 batches of 50 (the block named `500 check batches`). They build random programs and link them with `--ld`, run the result (natively for x86 ELF, in the emulator for PE, ARM64 and RISC-V), compare object formats and random instructions with NASM, test `-global` and `-update` in a throwaway folder, and feed mutated files to the assembler and the linker. A second block (`500 mature batches`) has 5 batches of 100 that test other things: expressions and layout against a model, macros against NASM, assembly linked into C with gcc, ARM64 and RISC-V encodings against llvm-mc, and objdump checks. Each batch is skipped if its tool is missing. To go harder, set `BATCH_N` (size of the fuzz and NASM batches, and of each batch in the second block), `BATCH_SEED` (different random data), `BATCH_ONLY` (part of a batch name) and `CLY` (another build, for example one built with `-fsanitize=address,undefined`).
+
 ## Where things are
 
 The source is in `src/`. `src/core` holds the preprocessor, expressions and the assembler core. Each CPU has its own folder, and `src/format` has the executable and object writers. See the source layout in `DOCUMENTATION.md`.

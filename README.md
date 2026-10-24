@@ -4,19 +4,19 @@
 
 # Comprinly
 
-Comprinly (`cly`) is a feature-packed programming language with almost the same syntax as NASM. It is simple, optimized, portable and fast... hence the slogan.
+Comprinly (`cly`) is a mature, feature-packed programming language and a dependable tool with almost the same syntax as NASM. It is simple, optimized, portable and fast... hence the slogan.
 
 It reads x86, ARM64 and RISC-V from the same syntax. The commands you type do not change when the CPU does.
 
 ## Project status
 
-Comprinly is no longer an experiment, I am fully working on it and hoping for collaborators.
+From 1.3.0 on, the project is no longer fully vibe-coded. It is partly vibe-coded and partly written by hand by me and, hopefully, by the people who join. See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to help.
 
-From 1.3.0 on, the project is no longer fully vibe-coded. It is partly vibe-coded and partly written by hand by me and, hopefully, by the people who join. You may still run into bugs, so please report them. See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to help.
+Version 1.3.4 is much more stable and much improved over everything before it, and it is the first release I would ask you to trust with real work. It was hunted for bugs hard: every release is checked by two sets of 500 batched tests (1000 in all) that link and run programs on four CPU families, compare thousands of random instructions against NASM, and feed broken files to the assembler and the linker. Bugs can still exist, so please keep reporting them.
 
 ## Get it
 
-Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Componly/releases). Or build it yourself. You only need a C compiler and make:
+Prebuilt binaries are on the [Releases page](https://github.com/rhyelt/Comprinly/releases). Or build it yourself. You only need a C compiler and make:
 
     make
 
@@ -60,8 +60,11 @@ The system is one of `linux`, `windows`, `mac` or `bare`. A few examples:
     cly linux hello.cly -O0
     cly linux hello.cly -O3
     cly linux hello.cly -cpu i386
-    cly linux hello.cly -obj
-    cly linux hello.cly -o
+    cly hello.cly
+    cly hello.cly -o
+    cly hello.cly -obj
+    cly hello.cly --o hello.o
+    cly hello.o --ld hello
 
 Run `cly -h` to see every option.
 

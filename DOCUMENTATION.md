@@ -277,7 +277,9 @@ Pseudo instructions: `li`, `la`, `lla`, `lga`, `mv`, `not`, `neg`, `negw`, `sext
 | Target | x86 | ARM64 | RISC-V |
 |--------|-----|-------|--------|
 | linux executable | yes | yes | yes |
-| linux object (`-obj`) | yes | yes | yes |
+| linux object (`-obj`, `-o`) | yes | yes | yes |
+| `--ld` link of ELF objects | yes | yes | yes |
+| `--ld` link of COFF objects to `.exe` | yes | no | no |
 | windows | yes | no | no |
 | mac | yes | no | no |
 | bare (boot image) | yes | raw only | raw only |
@@ -314,9 +316,9 @@ Things NASM and other assemblers have that Comprinly does not are listed next.
     src/arm64/     ARM64 encoder
     src/riscv/     RISC-V encoder
     src/opt/       optimizer
-    src/format/    ELF, PE, Mach-O, COFF writers and the linker
+    src/format/    ELF, PE, Mach-O, COFF writers, the linker for `--ld` (ldlink.c for ELF, ldcoff.c for COFF)
     src/runtime/   boot sector source for bare metal images
-    src/extras/    built-in C library and the leak check
+    src/extras/    built-in C library, the leak check and `-global`, `-unglobal`, `-uninstall`, `-update` (install.c)
 
 The build uses `-Isrc`, so every file just includes `cly.h`. Generated files (`rt_data.c`, `libc_data.c`, `insn_gen*.c`) come from the scripts in `rt/` and `tools/`.
 
@@ -325,9 +327,10 @@ The build uses `-Isrc`, so every file just includes `cly.h`. Generated files (`r
 These are not in Comprinly, so they are not documented above:
 
 - APX (the extended general registers `r16` to `r31` and the new instruction forms)
-- OMF and `.obj` output for 16-bit tools (`-coff` and `-obj` make COFF and ELF)
-- debug information of any kind: DWARF, STABS, and the `-g` option
+- `-obj` always means ELF (COFF on windows); OMF is `-omf`
+- debug information other than a DWARF line table (`-g`): no variable, type or macro info, no STABS
 - debugger integration
+- `--ld` is a small static linker: no shared libraries, no TLS, no section headers or symbols in the output
 - a disassembler like NDISASM
 - `%note` (NASM does not have it either)
 - SVE and SME on ARM64, 32-bit ARM
