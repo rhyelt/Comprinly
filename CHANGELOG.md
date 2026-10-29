@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.5
+
+- New: shared libraries. `-shared` writes a Linux `.so` for x86-64, i386, ARM64 and RISC-V, from source or with `--ld -shared` from objects (including objects built by gcc with `-fPIC`). `-dynamic` and `-needed LIB` make a program that loads shared libraries (your own, ones built by gcc, or `libc.so.6`). `-rdynamic`, `-rpath`, `-soname` and `-interp` set the details. Exports, imports, the PLT, GOT, copy and relative relocations, `DT_NEEDED`, `DT_INIT_ARRAY` and friends are written, and the section headers GNU ld needs to link against the result. A small library is about 1.6 KB, a program that calls `puts` from libc is 888 bytes.
+- New: Windows DLLs. `-dll` (from source) and `--ld -dll` (from COFF objects) write a DLL with an export table sorted for the loader and base relocations, for 32 and 64-bit x86.
+- New: position independent code forms. `wrt ..got`, `..gotoff`, `..gotpc` and `..plt` now match NASM's relocations in 32 and 64-bit object files, ARM64 has `adrp x0, :got:sym` and `ldr x0, [x0, :got_lo12:sym]`, RISC-V has `%got_pcrel_hi(sym)`.
+- New: the `weak` directive, and `global name:weak`, `extern name:weak`. Weak symbols are written as weak in ELF objects and resolved by `--ld`.
+- New: `--ld` provides `__start_NAME` and `__stop_NAME` for sections named like C identifiers, and `__init_array_start`, `__init_array_end`, `__fini_array_*` and `__preinit_array_*`. `.init_array.NNNNN` and `.fini_array.NNNNN` are sorted by priority like GNU ld does.
+- New: smaller output. A Windows program puts its import data in the data section when it can (a hello world is 1536 bytes instead of 2048), and a DLL puts its export table and relocations into the free space of the code page. The optimizer also turns `lea r, [r+1]` into `inc r`, `lea r32, [r32+k]` into `add`, `and r, 0` into `xor`, `or r, 0` and `and r, -1` on a 64-bit register into `test`, and `mov r32, 0xFFFFFFFF` into `or r32, -1`.
+- New: a third set of tests at the end of `tests/run_all.sh`: 16 batches of 100 for shared libraries, DLLs, many-object links, weak and common symbols, gcc interop (libraries and 200 random C programs linked statically and as shared libraries and compared with `ld`), fuzzing of the dynamic linker, and optimizer behavior and size. `tests/emu/elf_emu.py` has a small dynamic loader now (x86-64, i386, ARM64, RISC-V; `-L lib` loads a library).
+- Fix: `--ld` on an object with no global symbols crashed (a hash table that did not exist yet), and a very short file was read past its end while looking for a linker script.
+- Fix: the i386 `R_386_GOTPC` addend was missing the offset of the field, so position independent 32-bit code computed the wrong GOT address. `..got` references to a global now name the symbol, like NASM, instead of the section.
+- Fix: `--ld` ordered `.init_array` entries by file order. Priority constructors (`__attribute__((constructor(101)))`) now run first.
+- Fix: an error about a 32-bit address in a shared library printed an empty symbol name. It names the section now.
+- Fix: a DLL with many exports, imports and a bss section had a PE header larger than one file page, which moved every section and made the loader hang. The header size now follows the section count.
+- Fix: `__start_NAME`, `__stop_NAME` and the array bound symbols were missing when no object referenced them first. RISC-V `%got_pcrel_lo` used the wrong slot.
+- Fix: `weak` was not accepted as an assembler directive.
+- Smaller programs: `lea reg, [rel label]` no longer stops a program from using the single segment layout, so a Hello World that loads its string with `lea` is 164 bytes instead of 220.
+- Docs: `BENCHMARKS.md` has a 1.3.5 section.
+- Faster: `--ld` and `-shared` on inputs with thousands of symbols no longer slow down quadratically (global symbol table, leak analysis and string tail merging). A library of 12000 functions builds in about 2 seconds instead of 5.
+
 ## 1.3.4
 
 - New: `--o file` output flag. `-o` alone writes `name.o`, `-obj` writes `name.obj`. The kernel flag is optional (host default).

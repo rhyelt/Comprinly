@@ -154,9 +154,14 @@ int a64_parse_mem(Ctx *c, const char *s, AMem *m)
             if (ml >= sizeof mod) { err("%s: unknown relocation modifier", c->mn); return 0; }
             memcpy(mod, t + 1, ml);
             mod[ml] = 0;
-            if (strcasecmp(mod, "lo12") && strcasecmp(mod, "lo12_nc")) { err("%s: modifier `:%s:' is not supported here (use :lo12:)", c->mn, mod); return 0; }
+            int gotm = !strcasecmp(mod, "got_lo12");
+            if (!gotm && strcasecmp(mod, "lo12") && strcasecmp(mod, "lo12_nc")) { err("%s: modifier `:%s:' is not supported here (use :lo12: or :got_lo12:)", c->mn, mod); return 0; }
             m->hasmod = 1;
             if (!expr_eval_str(e + 1, &m->imm, 0)) return 0;
+            if (gotm) {
+                if (!m->imm.ext && m->imm.pos < 0) { err("%s: :got_lo12: needs a symbol", c->mn); return 0; }
+                m->imm.wk = 7;
+            }
             return 1;
         }
         if (!expr_eval_str(t, &m->imm, 0)) return 0;
@@ -241,6 +246,7 @@ static int rt_parse(Ctx *c, int i, RtInfo *r, int allow_fp)
 /* Emits a load or store with a :lo12: relocation. */
 static int emit_lo12(Ctx *c, u32 base, int shift, const Val *v)
 {
+    if (v->wk == 7 && shift != 3) { err("%s: :got_lo12: works only with a 64-bit ldr", c->mn); return 0; }
     a64_reloc(c, RK_A64_LO12, shift, v, (i64)c->out->code.n);
     a64_W(c, base);
     return 1;

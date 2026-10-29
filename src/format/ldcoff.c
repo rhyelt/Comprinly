@@ -397,7 +397,7 @@ int ld_link_coff(char **files, int nfiles, const char *outpath)
             }
         }
     }
-    static const char *ents[] = { "start", "_start", "mainCRTStartup", "_mainCRTStartup", "WinMainCRTStartup", "_WinMainCRTStartup", NULL };
+    static const char *ents[] = { "start", "_start", "mainCRTStartup", "_mainCRTStartup", "WinMainCRTStartup", "_WinMainCRTStartup", "_DllMainCRTStartup", "DllMainCRTStartup", NULL };
     for (int i = 0; ents[i] && !ob.entry; i++) {
         int g = gget(ents[i], 0);
         if (g >= 0 && gl[g].def) ob.entry = gl[g].sym;

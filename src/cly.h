@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.3.4"
+#define CLY_VERSION "1.3.5"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)
@@ -281,7 +281,7 @@ struct Sym {
     const char *deffile;
     int defln;
     int isabs;
-    int stype, svis, commonalign;
+    int stype, svis, commonalign, sweak;
     i64 ssize;
     char *sexpr;
 };
@@ -328,9 +328,9 @@ typedef struct {
 
 /* Kernels (targets) and output types. */
 enum { K_BARE, K_WINDOWS, K_LINUX, K_MAC };
-enum { T_BIN, T_ELF, T_EXE, T_MACHO, T_FLAT, T_IMG, T_COM, T_HEX, T_SREC, T_OBJ, T_COFF, T_X32, T_AOUT, T_AOUTB, T_OMF, T_AS86, T_IEEE };
+enum { T_BIN, T_ELF, T_EXE, T_MACHO, T_FLAT, T_IMG, T_COM, T_HEX, T_SREC, T_OBJ, T_COFF, T_X32, T_AOUT, T_AOUTB, T_OMF, T_AS86, T_IEEE, T_SO, T_DLL };
 /* True for the output types that are relocatable object files. */
-#define IS_OBJ(t) ((t) == T_OBJ || (t) == T_COFF || (t) == T_X32 || (t) == T_AOUT || (t) == T_AOUTB || (t) == T_OMF || (t) == T_AS86 || (t) == T_IEEE)
+#define IS_OBJ(t) ((t) == T_OBJ || (t) == T_SO || (t) == T_COFF || (t) == T_X32 || (t) == T_AOUT || (t) == T_AOUTB || (t) == T_OMF || (t) == T_AS86 || (t) == T_IEEE)
 
 /* Everything the assembler needs for one build: target, source lines, listing and CPU choices. */
 typedef struct {
@@ -473,15 +473,29 @@ void install_hint(void);
 void install_cleanup_old(void);
 int ver_newer(const char *remote, const char *local);
 void obj_live_secs(Obj *o, int *keep, int *secsym);
+/* Options for the built-in linker: shared library output, dynamic programs and the libraries they need. */
+typedef struct {
+    int shared, dynamic, export_dyn;
+    char **needed;
+    int nneeded;
+    const char *soname, *rpath, *interp;
+} LdOpts;
+extern LdOpts g_ldo;
 int ld_link(char **files, int nfiles, const char *outpath);
+int ld_link_mem(char **files, int nfiles, Bytes *outb);
+void ld_mem_add(const char *name, const void *buf, size_t n);
 int ld_link_coff(char **files, int nfiles, const char *outpath);
 int ld_is_coff(const void *buf, size_t n);
 int fmt_ieee(Obj *o, Bytes *out);
+int fmt_so(Obj *o, Bytes *out);
 i64 link_entry(Obj *o);
 
 int fmt_flat(Obj *o, Bytes *out);
 int fmt_elf(Obj *o, Bytes *out);
 int fmt_pe(Obj *o, Bytes *out);
+extern int g_pe_dll, g_npefix;
+extern i64 *g_pefix;
+extern const char *g_outname;
 int fmt_macho(Obj *o, Bytes *out);
 int fmt_bare(Obj *o, Bytes *out);
 int fmt_elfobj(Obj *o, Bytes *out);

@@ -17,6 +17,27 @@ start:
     jne bad
     cmp ecx, 0xffffffff
     jne bad
+    mov esi, 0x7fffffff
+    lea esi, [esi+1]
+    cmp esi, 0x80000000
+    jne bad
+    mov r8d, 0xFFFFFFFF
+    cmp r8d, -1
+    jne bad
+    mov r9, 0x123456789
+    and r9, 0
+    jnz bad
+    test r9, r9
+    jnz bad
+    mov r10, 7
+    or r10, 0
+    js bad
+    jz bad
+    mov r11d, -5
+    lea r11d, [r11d-1]
+    lea r11d, [r11d+3]
+    cmp r11d, -3
+    jne bad
     mov rdi, 0
     jmp done
 bad:

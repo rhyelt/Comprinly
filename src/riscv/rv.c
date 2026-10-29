@@ -227,7 +227,7 @@ static int get_f(RC *c, int i, int *r)
     return 1;
 }
 
-enum { RM_NONE, RM_HI, RM_LO, RM_PCHI, RM_PCLO };
+enum { RM_NONE, RM_HI, RM_LO, RM_PCHI, RM_PCLO, RM_GOTHI };
 
 /* Recognizes %hi(sym), %lo(sym), %pcrel_hi(sym) and similar operators. */
 static int reloc_op(const char *s, int *kind, char *inner, size_t isz)
@@ -235,8 +235,8 @@ static int reloc_op(const char *s, int *kind, char *inner, size_t isz)
     while (*s == ' ' || *s == '\t') s++;
     if (*s != '%') return 0;
     const char *p = s + 1;
-    const char *names[] = { "hi", "lo", "pcrel_hi", "pcrel_lo", NULL };
-    int ks[] = { RM_HI, RM_LO, RM_PCHI, RM_PCLO };
+    const char *names[] = { "hi", "lo", "pcrel_hi", "pcrel_lo", "got_pcrel_hi", NULL };
+    int ks[] = { RM_HI, RM_LO, RM_PCHI, RM_PCLO, RM_GOTHI };
     for (int i = 0; names[i]; i++) {
         size_t n = strlen(names[i]);
         if (!strncasecmp(p, names[i], n)) {
@@ -876,6 +876,11 @@ static int imm20_of(RC *c, const char *s, i64 *v, int *rk, Val *sym)
     if (rr < 0) { err("%s: junk after relocation operator", c->mn); return 0; }
     if (rr == 1) {
         if (!ev(c, inner, sym)) return 0;
+        if (k == RM_GOTHI) {
+            if (!sym->ext && sym->pos < 0) { err("%s: %%got_pcrel_hi needs a symbol", c->mn); return 0; }
+            sym->wk = 7;
+            k = RM_PCHI;
+        }
         if (k == RM_HI || k == RM_PCHI) {
             *rk = k;
             if (k == RM_HI && val_isconst(sym)) { *v = ((sym->n + 0x800) >> 12) & 0xfffff; *rk = RM_NONE; }

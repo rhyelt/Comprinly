@@ -401,7 +401,14 @@ static int h_adr(Ctx *c, const MnEnt *e)
     if (!gpr_zr(c, 0, &rd)) return 0;
     if (!rd.w64) { err("%s: an x register is required", c->mn); return 0; }
     Val v;
-    if (!a64_eval(c, c->tok[1], &v)) return 0;
+    int gotp = 0;
+    const char *at = c->tok[1];
+    if (e->a && !strncasecmp(at, ":got:", 5)) { gotp = 1; at += 5; }
+    if (!a64_eval(c, at, &v)) return 0;
+    if (gotp) {
+        if (!v.ext && v.pos < 0) { err("%s: :got: needs a symbol", c->mn); return 0; }
+        v.wk = 7;
+    }
     u32 base = e->a ? 0x90000000u : 0x10000000u;
     if (!e->a && a64_same_sec(c, &v)) {
         i64 d = v.n - a64_cur_off(c);

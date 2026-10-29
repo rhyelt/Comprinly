@@ -195,7 +195,7 @@ These behave the same on x86, ARM64 and RISC-V:
 | Directive | Notes |
 |-----------|-------|
 | `section .text`, `.data`, `.bss`, `.rodata` | sections are also made automatically |
-| `global`, `extern` | symbols for object files and linking |
+| `global`, `extern`, `weak` | symbols for object files and linking. `weak name`, `global name:weak` and `extern name:weak` write weak symbols; `global name:function`, `:data`, `:hidden`, `:protected` set type and visibility |
 | `db`, `dw`, `dd`, `dq` | data. Strings, floats and expressions work. `dt`, `do`, `dy` and `dz` on x86 only |
 | `resb`, `resw`, `resd`, `resq` | bss space |
 | `equ`, `times`, `align`, `alignb` | as in NASM |
@@ -222,6 +222,19 @@ The full macro language (`%macro`, `%if`, `%rep`, `%include`, contexts, `%assign
         syscall
     %endif
     %endmacro
+
+## Position independent code
+
+For `-shared` libraries and `-dynamic` programs, and for objects you will link into them, these forms name the GOT and the PLT:
+
+| CPU | Form |
+|-----|------|
+| x86-64 | `call f wrt ..plt`, `mov rax, [rel x wrt ..got]`, `lea rax, [rel x]`, `lea rbx, [rel _GLOBAL_OFFSET_TABLE_ wrt ..gotpc]`, `mov rax, x wrt ..gotoff` style offsets from the GOT |
+| i386 | `call f wrt ..plt`, `_GLOBAL_OFFSET_TABLE_ + $$ - .p wrt ..gotpc`, `[ebx + x wrt ..got]`, `[ebx + x wrt ..gotoff]` |
+| ARM64 | `bl f`, `adrp x0, :got:x` with `ldr x0, [x0, :got_lo12:x]` (64-bit load only) |
+| RISC-V | `call f`, `auipc t0, %got_pcrel_hi(x)` with `ld t0, %pcrel_lo(label)(t0)` |
+
+The relocations match what NASM writes for the x86 forms. A reference that cannot be position independent (a 32-bit absolute address in x86-64 code, `adrp` plus `:lo12:` against a symbol from another library) is an error in a shared library, and the message says what to use. In an output that is not an object or a library the GOT forms on ARM64 and RISC-V are errors.
 
 ## Forgiving syntax
 
@@ -279,7 +292,9 @@ Pseudo instructions: `li`, `la`, `lla`, `lga`, `mv`, `not`, `neg`, `negw`, `sext
 | linux executable | yes | yes | yes |
 | linux object (`-obj`, `-o`) | yes | yes | yes |
 | `--ld` link of ELF objects | yes | yes | yes |
-| `--ld` link of COFF objects to `.exe` | yes | no | no |
+| `--ld` link of COFF objects to `.exe` or `.dll` | yes | no | no |
+| linux shared library (`-shared`) and dynamic program (`-dynamic`, `-needed`) | yes | yes | yes |
+| windows DLL (`-dll`) | yes | no | no |
 | windows | yes | no | no |
 | mac | yes | no | no |
 | bare (boot image) | yes | raw only | raw only |
@@ -330,7 +345,7 @@ These are not in Comprinly, so they are not documented above:
 - `-obj` always means ELF (COFF on windows); OMF is `-omf`
 - debug information other than a DWARF line table (`-g`): no variable, type or macro info, no STABS
 - debugger integration
-- `--ld` is a small static linker: no shared libraries, no TLS, no section headers or symbols in the output
+- `--ld` is a small linker: no TLS, no lazy binding or symbol versioning, no symbols in the output, and a static output has no section headers
 - a disassembler like NDISASM
 - `%note` (NASM does not have it either)
 - SVE and SME on ARM64, 32-bit ARM

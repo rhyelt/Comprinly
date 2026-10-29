@@ -24,7 +24,7 @@ static const char *usage_text =
     "usage: cly <kernel> <file> [-type] [modes] [options]\n"
     "\n"
     "kernels: bare, windows, linux, linux32 (32-bit Linux), mac\n"
-    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff,\n         -x32 (ELF x32 object), -aout, -aoutb (a.out objects), -omf (Intel OMF object), -as86, -ieee (IEEE-695 object)\n"
+    "types:   -bin (default), -elf, -exe, -macho, -flat, -img, -com, -hex, -srec, -obj, -o, -coff,\n         -x32 (ELF x32 object), -aout, -aoutb (a.out objects), -omf (Intel OMF object), -as86, -ieee (IEEE-695 object)\n         -shared (Linux shared library .so, any CPU), -dll (Windows DLL), -dynamic (Linux program that uses shared libraries)\n"
     "         (-o writes an object file named .o on every kernel; use --o FILE or -out FILE to name any output)\n"
     "\n"
     "modes (any order, any number):\n"
@@ -43,6 +43,8 @@ static const char *usage_text =
     "options:\n"
     "  --o FILE, -out FILE   output file name\n"
     "  --ld FILE     link object files into a program: cly a.o b.o --ld program\n"
+    "  -needed LIB   link against a shared library (a path to a .so, or a name such as libc.so.6); repeat for more\n"
+    "  -rdynamic, -rpath DIR, -soname NAME, -interp PATH   dynamic program and shared library settings\n"
     "  -global, -unglobal, -uninstall   install Comprinly as a command, move it back, or remove it\n"
     "  -update       check GitHub for a newer release and update\n"
     "  -I DIR        add an include directory\n"
@@ -97,6 +99,8 @@ static int parse_type(const char *s)
     if (!strcasecmp(s, "omf")) return T_OMF;
     if (!strcasecmp(s, "as86")) return T_AS86;
     if (!strcasecmp(s, "ieee")) return T_IEEE;
+    if (!strcasecmp(s, "shared") || !strcasecmp(s, "so")) return T_SO;
+    if (!strcasecmp(s, "dll")) return T_DLL;
     return -1;
 }
 
@@ -122,6 +126,8 @@ static const char *ext_for(int kernel, int type)
     case T_X32: case T_AOUT: case T_AOUTB: case T_AS86: return ".o";
     case T_IEEE: return ".o";
     case T_OMF: return ".obj";
+    case T_SO: return g_ldo.shared ? ".so" : "";
+    case T_DLL: return ".dll";
     }
     return "";
 }
@@ -143,6 +149,8 @@ static const char *fmt_name(int kernel, int type, int bits)
     case T_OMF: return "obj";
     case T_AS86: return "as86";
     case T_IEEE: return "ieee";
+    case T_SO: return b64 ? "elf64" : "elf32";
+    case T_DLL: return b64 ? "win64" : "win32";
     }
     return "bin";
 }
@@ -182,6 +190,13 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
     AsmOpts a2 = *ao;
     a2.lines = work;
     /* Step 1: add the built-in C library blocks the program needs (Linux x86 only). */
+    if ((type == T_SO || g_ldo.dynamic) && arch == ARCH_X86 && detect_bits(&a2) == 64) {
+        LineVec nl;
+        memset(&nl, 0, sizeof nl);
+        lv_add(&nl, "default rel", "<pic>", 0);
+        for (int i = 0; i < a2.lines.n; i++) lv_add(&nl, a2.lines.v[i].text, a2.lines.v[i].file, a2.lines.v[i].line);
+        a2.lines = nl;
+    }
     if (arch == ARCH_X86 && !g_nolibc) {
         int n0 = a2.lines.n;
         xlog("libc", "scanning for library calls (%d lines)", n0);
@@ -216,7 +231,7 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
         return 1;
     }
     /* Step 5: write the file, marking it executable for ELF and Mach-O. */
-    int exec = (type == T_ELF || type == T_MACHO || (type == T_BIN && (kernel == K_LINUX || kernel == K_MAC)));
+    int exec = (type == T_ELF || (type == T_SO && !g_ldo.shared) || type == T_MACHO || (type == T_BIN && (kernel == K_LINUX || kernel == K_MAC)));
     errno = 0;
     if (write_file(oname, out.p, out.n, exec)) {
         fprintf(stderr, "cly: cannot write `%s': %s\n", oname, errno ? strerror(errno) : "unknown error");
@@ -230,6 +245,8 @@ static int build_image(AsmOpts *ao, int arch, int kernel, int type, const char *
 }
 
 /* Entry point. Reads options in any order, finds the kernel, source file and output type, picks the CPU, then calls build_image and the leak check. */
+const char *g_outname;
+
 int main(int argc, char **argv)
 {
     int kernel = -1, type = T_BIN, type_set = 0, saw_o = 0;
@@ -358,6 +375,17 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-E")) { pponly = 1; continue; }
         if (!strcmp(a, "-nasm")) { g_nasm = 1; continue; }
         if (!strcmp(a, "-nolibc")) { g_nolibc = 1; continue; }
+        if (!strcmp(a, "-dynamic") || !strcmp(a, "--dynamic")) { g_ldo.dynamic = 1; continue; }
+        if (!strcmp(a, "-rdynamic") || !strcmp(a, "--export-dynamic")) { g_ldo.export_dyn = 1; continue; }
+        if (!strcmp(a, "-needed") || !strcmp(a, "-rpath") || !strcmp(a, "-soname") || !strcmp(a, "-interp")) {
+            if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs an argument\n", a); return 1; }
+            const char *v = argv[++i];
+            if (!strcmp(a, "-needed")) { g_ldo.needed = xrealloc(g_ldo.needed, sizeof(char *) * (size_t)(g_ldo.nneeded + 1)); g_ldo.needed[g_ldo.nneeded++] = (char *)v; g_ldo.dynamic = 1; }
+            else if (!strcmp(a, "-rpath")) g_ldo.rpath = v;
+            else if (!strcmp(a, "-soname")) g_ldo.soname = v;
+            else g_ldo.interp = v;
+            continue;
+        }
         if (!strcmp(a, "-log")) { log_open(NULL); continue; }
         if (!strncmp(a, "-log=", 5)) { if (!log_open(a + 5)) fprintf(stderr, "cly: cannot open log file `%s'\n", a + 5); continue; }
         if (!strcmp(a, "-noleak")) { no_leak = 1; continue; }
@@ -443,6 +471,8 @@ int main(int argc, char **argv)
         int lc = 0;
         for (int i = 0; i < npos; i++) if (parse_kernel(pos[i]) < 0 || file_exists(pos[i])) pos[lc++] = pos[i];
         if (!lc) { fprintf(stderr, "cly: --ld needs at least one object file\n"); return 1; }
+        g_ldo.shared = type == T_SO;
+        g_pe_dll = type == T_DLL;
         return ld_link(pos, lc, outpath ? outpath : ldout) ? 0 : 1;
     }
     if (dump) {
@@ -481,8 +511,15 @@ int main(int argc, char **argv)
         return 1;
     }
     if (kernel < 0) {
-        kernel = host_kernel();
+        kernel = type == T_SO ? K_LINUX : type == T_DLL ? K_WINDOWS : host_kernel();
     }
+    if (type == T_SO && kernel != K_LINUX) { fprintf(stderr, "cly: -shared writes an ELF shared library; use the linux kernel (for a Windows DLL use -dll)\n"); return 1; }
+    if (type == T_DLL && kernel != K_WINDOWS) { fprintf(stderr, "cly: -dll writes a Windows DLL; use the windows kernel (for a Linux shared library use -shared)\n"); return 1; }
+    if (g_ldo.dynamic && type == T_BIN && kernel == K_LINUX) type = T_ELF;
+    if (g_ldo.dynamic && type != T_ELF && type != T_SO && type != T_BIN) { fprintf(stderr, "cly: -dynamic, -needed and -rpath only apply to Linux programs (-elf) and shared libraries (-shared)\n"); return 1; }
+    g_ldo.shared = type == T_SO;
+    if (g_ldo.dynamic && type == T_ELF) type = T_SO;
+    if (type == T_SO) g_nolibc = 1;
     if (!file) {
         fprintf(stderr, "cly: missing input file\n%s", short_usage);
         return 1;
@@ -669,6 +706,7 @@ int main(int argc, char **argv)
             oname = sget(&s);
         }
     }
+    g_outname = oname;
     if (!strcmp(oname, file)) {
         fprintf(stderr, "cly: output would overwrite the input file `%s'\n", file);
         return 1;

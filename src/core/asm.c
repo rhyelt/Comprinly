@@ -1204,7 +1204,7 @@ static int word_kind(const char *w, int *unit)
 static int is_directive_word(const char *w)
 {
     static const char *d[] = {
-        "bits", "use16", "use32", "use64", "section", "segment", "absolute", "global", "extern", "common", "static", "org", "align", "alignb",
+        "bits", "use16", "use32", "use64", "section", "segment", "absolute", "global", "weak", "extern", "common", "static", "org", "align", "alignb",
         "default", "cpu", "alignmode", "__cly_use", "import", "export", "group", "uppercase", "struc", "endstruc", "times", "equ", "float", "warning", "list",
         "extrn", "public", "incbin", "istruc", "iend", "at", "map", "debug", "sectalign", "prefix", "postfix", "gprefix", "gpostfix", "lprefix", "lpostfix", "required", "global_", NULL
     };
@@ -1402,6 +1402,7 @@ static void cb_global(const char *name, const char *attr, void *ud)
         else if (!strcasecmp(w, "internal")) s->svis = 1;
         else if (!strcasecmp(w, "hidden")) s->svis = 2;
         else if (!strcasecmp(w, "protected")) s->svis = 3;
+        else if (!strcasecmp(w, "weak")) s->sweak = 1;
         else {
             free(s->sexpr);
             s->sexpr = xstrdup(w);
@@ -1419,13 +1420,22 @@ static void cb_global(const char *name, const char *attr, void *ud)
     free(fn);
 }
 
+/* Exports a symbol as weak: a strong definition in another object replaces it. */
+static void cb_weak(const char *name, const char *attr, void *ud)
+{
+    cb_global(name, attr, ud);
+    char *fn = full_name(name);
+    get_sym(fn)->sweak = 1;
+    free(fn);
+}
+
 /* Declares a symbol defined elsewhere. */
 static void cb_extern(const char *name, const char *attr, void *ud)
 {
-    (void)attr;
     (void)ud;
     char *fn = full_name(name);
     Sym *s = get_sym(fn);
+    if (attr && !strcasecmp(skipws(attr), "weak")) s->sweak = 1;
     if (s->defined && s->defpass >= 0) { free(fn); return; }
     s->ext = 1;
     if (!s->defline) s->defline = A.cur_line;
@@ -1821,6 +1831,7 @@ static void do_directive(const char *w, const char *rest)
     else if (is_kw(w, "absolute")) handle_absolute(rest);
     else if (is_kw(w, "global") || is_kw(w, "public")) parse_name_list(rest, cb_global, NULL);
     else if (is_kw(w, "extern") || is_kw(w, "extrn")) parse_name_list(rest, cb_extern, NULL);
+    else if (is_kw(w, "weak")) parse_name_list(rest, cb_weak, NULL);
     else if (is_kw(w, "static")) parse_name_list(rest, cb_static, NULL);
     else if (is_kw(w, "common")) {
         char name[256];
@@ -2041,7 +2052,13 @@ static int encode_one(Sec *s, const char *mn, Op *ops, int nops, IC *ic0, int qu
 /* In object output, treats names that are used but never defined as extern. */
 static void auto_extern(void)
 {
-    if (!(A.type == T_OBJ || A.type == T_X32 || A.type == T_AOUT || A.type == T_AOUTB || A.type == T_OMF || A.type == T_AS86 || A.type == T_IEEE) || g_nasm) return;
+    if (IS_OBJ(A.type) && g_nasm) {
+        for (int i = 0; i < A.nsyms; i++) {
+            Sym *s = A.syms[i];
+            if (s->referenced && !s->defined && !s->ext && !s->common && !strcmp(s->name, "_GLOBAL_OFFSET_TABLE_")) s->ext = 1;
+        }
+    }
+    if (!(A.type == T_OBJ || A.type == T_SO || A.type == T_X32 || A.type == T_AOUT || A.type == T_AOUTB || A.type == T_OMF || A.type == T_AS86 || A.type == T_IEEE) || g_nasm) return;
     for (int i = 0; i < A.nsyms; i++) {
         Sym *s = A.syms[i];
         if (s->referenced && !s->defined && !s->ext && !s->common && strncmp(s->name, "__num_", 6)) s->ext = 1;

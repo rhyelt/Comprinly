@@ -186,9 +186,15 @@ static void put_reloc(Obj *o, Reloc *r, i64 val)
 }
 
 /* Resolves every relocation. Reports out of range values and undefined symbols. */
+int g_pe_dll;
+i64 *g_pefix;
+int g_npefix;
+static int cap_pefix;
+
 int link_apply(Obj *o)
 {
     int bad = 0;
+    g_npefix = 0;
     for (int i = 0; i < o->nrelocs; i++) {
         Reloc *r = &o->relocs[i];
         int ok = 1;
@@ -205,6 +211,16 @@ int link_apply(Obj *o)
             continue;
         }
         if (r->kind == RK_REL) v -= sec_addr(o, r->sec) + r->relbase;
+        else if (g_pe_dll && r->kind == RK_ABS && (r->v.pos >= 0 || r->v.ext) && !(r->v.ext && !r->v.ext->defined) && (r->size == 4 || r->size == 8)) {
+            Sec *rs = o->secs[r->sec];
+            int wide = r->size == 8;
+            if (o->is64 && r->size == 4) {
+                if (!rs->exec && (size_t)(r->off + 8) <= rs->data.n && !memcmp(rs->data.p + r->off + 4, "\0\0\0\0", 4)) wide = 1;
+                else { fprintf(stderr, "cly: error: a 32-bit absolute address cannot be relocated in a 64-bit DLL; use rip-relative addressing\n"); bad++; continue; }
+            }
+            if (g_npefix == cap_pefix) { cap_pefix = cap_pefix ? cap_pefix * 2 : 64; g_pefix = xrealloc(g_pefix, sizeof(i64) * (size_t)cap_pefix); }
+            g_pefix[g_npefix++] = (sec_addr(o, r->sec) + r->off) | (wide ? (i64)1 << 62 : 0);
+        }
         put_reloc(o, r, v);
     }
     return bad ? 0 : 1;
@@ -507,7 +523,9 @@ static int link_obj_inner(Obj *o, int kernel, int type, Bytes *out)
     if (g_debug && !(type == T_ELF || (type == T_OBJ && kernel != K_WINDOWS) || type == T_X32)) warn("debug information (-g) is only written for ELF output (not a.out, OMF, as86 or IEEE objects); ignored");
     switch (type) {
     case T_ELF: return fmt_elf(o, out);
+    case T_SO: return fmt_so(o, out);
     case T_EXE: return fmt_pe(o, out);
+    case T_DLL: g_pe_dll = 1; return fmt_pe(o, out);
     case T_MACHO: return fmt_macho(o, out);
     case T_OBJ:
         if (kernel == K_WINDOWS) return fmt_coff(o, out);

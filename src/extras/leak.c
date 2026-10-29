@@ -1166,16 +1166,30 @@ static void find_functions(void)
     capfn = 16;
     fn_entry = xmalloc(sizeof(int) * (size_t)capfn);
     fn_name = xmalloc(sizeof(char *) * (size_t)capfn);
+    size_t ccap = 16;
+    while (ccap < (size_t)nI * 2 + 16) ccap <<= 1;
+    char **cset = xcalloc(ccap, sizeof(char *));
+    for (int j = 0; j < nI; j++) {
+        if (I[j].kind != K_CODE || strcmp(I[j].mn, "call") || !I[j].nop) continue;
+        char nm[64];
+        call_name(I[j].op[0], nm, sizeof nm);
+        size_t h = 5381;
+        for (const char *q = nm; *q; q++) h = h * 33 + (unsigned char)*q;
+        h &= ccap - 1;
+        while (cset[h] && strcmp(cset[h], nm)) h = (h + 1) & (ccap - 1);
+        if (!cset[h]) cset[h] = xstrdup(nm);
+    }
     for (int k = 0; k < nI; k++) {
         if (!I[k].lab || I[k].lab[0] == '.' || strchr(I[k].lab, '.')) continue;
         if (I[k].kind == K_SKIP) continue;
         int is_fn = !strcmp(I[k].lab, "main") || !strcmp(I[k].lab, "_start") || !strcmp(I[k].lab, "start") || !strcmp(I[k].lab, "_main");
         if (!is_fn) {
-            for (int j = 0; j < nI && !is_fn; j++) {
-                if (I[j].kind != K_CODE || strcmp(I[j].mn, "call") || !I[j].nop) continue;
-                char nm[64];
-                call_name(I[j].op[0], nm, sizeof nm);
-                if (!strcmp(nm, I[k].lab)) is_fn = 1;
+            size_t h = 5381;
+            for (const char *q = I[k].lab; *q; q++) h = h * 33 + (unsigned char)*q;
+            h &= ccap - 1;
+            while (cset[h]) {
+                if (!strcmp(cset[h], I[k].lab)) { is_fn = 1; break; }
+                h = (h + 1) & (ccap - 1);
             }
         }
         if (!is_fn) continue;
@@ -1184,6 +1198,8 @@ static void find_functions(void)
         fn_name[nfn] = I[k].lab;
         nfn++;
     }
+    for (size_t q = 0; q < ccap; q++) free(cset[q]);
+    free(cset);
     fn_end = xmalloc(sizeof(int) * (size_t)(nfn + 1));
     for (int f = 0; f < nfn; f++) {
         int e = f + 1 < nfn ? fn_entry[f + 1] : nI;

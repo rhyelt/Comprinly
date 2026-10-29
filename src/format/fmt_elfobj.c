@@ -119,9 +119,10 @@ static int a64_elf_type(Reloc *r, int *ok)
     case RK_A64_B19: return r->size == 1 ? 273 : 280;
     case RK_A64_B14: return 279;
     case RK_A64_ADR: return 274;
-    case RK_A64_ADRP: return 275;
+    case RK_A64_ADRP: return r->v.wk == 7 ? 311 : 275;
     case RK_A64_LO12: {
         static const int t[] = { 277, 284, 285, 286, 299 };
+        if (r->v.wk == 7) return 312;
         return r->size >= 0 && r->size <= 4 ? t[r->size] : (*ok = 0);
     }
     case RK_A64_MOVW: {
@@ -145,7 +146,7 @@ static int rv_elf_type(Reloc *r, int *ok)
     case RK_RV_HI20: return 26;
     case RK_RV_LO12I: return 27;
     case RK_RV_LO12S: return 28;
-    case RK_RV_PCHI20: return 23;
+    case RK_RV_PCHI20: return r->v.wk == 7 ? 20 : 23;
     case RK_RV_PCLO12I: return 24;
     case RK_RV_PCLO12S: return 25;
     case RK_RV_CALL: return 19;
@@ -247,11 +248,11 @@ int fmt_elfobj(Obj *o, Bytes *out)
             g_other = s->svis;
             int ty = s->stype;
             if (s->defined && !s->common && !s->ext) {
-                if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)(s->isequ ? s->eqv.n : s->off), (u64)s->ssize, (glob ? 0x10 : 0) | ty, 0xFFF1);
-                else put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)s->off, (u64)s->ssize, (glob ? 0x10 : 0) | ty, secnew[s->sec]);
+                if (s->isequ || s->sec < 0) put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)(s->isequ ? s->eqv.n : s->off), (u64)s->ssize, (glob ? (s->sweak ? 0x20 : 0x10) : 0) | ty, 0xFFF1);
+                else put_sym(&symtab, &strtab, sym_mangle(s, glob), (u64)s->off, (u64)s->ssize, (glob ? (s->sweak ? 0x20 : 0x10) : 0) | ty, secnew[s->sec]);
             } else if (s->common) {
                 put_sym(&symtab, &strtab, sym_mangle(s, 1), (u64)s->commonalign, (u32)s->commonsize, 0x10 | ty, 0xFFF2);
-            } else put_sym(&symtab, &strtab, sym_mangle(s, 1), 0, 0, 0x10, 0);
+            } else put_sym(&symtab, &strtab, sym_mangle(s, 1), 0, 0, s->sweak ? 0x20 : 0x10, 0);
             g_other = 0;
             symidx[i] = nsym++;
             if (pass == 0) nlocal = nsym;
@@ -297,7 +298,14 @@ int fmt_elfobj(Obj *o, Bytes *out)
         else continue;
         int type;
         i64 add = v->n;
+        i64 vn = v->n;
         Sec *s = o->secs[r->sec];
+        if (!narch && !v->ext && v->pos >= 0 && (v->wk == 2 || (v->wk == 4 && o->is64))) {
+            for (int j = 0; j < o->nsyms; j++) {
+                Sym *q = o->syms[j];
+                if (q->global && q->defined && !q->common && !q->isequ && q->sec == v->pos && q->off == v->n && symidx[j]) { symi = symidx[j]; add = 0; vn = 0; break; }
+            }
+        }
         if (narch) {
             int ok2;
             type = o->arch == ARCH_A64 ? a64_elf_type(r, &ok2) : rv_elf_type(r, &ok2);
@@ -313,7 +321,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
         }
         if (o->is64) {
             if (r->kind == RK_REL) {
-                add = v->n + r->off - r->relbase;
+                add = vn + r->off - r->relbase;
                 type = r->size == 8 ? 24 : r->size == 4 ? 2 : r->size == 2 ? 13 : 15;
                 if (r->size == 4) {
                     if (v->wk == 1) type = 4;
@@ -333,14 +341,14 @@ int fmt_elfobj(Obj *o, Bytes *out)
             continue;
         }
         if (r->kind == RK_REL) {
-            add = v->n + r->off - r->relbase;
+            add = vn + r->off - r->relbase;
             type = r->size == 4 ? 2 : r->size == 2 ? 21 : 23;
             if (r->size == 4 && v->wk == 1) type = 4;
         } else {
             type = r->size == 4 ? 1 : r->size == 2 ? 20 : 22;
             if (r->size == 4 && v->wk == 2) type = 3;
             else if (r->size == 4 && v->wk == 3) type = 9;
-            else if (r->size == 4 && v->wk == 4) type = 10;
+            else if (r->size == 4 && v->wk == 4) { type = 10; add += r->off; }
         }
         if (!s->nobits && (size_t)(r->off + r->size) <= s->data.n) bputle(&s->data, (size_t)r->off, (u64)add, r->size);
         put32(&rel[r->sec], (u32)r->off);

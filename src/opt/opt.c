@@ -703,11 +703,52 @@ static int peephole(Ctx *c)
         }
         if (!strcmp(x->mn, "mov") && x->nops == 2) {
             int w = regw(x->ops[0], r32n);
-            if ((w == 32 || w == 64) && is_num(x->ops[1], &v) && v == -1 && flags_dead(L, n, i, F_ALL)) {
+            if ((w == 32 || w == 64) && is_num(x->ops[1], &v) && (v == -1 || (w == 32 && v == 0xFFFFFFFFL)) && flags_dead(L, n, i, F_ALL)) {
                 snprintf(buf, sizeof buf, "    or %s, -1", x->ops[0]);
                 set_line(c, i, buf);
                 changed = 1;
                 continue;
+            }
+        }
+        if (x->nops == 2 && !strcmp(x->mn, "and") && is_num(x->ops[1], &v) && v == 0) {
+            int w = regw(x->ops[0], r32n);
+            if ((w == 32 || w == 64) && (w == 32 || r32n[0] == 'e' || (r32n[0] == 'r' && strchr(r32n, 'd')))) {
+                snprintf(buf, sizeof buf, "    xor %s, %s", r32n, r32n);
+                set_line(c, i, buf);
+                changed = 1;
+                continue;
+            }
+        }
+        if (x->nops == 2 && (!strcmp(x->mn, "or") || !strcmp(x->mn, "and")) && is_num(x->ops[1], &v) && v == (!strcmp(x->mn, "or") ? 0 : -1)) {
+            int w = regw(x->ops[0], NULL);
+            if ((w == 64 || (w == 32 && OB == 32))) {
+                snprintf(buf, sizeof buf, "    test %s, %s", x->ops[0], x->ops[0]);
+                set_line(c, i, buf);
+                changed = 1;
+                continue;
+            }
+        }
+        if (x->nops == 2 && !strcmp(x->mn, "lea") && x->ops[1][0] == '[') {
+            int w = regw(x->ops[0], NULL);
+            char rn[16], sg;
+            long k;
+            if ((w == 32 || w == 64) && sscanf(x->ops[1], "[%15[a-zA-Z0-9] %c %ld]", rn, &sg, &k) == 3 && (sg == '+' || sg == '-') && !strcasecmp(rn, x->ops[0])) {
+                if (sg == '-') k = -k;
+                const char *mn2 = NULL;
+                if (k == 1) mn2 = "inc";
+                else if (k == -1) mn2 = "dec";
+                if (mn2 && flags_dead(L, n, i, F_ALL)) {
+                    snprintf(buf, sizeof buf, "    %s %s", mn2, x->ops[0]);
+                    set_line(c, i, buf);
+                    changed = 1;
+                    continue;
+                }
+                if (!mn2 && w == 32 && OB == 64 && k >= -128 && k <= 127 && k != 0 && flags_dead(L, n, i, F_ALL)) {
+                    snprintf(buf, sizeof buf, "    %s %s, %ld", k > 0 ? "add" : "sub", x->ops[0], k > 0 ? k : -k);
+                    set_line(c, i, buf);
+                    changed = 1;
+                    continue;
+                }
             }
         }
         if (!strcmp(x->mn, "jmp") && direct_target(x, t, sizeof t)) {
@@ -1019,7 +1060,7 @@ static void ro_analyze(LineVec *lv, int bits)
 {
     g_ro_prog = 0;
     if (bits != 32 && bits != 64) return;
-    static const char *const ok_mn[] = { "mov", "xor", "and", "or", "add", "sub", "inc", "dec", "neg", "not", "cmp", "test", "shl", "shr", "sar", "nop", "jmp", NULL };
+    static const char *const ok_mn[] = { "mov", "xor", "and", "or", "add", "sub", "inc", "dec", "neg", "not", "cmp", "test", "shl", "shr", "sar", "nop", "jmp", "lea", NULL };
     static const long safe64[] = { 1, 60, 231, 39, 0 };
     static const long safe32[] = { 4, 1, 252, 20, 0 };
     const long *safe = bits == 64 ? safe64 : safe32;
@@ -1040,7 +1081,8 @@ static void ro_analyze(LineVec *lv, int bits)
         int is_sys = (bits == 64 && !strcmp(x->mn, "syscall") && x->nops == 0) || (bits == 32 && !strcmp(x->mn, "int") && x->nops == 1 && !strcmp(x->ops[0], "0x80"));
         if (!is_sys && !in_list(x->mn, ok_mn) && !is_jcc(x->mn, &cc)) { ok = 0; break; }
         for (int k = 0; k < x->nops; k++) {
-            if (strchr(x->ops[k], '[') || has_word(x->ops[k], "sp") || has_word(x->ops[k], "bp")) ok = 0;
+            int is_lea = !strcmp(x->mn, "lea") && x->nops == 2 && k == 1;
+            if ((!is_lea && strchr(x->ops[k], '[')) || has_word(x->ops[k], "sp") || has_word(x->ops[k], "bp") || has_word(x->ops[k], "rsp") || has_word(x->ops[k], "esp")) ok = 0;
         }
         int is_jump = !strcmp(x->mn, "jmp") || is_jcc(x->mn, &cc);
         if (!is_jump && !is_sys && strcmp(x->mn, "nop")) {

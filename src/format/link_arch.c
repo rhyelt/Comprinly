@@ -50,12 +50,14 @@ static int a64_apply(Obj *o, Reloc *r, i64 S, i64 P)
         w = (w & ~((3u << 29) | (0x7ffffu << 5))) | ((u32)(d & 3) << 29) | ((u32)((d >> 2) & 0x7ffff) << 5);
         break;
     case RK_A64_ADRP: {
+        if (r->v.wk == 7) { err("GOT references (:got:) need an object file or a shared library output"); return 0; }
         i64 pg = (S >> 12) - (P >> 12);
         if (!fits(pg, 21)) { err("adrp target is out of range (+-4GB)"); return 0; }
         w = (w & ~((3u << 29) | (0x7ffffu << 5))) | ((u32)(pg & 3) << 29) | ((u32)((pg >> 2) & 0x7ffff) << 5);
         break;
     }
     case RK_A64_LO12: {
+        if (r->v.wk == 7) { err("GOT references (:got_lo12:) need an object file or a shared library output"); return 0; }
         int sh = r->size;
         if (sh && (S & (((i64)1 << sh) - 1))) { err("address is not aligned to %d bytes for this access", 1 << sh); return 0; }
         w = (w & ~(0xfffu << 10)) | ((u32)((S & 0xfff) >> sh) << 10);
@@ -141,6 +143,7 @@ static int rv_apply(Obj *o, Reloc *r, i64 S, i64 P)
         rv_patch_s(s, r->off, sx12(S));
         return 1;
     case RK_RV_PCHI20:
+        if (r->v.wk == 7) { err("%%got_pcrel_hi needs an object file or a shared library output"); return 0; }
         if (!fits((d + 0x800) >> 12, 20)) { err("pc-relative address is out of range (+-2GB)"); return 0; }
         rv_patch_u(s, r->off, (d + 0x800) >> 12);
         return 1;

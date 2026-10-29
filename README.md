@@ -10,9 +10,11 @@ It reads x86, ARM64 and RISC-V from the same syntax. The commands you type do no
 
 ## Project status
 
+Comprinly is no longer an experiment, I am fully working on it and hoping for collaborators.
+
 From 1.3.0 on, the project is no longer fully vibe-coded. It is partly vibe-coded and partly written by hand by me and, hopefully, by the people who join. See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to help.
 
-Version 1.3.4 is much more stable and much improved over everything before it, and it is the first release I would ask you to trust with real work. It was hunted for bugs hard: every release is checked by two sets of 500 batched tests (1000 in all) that link and run programs on four CPU families, compare thousands of random instructions against NASM, and feed broken files to the assembler and the linker. Bugs can still exist, so please keep reporting them.
+Version 1.3.5 adds shared libraries (`.so`) and Windows DLLs, and it is the first release where Comprinly can link its own programs against libc, against libraries built by gcc, and into libraries that gcc programs load. It was hunted for bugs hard: every release is checked by three sets of batched tests (500, 500 and 1600) that link and run programs on four CPU families, compare thousands of random instructions against NASM, link random C programs and compare the result with GNU ld, and feed broken files to the assembler and the linker. Bugs can still exist, so please keep reporting them.
 
 ## Get it
 
@@ -65,6 +67,9 @@ The system is one of `linux`, `windows`, `mac` or `bare`. A few examples:
     cly hello.cly -obj
     cly hello.cly --o hello.o
     cly hello.o --ld hello
+    cly linux lib.cly -shared --o libx.so
+    cly linux main.cly -dynamic -needed ./libx.so
+    cly windows lib.cly -dll
 
 Run `cly -h` to see every option.
 

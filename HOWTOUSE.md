@@ -414,7 +414,7 @@ The kernel flag is optional. Without one, Comprinly uses the kernel of the machi
 
 ### Linking with --ld
 
-`--ld` links ELF object files into a static program:
+`--ld` links ELF object files into a static program (or a shared library or dynamic program, see below):
 
 ```
 cly 1.o --ld program.elf
@@ -432,7 +432,56 @@ cly 1.obj 2.obj --ld program.exe
 
 You cannot mix the two kinds in one link. In the Windows case, names that no object defines are imported from DLLs: Comprinly picks `user32.dll`, `gdi32.dll`, `advapi32.dll`, `ws2_32.dll` or `msvcrt.dll` for the common functions of those libraries and `kernel32.dll` for everything else. The entry point is `start`, `_start` or `mainCRTStartup`.
 
-Limits: no shared libraries, no TLS, `.eh_frame` and debug sections are dropped, and the output has no section headers or symbol table. Undefined symbols and duplicate definitions are reported as errors. The output file cannot also be an input.
+Limits: no TLS, `.eh_frame` and debug sections are dropped, and a static output has no section headers or symbol table. Undefined symbols and duplicate definitions are reported as errors. The output file cannot also be an input. Weak symbols, common symbols, COMDAT groups, `.init_array` (sorted by priority), `__start_NAME` and `__stop_NAME` for sections named like C identifiers, and `__init_array_start`/`__init_array_end` work, so objects built by gcc with `-ffreestanding` link fine.
+
+### Shared libraries and dynamic programs
+
+`-shared` writes a Linux shared library (an ELF `.so`) for x86-64, i386, ARM64 and RISC-V. Write position independent code: call imports with `call f wrt ..plt` (or plain `call f`, the linker makes the stub), read imported or exported data through the GOT, and use `[rel x]` or `lea reg, [rel x]` for your own data:
+
+```
+bits 64
+default rel
+global add2:function
+global counter:data
+section .data
+counter dq 5
+tbl dq add2
+section .text
+add2:
+    lea rax, [rdi+rsi]
+    add [rel counter], rax
+    ret
+```
+
+```
+cly linux lib.cly -shared --o libx.so
+cly linux main.cly -dynamic -needed ./libx.so --o main
+cly lib1.o lib2.o -shared --ld libx.so
+cly main.o -dynamic -needed ./libx.so --ld main
+```
+
+What you get:
+
+- Every `global` symbol is exported (`hidden` ones are not). Data symbols are exported as protected, so programs built by GNU ld take their address through the GOT instead of copying them.
+- `-needed` takes a path to a `.so` (its symbols are read, its soname becomes the `NEEDED` entry) or a plain name such as `libc.so.6`. Using any `-needed`, `-dynamic` or a `.so` as input makes the output a dynamic program with an interpreter. `-interp`, `-rpath`, `-soname` and `-rdynamic` set the interpreter, the run path, the soname and whether a program exports its symbols.
+- Data from a library is reached with `mov rax, [rel sym wrt ..got]` on x86-64, `mov eax, [ebx + sym wrt ..got]` on i386 (with `_GLOBAL_OFFSET_TABLE_ wrt ..gotpc` for the base), `adrp x0, :got:sym` and `ldr x0, [x0, :got_lo12:sym]` on ARM64, and `auipc t0, %got_pcrel_hi(sym)` then `ld t0, %pcrel_lo(label)(t0)` on RISC-V. Calls through the PLT work on every CPU. Programs that use data imports with a direct reference get a copy relocation when the library allows it.
+- `.init_array`, `.fini_array`, `_init` and `_fini` run when the library loads.
+- Libraries built by gcc (`-fPIC -shared`) work as inputs, and objects built by gcc with `-fPIC` link into a `.so` with `--ld -shared`. The tests do both and run the results.
+
+A shared library is small: a library with a few functions is about 1.6 KB and a program that calls `puts` from libc is 888 bytes. There is no lazy binding (every import is bound when the program starts) and no symbol versioning.
+
+### Windows DLLs
+
+`-dll` writes a Windows DLL for 32 and 64-bit x86 from one source file, and `--ld -dll` links COFF objects into one:
+
+```
+cly windows lib.cly -dll --o lib.dll
+cly 1.obj 2.obj -dll --ld lib.dll
+```
+
+Every `global` symbol is exported by name, sorted the way the loader wants. Absolute addresses in the code or data (a table of function pointers, for instance) get base relocations, so the DLL loads at any address; the preferred base is 0x10000000. A label named `start` becomes the entry point and is called with `DllMain`'s arguments. The export table and the relocations go into the free space at the end of the code page when they fit, which keeps a small DLL to 1.5 KB.
+
+A 32-bit absolute address inside code in a 64-bit DLL is an error, because it cannot be moved; use `[rel x]`.
 
 ### Installing and updating
 
