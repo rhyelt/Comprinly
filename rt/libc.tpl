@@ -48,12 +48,34 @@
 @ret
 ;;@ strlen
 @func strlen 1
-    xor @a, @a
-.l: cmp byte [@di+@a], 0
-    je .d
-    inc @a
+    push @di
+.a: test @di, @W-1
+    jz .w
+    cmp byte [@di], 0
+    je .e
+    inc @di
+    jmp .a
+.w:
+64|    mov rsi, 0x0101010101010101
+64|    mov rdx, 0x8080808080808080
+32|    mov esi, 0x01010101
+32|    mov edx, 0x80808080
+.l: mov @a, [@di]
+    mov @c, @a
+    sub @a, @si
+    not @c
+    and @a, @c
+    and @a, @d
+    jnz .f
+    add @di, @W
     jmp .l
-.d:
+.f: cmp byte [@di], 0
+    je .e
+    inc @di
+    jmp .f
+.e: mov @a, @di
+    pop @c
+    sub @a, @c
 @ret
 ;;@ strcpy
 @func strcpy 2
@@ -234,12 +256,18 @@
     mov @c, @d
     cmp @di, @si
     jbe .fw
-    lea @di, [@di+@c-1]
-    lea @si, [@si+@c-1]
-    std
-    rep movsb
-    cld
-    jmp .d
+.bl: cmp @c, @W
+    jb .bt
+    mov @d, [@si+@c-@W]
+    mov [@di+@c-@W], @d
+    sub @c, @W
+    jmp .bl
+.bt: test @c, @c
+    jz .d
+    dec @c
+    mov dl, [@si+@c]
+    mov [@di+@c], dl
+    jmp .bt
 .fw:
     rep movsb
 .d:
@@ -254,7 +282,16 @@
 @ret
 ;;@ memcmp
 @func memcmp 3
-    xor eax, eax
+.w: cmp @d, @W
+    jb .b
+    mov @a, [@di]
+    cmp @a, [@si]
+    jne .b
+    add @di, @W
+    add @si, @W
+    sub @d, @W
+    jmp .w
+.b: xor eax, eax
 .l: test @d, @d
     jz .d
     movzx eax, byte [@di]

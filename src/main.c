@@ -62,6 +62,7 @@ static const char *usage_text =
     "  -map [FILE]   write a map of the sections and symbols\n"
     "  -MF FILE, -MT NAME, -MQ NAME, -MP   more make rule options;  -@ FILE  read options from FILE\n"
     "  -q            hide everything but errors\n"
+    "  -strip        smallest output: no logs, no symbols, tiny headers, same behavior\n"
     "  --dump-opt    print the source after optimizing, to stderr\n"
     "  --dump-insns  print the instruction table\n"
     "  -v            version\n"
@@ -386,6 +387,7 @@ int main(int argc, char **argv)
             else g_ldo.interp = v;
             continue;
         }
+        if (!strcmp(a, "-strip") || !strcmp(a, "--strip")) { g_xstrip = 1; continue; }
         if (!strcmp(a, "-log")) { log_open(NULL); continue; }
         if (!strncmp(a, "-log=", 5)) { if (!log_open(a + 5)) fprintf(stderr, "cly: cannot open log file `%s'\n", a + 5); continue; }
         if (!strcmp(a, "-noleak")) { no_leak = 1; continue; }
@@ -454,6 +456,11 @@ int main(int argc, char **argv)
             return 1;
         }
         pos[npos++] = (char *)a;
+    }
+    if (g_xstrip) {
+        quiet = 1; g_hidewarn = 1; g_nowarn = 1; no_leak = 1; g_debug = 0;
+        if (g_log) log_close();
+        if (g_nasm) { fprintf(stderr, "cly: -strip does not work with -nasm\n"); return 1; }
     }
     if (g_nasm) {
         g_nolibc = 1;
@@ -722,7 +729,20 @@ int main(int argc, char **argv)
         g_mappath = mappath;
     }
     xlog("target", "kernel %d, output type %d, file `%s'", kernel, type, oname);
+    g_xlea = 1;
     int rc = build_image(&ao, arch, kernel, type, oname, file, quiet, optimize);
+    if (!rc && g_xstrip && arch == ARCH_X86 && kernel == K_LINUX && (type == T_ELF || type == T_BIN) && !g_ldo.dynamic) {
+        size_t s1 = g_last_size;
+        Str ts = {0};
+        sfmt(&ts, "%s.cly_tmp", oname);
+        char *tn = sget(&ts);
+        g_xlea = 0;
+        if (!build_image(&ao, arch, kernel, type, tn, file, 1, optimize) && g_last_size < s1) {
+            remove(oname);
+            if (rename(tn, oname)) { remove(tn); g_last_size = s1; }
+        } else { remove(tn); g_last_size = s1; }
+        g_errors = 0;
+    }
     if (!rc && g_werror && g_warnings) {
         fprintf(stderr, "cly: %d warning%s treated as error%s (-Werror)\n", g_warnings, g_warnings == 1 ? "" : "s", g_warnings == 1 ? "" : "s");
         remove(oname);
@@ -751,7 +771,7 @@ int main(int argc, char **argv)
             write_file(sget(&dn), ds.s, ds.n, 0);
         }
     }
-    if (!rc) install_hint();
+    if (!rc && !g_xstrip) install_hint();
     if (rc) { xlog("done", "failed with %d error%s, %d warning%s", g_errors, g_errors == 1 ? "" : "s", g_warnings, g_warnings == 1 ? "" : "s"); return rc; }
     if (nleaks && canfix && !fix_main) {
         Str fs = {0};

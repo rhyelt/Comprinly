@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0
+
+- New: `-strip`. Writes the smallest file it can and prints nothing. No warnings, no log, no hints, no symbol tables, and the optimizer is allowed to use what Linux guarantees at startup (all registers are zero except the stack pointer), so `mov eax, 0`, `mov eax, 1` and similar setup code shrinks. The program does the same thing as the normal build. A hello world is 116 bytes for x86-64 (164 normally), 78 for i386 (129 normally), 166 for ARM64 and RISC-V (286 normally), and a Windows hello is 1024 bytes (1536 normally).
+- New: tiny ELF headers. x86-64 puts the program header inside the ELF header and starts the code inside the header, i386 uses the overlapped 46 byte header, and ARM64 and RISC-V use one segment with a short header. The compiler builds both the tiny and the normal layout and keeps the smaller file.
+- New: in `-strip` mode, `mov r64, label` becomes `lea r64, [rel label]` when that is shorter, and the compiler builds both ways and keeps the smaller one.
+- New: object files from `-strip` drop local symbols nothing refers to.
+- New: ARM64 uses `adr` instead of a `movz`/`movk` pair when a label is close enough.
+- Faster: `strlen`, `memcmp` and `memmove` in the built-in libc read a machine word at a time.
+- Faster: writing object files with many symbols no longer looks symbols up one by one.
+- New: a fourth set of tests at the end of `tests/run_all.sh`: 14 batches of 100 that build every program with and without `-strip` for x86-64, i386, ARM64, RISC-V and Windows, run both and compare the output, link `-strip` objects with ld, check the libc fast paths against a Python model, and feed damaged files to `-strip`.
+- Docs: `BENCHMARKS.md` has a 1.4.0 section.
+
 ## 1.3.5
 
 - New: shared libraries. `-shared` writes a Linux `.so` for x86-64, i386, ARM64 and RISC-V, from source or with `--ld -shared` from objects (including objects built by gcc with `-fPIC`). `-dynamic` and `-needed LIB` make a program that loads shared libraries (your own, ones built by gcc, or `libc.so.6`). `-rdynamic`, `-rpath`, `-soname` and `-interp` set the details. Exports, imports, the PLT, GOT, copy and relative relocations, `DT_NEEDED`, `DT_INIT_ARRAY` and friends are written, and the section headers GNU ld needs to link against the result. A small library is about 1.6 KB, a program that calls `puts` from libc is 888 bytes.

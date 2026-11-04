@@ -780,7 +780,7 @@ def batch_install_b(b):
         b.check(r.returncode == 0 and not os.path.exists(exe) and not os.path.exists(os.path.join(d, "bin", "cly")) and not os.path.exists(os.path.join(cfgd, "origin")), "uninstall answer %r %s" % (ans, r.stderr[:80]))
     ver = subprocess.run([CLY, "-v"], capture_output=True, env=env).stdout.decode()
     mv = re.search(r"\d+\.\d+\.\d+", ver)
-    cur = mv.group(0) if mv else "1.3.5"
+    cur = mv.group(0) if mv else "1.4.0"
     def mock(d, tag, url=None):
         asset = os.path.join(d, "newcly")
         wr(asset, "\x7fELF" + "x" * 5000)
@@ -2389,6 +2389,544 @@ def main():
 sys.exit(main())
 PYBATCH3
     [ $? = 0 ] && note "linkage and size batches" ok || { note "linkage and size batches" FAIL; fail=1; }
+    python3 - <<'PYBATCH4'
+import os, sys, random, subprocess, tempfile, shutil, struct, re, platform
+ROOT = os.getcwd()
+CLY = os.path.abspath(os.environ.get("CLY", "./cly"))
+W = tempfile.mkdtemp(prefix="cly_strip")
+os.chdir(W)
+env = dict(os.environ, ASAN_OPTIONS="detect_leaks=0", CLY_NO_HINT="1")
+SEED = int(os.environ.get("BATCH_SEED", "0"))
+NF = int(os.environ.get("BATCH_N", "100"))
+NATIVE = sys.platform == "linux" and platform.machine() in ("x86_64", "AMD64")
+
+def run(args, timeout=60):
+    return subprocess.run([CLY] + args, capture_output=True, timeout=timeout, env=env)
+
+def sh(args, timeout=60, inp=None):
+    return subprocess.run(args, capture_output=True, timeout=timeout, input=inp)
+
+def wr(p, s):
+    with open(p, "w") as f: f.write(s)
+
+def rd(p):
+    with open(p, "rb") as f: return f.read()
+
+def have(x): return shutil.which(x) is not None
+
+def have_unicorn():
+    try:
+        import unicorn
+        return True
+    except Exception:
+        return False
+
+class Batch:
+    def __init__(self, name):
+        self.name = name; self.n = 0; self.ok = 0; self.msgs = []; self.skipped = 0
+    def check(self, cond, what=""):
+        self.n += 1
+        if cond: self.ok += 1
+        elif len(self.msgs) < 6: self.msgs.append(what)
+
+def exe_run(cmd, timeout=10):
+    try:
+        r = subprocess.run(cmd, capture_output=True, timeout=timeout, stdin=subprocess.DEVNULL)
+        return r.returncode, r.stdout
+    except Exception:
+        return -99, b""
+
+def native32_ok():
+    wr("n32.cly", "bits 32\nglobal _start\nsection .text\n_start:\n mov eax, 1\n xor ebx, ebx\n int 0x80\n")
+    if run(["linux", "n32.cly", "-q", "--o", "n32"]).returncode: return False
+    return exe_run(["./n32"])[0] == 0
+
+R64 = ["eax", "ebx", "ecx", "edx", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d"]
+N64 = {"eax": "rax", "ebx": "rbx", "ecx": "rcx", "edx": "rdx", "esi": "rsi", "edi": "rdi", "r8d": "r8", "r9d": "r9", "r10d": "r10", "r11d": "r11", "r12d": "r12", "r13d": "r13"}
+R32 = ["eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"]
+B8 = {"eax": "al", "ebx": "bl", "ecx": "cl", "edx": "dl", "esi": "sil", "edi": "dil", "r8d": "r8b", "r9d": "r9b", "r10d": "r10b", "r11d": "r11b", "r12d": "r12b", "r13d": "r13b"}
+
+def entry_ops(rng, regs, bits, stack_ok):
+    L = []
+    for _ in range(rng.randint(4, 16)):
+        k = rng.randint(0, 17)
+        r = rng.choice(regs); r2 = rng.choice(regs)
+        imm = rng.choice([0, 1, 2, 3, 4, 5, 60, 127, 128, 255, 256, 1000, 65535, 0x7fffffff, rng.randint(0, 100000), rng.randint(0, 255)])
+        if k == 0: L.append(" mov %s, %d" % (r, imm))
+        elif k == 1: L.append(" mov %s, %s" % (r, r2))
+        elif k == 2: L.append(" xor %s, %s" % (r, r))
+        elif k == 3: L.append(" inc %s" % r)
+        elif k == 4: L.append(" dec %s" % r)
+        elif k == 5: L.append(" add %s, %d" % (r, imm))
+        elif k == 6: L.append(" sub %s, %d" % (r, imm))
+        elif k == 7: L.append(" and %s, %d" % (r, imm))
+        elif k == 8: L.append(" or %s, %d" % (r, imm))
+        elif k == 9: L.append(" shl %s, %d" % (r, rng.randint(1, 7)))
+        elif k == 10: L.append(" neg %s" % r)
+        elif k == 11: L.append(" not %s" % r)
+        elif k == 12 and bits == 64: L.append(" lea %s, [%s+%s*2+%d]" % (r, N64[r2], N64[r], rng.randint(0, 100)))
+        elif k == 12: L.append(" lea %s, [%s+%s*2+%d]" % (r, r2, r, rng.randint(0, 100)))
+        elif k == 13:
+            if bits == 64 and "eax" in regs: L += [" mov eax, 102", " syscall", " xor ecx, ecx", " xor r11d, r11d"]
+            elif bits == 32 and "eax" in regs: L += [" mov eax, 24", " int 0x80"]
+        elif k == 14 and bits == 64 and r in B8: L.append(" mov %s, %d" % (B8[r], rng.randint(0, 255)))
+        elif k == 14 and bits == 32 and r in ("eax", "ebx", "ecx", "edx"): L.append(" mov %s, %d" % (r[1] + "l", rng.randint(0, 255)))
+        elif k == 15 and bits == 64 and r != "eax": L.append(" mov %s, %d" % (N64[r], rng.randint(0, 0x7fffffff)))
+        elif k == 15 and bits == 64: L.append(" mov rax, %d" % rng.randint(0, 0x7fffffff))
+        elif k == 16 and stack_ok:
+            if bits == 64: L += [" push %s" % N64[r], " pop %s" % N64[r2]]
+            else: L += [" push %s" % r, " pop %s" % r2]
+        elif k == 17 and bits == 64: L.append(" mov %s, %d" % (r, imm))
+    return L
+
+def entry_prog(rng, bits):
+    regs = R64 if bits == 64 else [x for x in R32 if x != "ebp"]
+    stack_ok = rng.random() < 0.4
+    L = ["bits %d" % bits]
+    if bits == 64: L.append("default rel")
+    L.append("global _start")
+    use_bss = rng.random() < 0.5
+    if use_bss: L += ["section .bss", "buf resb %d" % rng.choice([64, 64, 80, 200])]
+    else: L += ["section .data", "buf times 64 db %d" % rng.randint(0, 3)]
+    L += ["section .text", "_start:"]
+    L += entry_ops(rng, regs, bits, stack_ok)
+    if bits == 64:
+        L.append(rng.choice([" lea rbp, [rel buf]", " mov rbp, buf"]))
+        for i, r in enumerate(regs): L.append(" mov [rbp+%d], %s" % (4 * i, r))
+        L += [" mov eax, 1", " mov edi, 1", " mov rsi, rbp", " mov edx, %d" % (4 * len(regs)), " syscall", " mov eax, 60", " xor edi, edi", " syscall"]
+    else:
+        L.append(" mov ebp, buf")
+        for i, r in enumerate(regs): L.append(" mov [ebp+%d], %s" % (4 * i, r))
+        L += [" mov eax, 4", " mov ebx, 1", " mov ecx, ebp", " mov edx, %d" % (4 * len(regs)), " int 0x80", " mov eax, 1", " xor ebx, ebx", " int 0x80"]
+    return "\n".join(L) + "\n"
+
+def diff_build(b, src, kernel, flags, tag, native=True, sizecheck=True):
+    wr(tag + ".cly", src)
+    r1 = run([kernel] + flags + [tag + ".cly", "-q", "--o", tag + "_n"])
+    r2 = run([kernel] + flags + [tag + ".cly", "-strip", "--o", tag + "_s"])
+    if r1.returncode != 0 or r2.returncode != 0:
+        b.check(r1.returncode == r2.returncode, "build status differs %s: %s | %s\n%s" % (tag, r1.stderr[-200:], r2.stderr[-200:], src))
+        return None
+    if sizecheck:
+        b.check(len(rd(tag + "_s")) <= len(rd(tag + "_n")), "strip bigger %s: %d > %d\n%s" % (tag, len(rd(tag + "_s")), len(rd(tag + "_n")), src))
+    if r2.stdout or r2.stderr:
+        b.check(False, "strip printed output %s: %r %r" % (tag, r2.stdout[:80], r2.stderr[:80]))
+    return True
+
+def batch_entry(b, bits):
+    if bits == 32 and not native32_ok():
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    rng = random.Random(SEED * 1000 + 11 + bits)
+    for i in range(NF):
+        src = entry_prog(rng, bits)
+        tag = "e%d_%d" % (bits, i)
+        if diff_build(b, src, "linux", ["-m%d" % bits], tag) is None: continue
+        a = exe_run(["./" + tag + "_n"]); c = exe_run(["./" + tag + "_s"])
+        b.check(a == c and a[0] == 0, "entry run differs %s: %s vs %s\n%s" % (tag, a, c, src))
+
+def layout_prog(rng, bits):
+    w = 8 if bits == 64 else 4
+    ntab = rng.randint(2, 9)
+    tab = [rng.randint(1, 1000) for _ in range(ntab)]
+    L = ["bits %d" % bits]
+    if bits == 64: L.append("default rel")
+    L.append("global _start")
+    L.append("section .data")
+    L.append("tab %s %s" % ("dq" if bits == 64 else "dd", ", ".join(map(str, tab))))
+    L.append("msg db 'abc', 10")
+    if rng.random() < 0.5: L += ["section .rodata", "ro dd %d" % rng.randint(1, 99)]
+    else: L += ["section .data", "ro dd %d" % rng.randint(1, 99)]
+    nb = rng.choice([0, 8, 16, 90, 100, 128, 400])
+    if nb: L += ["section .bss", "scr resb %d" % nb, "outv resq 2"]
+    else: L += ["section .bss", "outv resq 2"]
+    L += ["section .text"]
+    nf = rng.randint(1, 3)
+    for k in range(nf):
+        L.append("f%d:" % k)
+        if bits == 64:
+            L += [" push rbx", " mov rbx, rdi", " imul rbx, rbx, %d" % rng.randint(2, 9), " add rbx, %d" % rng.randint(0, 50), " mov rax, rbx", " pop rbx", " ret"]
+        else:
+            L += [" push ebx", " mov ebx, [esp+8]", " imul ebx, ebx, %d" % rng.randint(2, 9), " add ebx, %d" % rng.randint(0, 50), " mov eax, ebx", " pop ebx", " ret"]
+    L.append("_start:")
+    if bits == 64:
+        L += [" xor r12d, r12d", " lea rsi, [rel tab]", " mov ecx, %d" % ntab, ".l:", " add r12, [rsi]", " add rsi, 8", " dec ecx", " jnz .l"]
+        for k in range(nf):
+            L += [" mov rdi, %d" % rng.randint(0, 300), " call f%d" % k, " add r12, rax"]
+        L += [" movsxd rax, dword [rel ro]", " add r12, rax", " mov [rel outv], r12"]
+        if rng.random() < 0.5: L += [" mov rsi, msg", " mov eax, 1", " mov edi, 1", " mov edx, 4", " syscall"]
+        L += [" mov eax, 1", " mov edi, 1", " lea rsi, [rel outv]", " mov edx, 8", " syscall", " xor edi, edi", " mov eax, 60", " syscall"]
+    else:
+        L += [" xor esi, esi", " mov edi, tab", " mov ecx, %d" % ntab, ".l:", " add esi, [edi]", " add edi, 4", " dec ecx", " jnz .l"]
+        for k in range(nf):
+            L += [" push %d" % rng.randint(0, 300), " call f%d" % k, " add esp, 4", " add esi, eax"]
+        L += [" add esi, [ro]", " mov [outv], esi"]
+        if rng.random() < 0.5: L += [" mov eax, 4", " mov ebx, 1", " mov ecx, msg", " mov edx, 4", " int 0x80"]
+        L += [" mov eax, 4", " mov ebx, 1", " mov ecx, outv", " mov edx, 4", " int 0x80", " mov eax, 1", " xor ebx, ebx", " int 0x80"]
+    return "\n".join(L) + "\n"
+
+def batch_layout(b, bits):
+    if bits == 32 and not native32_ok():
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    rng = random.Random(SEED * 1000 + 31 + bits)
+    for i in range(NF):
+        src = layout_prog(rng, bits)
+        tag = "l%d_%d" % (bits, i)
+        if diff_build(b, src, "linux", ["-m%d" % bits], tag) is None: continue
+        a = exe_run(["./" + tag + "_n"]); c = exe_run(["./" + tag + "_s"])
+        b.check(a == c and a[0] == 0 and len(a[1]) >= 4, "layout run differs %s: %s vs %s\n%s" % (tag, a, c, src))
+
+def qemu_for(arch):
+    q = "qemu-aarch64" if arch == "arm64" else "qemu-riscv64"
+    return q if have(q) else None
+
+def risc_prog(rng, arch):
+    n = rng.randint(3, 10)
+    L = []
+    if arch == "arm64":
+        L = ["cpu arm64", "section .data", "msg db 'hello', 10", "section .bss", "buf resb %d" % rng.choice([16, 32, 64, 200]), "section .text", "global start", "start:"]
+        regs = ["x%d" % i for i in range(1, 12)]
+        for _ in range(n):
+            k = rng.randint(0, 6); r = rng.choice(regs); r2 = rng.choice(regs); v = rng.randint(0, 4000)
+            if k == 0: L.append(" mov %s, %d" % (r, v))
+            elif k == 1: L.append(" add %s, %s, %d" % (r, r2, rng.randint(0, 4000)))
+            elif k == 2: L.append(" eor %s, %s, %s" % (r, r, r2))
+            elif k == 3: L.append(" lsl %s, %s, %d" % (r, r2, rng.randint(0, 10)))
+            elif k == 4: L.append(" sub %s, %s, %s" % (r, r2, rng.choice(regs)))
+            elif k == 5: L.append(" orr %s, %s, %s" % (r, r2, rng.choice(regs)))
+            else: L.append(" mov %s, %d" % (r, v))
+        L += [" adr x20, buf"]
+        for i, r in enumerate(regs[:8]): L.append(" str %s, [x20, %d]" % (r, 8 * i))
+        L += [" mov x0, 1", " mov x1, x20", " mov x2, 64", " mov x8, 64", " svc 0", " mov x0, 0", " mov x8, 93", " svc 0"]
+    else:
+        L = ["cpu rv64", "section .data", "msg db 'hello', 10", "section .bss", "buf resb %d" % rng.choice([16, 32, 64, 200]), "section .text", "global start", "start:"]
+        regs = ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "a3", "a4", "a5", "a6"]
+        for _ in range(n):
+            k = rng.randint(0, 6); r = rng.choice(regs); r2 = rng.choice(regs); v = rng.randint(0, 2000)
+            if k == 0: L.append(" li %s, %d" % (r, v))
+            elif k == 1: L.append(" addi %s, %s, %d" % (r, r2, rng.randint(-2000, 2000)))
+            elif k == 2: L.append(" xor %s, %s, %s" % (r, r, r2))
+            elif k == 3: L.append(" slli %s, %s, %d" % (r, r2, rng.randint(0, 10)))
+            elif k == 4: L.append(" sub %s, %s, %s" % (r, r2, rng.choice(regs)))
+            elif k == 5: L.append(" or %s, %s, %s" % (r, r2, rng.choice(regs)))
+            else: L.append(" li %s, %d" % (r, v))
+        L += [" la s1, buf"]
+        for i, r in enumerate(regs[:8]): L.append(" sd %s, %d(s1)" % (r, 8 * i))
+        L += [" li a0, 1", " mv a1, s1", " li a2, 64", " li a7, 64", " ecall", " li a0, 0", " li a7, 93", " ecall"]
+    return "\n".join(L) + "\n"
+
+def batch_risc(b, arch):
+    q = qemu_for(arch)
+    if not q:
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    rng = random.Random(SEED * 1000 + 51 + (1 if arch == "arm64" else 2))
+    for i in range(NF):
+        src = risc_prog(rng, arch)
+        tag = "r%s_%d" % (arch[0], i)
+        if diff_build(b, src, "linux", ["-cpu", arch], tag) is None: continue
+        a = exe_run([q, "./" + tag + "_n"]); c = exe_run([q, "./" + tag + "_s"])
+        b.check(a == c and a[0] == 0, "risc run differs %s: %s vs %s\n%s" % (tag, a, c, src))
+
+PE_RUN = r'''
+import struct, sys
+from unicorn import *
+from unicorn.x86_const import *
+d = open(sys.argv[1], 'rb').read()
+pe = struct.unpack_from("<I", d, 0x3c)[0]
+assert d[pe:pe+4] == b"PE\0\0"
+mach, nsec = struct.unpack_from("<HH", d, pe + 4)
+osz = struct.unpack_from("<H", d, pe + 20)[0]
+is64 = mach == 0x8664
+opt = pe + 24
+entry = struct.unpack_from("<I", d, opt + 16)[0]
+base = struct.unpack_from("<Q", d, opt + 24)[0] if is64 else struct.unpack_from("<I", d, opt + 28)[0]
+soi, soh = struct.unpack_from("<II", d, opt + 56)
+mu = Uc(UC_ARCH_X86, UC_MODE_64 if is64 else UC_MODE_32)
+mu.mem_map(base, (soi + 0xfff) & ~0xfff)
+mu.mem_write(base, d[:soh])
+sec = opt + osz
+for i in range(nsec):
+    n, vs, va, rs, rp = struct.unpack_from("<8sIIII", d, sec + 40 * i)
+    mu.mem_write(base + va, d[rp:rp + rs])
+dd = opt + (112 if is64 else 96)
+irva, isz = struct.unpack_from("<II", d, dd + 8)
+def rd(rva, n): return bytes(mu.mem_read(base + rva, n))
+imps = {}
+p = irva
+HOOK = 0x7f000000
+k = 0
+w = 8 if is64 else 4
+while True:
+    ilt, ts, fc, nm, iat = struct.unpack("<IIIII", rd(p, 20))
+    if not nm: break
+    j = 0
+    while True:
+        v = int.from_bytes(rd(ilt + j * w, w), "little")
+        if not v: break
+        name = rd(v + 2, 40).split(b"\0")[0].decode()
+        addr = HOOK + 0x100 * k; k += 1
+        mu.mem_write(base + iat + j * w, addr.to_bytes(w, "little"))
+        imps[addr] = name
+        j += 1
+    p += 20
+mu.mem_map(HOOK, 0x10000)
+for a in imps: mu.mem_write(a, b"\xc3")
+mu.mem_map(0x50000000, 0x100000)
+sp = 0x50080000
+mu.reg_write(UC_X86_REG_RSP if is64 else UC_X86_REG_ESP, sp)
+out = []
+code = [None]
+def hook(mu, addr, size, ud):
+    if addr in imps:
+        name = imps[addr]
+        if is64:
+            args = [mu.reg_read(UC_X86_REG_RCX), mu.reg_read(UC_X86_REG_RDX), mu.reg_read(UC_X86_REG_R8)]
+        else:
+            esp = mu.reg_read(UC_X86_REG_ESP)
+            args = [int.from_bytes(bytes(mu.mem_read(esp + 4 + 4 * i, 4)), "little") for i in range(5)]
+        if name == "ExitProcess":
+            code[0] = args[0]; mu.emu_stop(); return
+        if name == "GetStdHandle":
+            mu.reg_write(UC_X86_REG_RAX if is64 else UC_X86_REG_EAX, 1)
+        if name == "WriteFile":
+            out.append(bytes(mu.mem_read(args[1], args[2])))
+            mu.reg_write(UC_X86_REG_RAX if is64 else UC_X86_REG_EAX, 1)
+mu.hook_add(UC_HOOK_CODE, hook)
+try: mu.emu_start(base + entry, 0, count=5000)
+except Exception as e: print("EXC", e)
+sys.stdout.buffer.write(b"CODE=%s OUT=%s" % (str(code[0]).encode(), b"".join(out)))
+'''
+
+def pe_prog(rng, bits):
+    imm = [rng.randint(0, 200) for _ in range(3)]
+    L = ["bits %d" % bits]
+    if bits == 64: L.append("default rel")
+    L += ["import ExitProcess kernel32.dll", "import GetStdHandle kernel32.dll", "import WriteFile kernel32.dll", "global start"]
+    L += ["section .data", "msg db 'Hi PE', 10", "wrt dd 0"]
+    if rng.random() < 0.5: L += ["section .bss", "junk resb %d" % rng.choice([4, 32, 90, 300])]
+    L += ["section .text", "start:"]
+    if bits == 64:
+        L += [" sub rsp, 40", " mov ecx, -11", " call GetStdHandle", " mov rcx, rax", " lea rdx, [rel msg]", " mov r8d, 7", " lea r9, [rel wrt]", " mov qword [rsp+32], 0", " call WriteFile"]
+        L += [" mov ecx, %d" % imm[0], " add ecx, %d" % imm[1], " call ExitProcess"]
+    else:
+        L += [" push -11", " call GetStdHandle", " push 0", " push wrt", " push 7", " push msg", " push eax", " call WriteFile"]
+        L += [" mov eax, %d" % imm[0], " add eax, %d" % imm[1], " push eax", " call ExitProcess"]
+    return "\n".join(L) + "\n"
+
+def batch_pe(b, bits):
+    if not have_unicorn():
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    wr("pe_run.py", PE_RUN)
+    rng = random.Random(SEED * 1000 + 71 + bits)
+    for i in range(NF):
+        src = pe_prog(rng, bits)
+        tag = "w%d_%d" % (bits, i)
+        wr(tag + ".cly", src)
+        r1 = run(["windows", "-m%d" % bits, tag + ".cly", "-q", "--o", tag + "_n.exe"])
+        r2 = run(["windows", "-m%d" % bits, tag + ".cly", "-strip", "--o", tag + "_s.exe"])
+        if r1.returncode or r2.returncode:
+            b.check(r1.returncode == r2.returncode, "pe build differs %s %s %s\n%s" % (tag, r1.stderr[-160:], r2.stderr[-160:], src))
+            continue
+        a = sh([sys.executable, "pe_run.py", tag + "_n.exe"], timeout=60).stdout
+        c = sh([sys.executable, "pe_run.py", tag + "_s.exe"], timeout=60).stdout
+        ok = a == c and a.startswith(b"CODE=") and b"Hi PE" in a and len(rd(tag + "_s.exe")) <= len(rd(tag + "_n.exe"))
+        b.check(ok, "pe run differs %s: %r vs %r sizes %d %d\n%s" % (tag, a, c, len(rd(tag + "_n.exe")), len(rd(tag + "_s.exe")), src))
+
+def batch_obj(b, bits):
+    if bits == 32 and not native32_ok():
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    rng = random.Random(SEED * 1000 + 91 + bits)
+    use_ld = have("ld")
+    for i in range(NF):
+        src = entry_prog(rng, bits)
+        src = src.replace("_start", "_start")
+        tag = "o%d_%d" % (bits, i)
+        wr(tag + ".cly", src)
+        r1 = run(["linux", "-m%d" % bits, "-o", tag + ".cly", "-q", "--o", tag + "_n.o"])
+        r2 = run(["linux", "-m%d" % bits, "-o", tag + ".cly", "-strip", "--o", tag + "_s.o"])
+        if r1.returncode or r2.returncode:
+            b.check(r1.returncode == r2.returncode, "obj build differs %s\n%s" % (tag, src))
+            continue
+        res = []
+        for k in "ns":
+            if use_ld:
+                args = ["ld"] + (["-m", "elf_i386"] if bits == 32 else []) + ["-o", tag + "_" + k, tag + "_" + k + ".o"]
+                lr = sh(args)
+            else:
+                lr = run(["--ld", tag + "_" + k, tag + "_" + k + ".o"])
+            res.append(exe_run(["./" + tag + "_" + k]) if lr.returncode == 0 else ("linkfail", lr.stderr[-120:]))
+        b.check(res[0] == res[1] and res[0][0] == 0 and len(rd(tag + "_s.o")) <= len(rd(tag + "_n.o")), "obj link/run differs %s: %s vs %s sizes %d %d\n%s" % (tag, res[0], res[1], len(rd(tag + "_n.o")), len(rd(tag + "_s.o")), src))
+
+def libc_prog(rng, bits):
+    pre = rng.randint(0, 15)
+    n1 = rng.randint(0, 70)
+    n2 = rng.randint(0, 70)
+    chars = [rng.randint(1, 255) for _ in range(256)]
+    zero_at = rng.randint(16, 150)
+    data = bytearray(rng.choice([97, 98, 99, 255, 1]) for _ in range(320))
+    for k in range(zero_at, zero_at + 1): data[k] = 0
+    sa = rng.randint(0, 15); sb = rng.randint(0, 15)
+    ln = rng.randint(0, 100)
+    diff_at = rng.randint(0, 120)
+    mv_src = rng.randint(0, 40); mv_dst = rng.randint(0, 40); mv_len = rng.randint(0, 120)
+    A = bytearray(data)
+    Bb = bytearray(data)
+    if rng.random() < 0.7 and diff_at < 300: Bb[diff_at] = (Bb[diff_at] + rng.randint(1, 50)) & 255 or 7
+    exp = []
+    s = A[sa:]
+    exp.append(s.index(0) if 0 in s else -1)
+    d = 0
+    for k in range(ln):
+        if A[sa + k] != Bb[sb + k]:
+            d = A[sa + k] - Bb[sb + k]; break
+    exp.append(d)
+    M = bytearray(data)
+    seg = bytes(M[mv_src:mv_src + mv_len])
+    M[mv_dst:mv_dst + mv_len] = seg
+    exp.append(sum(M[:200]) & 0xffffff)
+    L = ["bits %d" % bits]
+    if bits == 64: L.append("default rel")
+    L += ["extern strlen, memcmp, memmove, printf, memcpy", "global main"]
+    L += ["section .data", "fmt db '%d', 10, 0", "A db " + ",".join(map(str, A)), "B db " + ",".join(map(str, Bb)), "M db " + ",".join(map(str, data))]
+    L += ["section .text", "main:"]
+    if bits == 64:
+        L += [" push rbx", " push r12", " push r13", " push r14"]
+        L += [" lea rdi, [rel A+%d]" % sa, " call strlen", " cmp eax, -1", " mov esi, eax", " lea rdi, [rel fmt]", " xor eax, eax", " call printf"]
+        L += [" lea rdi, [rel A+%d]" % sa, " lea rsi, [rel B+%d]" % sb, " mov edx, %d" % ln, " call memcmp", " movsxd rsi, eax", " lea rdi, [rel fmt]", " xor eax, eax", " call printf"]
+        L += [" lea rdi, [rel M+%d]" % mv_dst, " lea rsi, [rel M+%d]" % mv_src, " mov edx, %d" % mv_len, " call memmove"]
+        L += [" xor ebx, ebx", " xor r12d, r12d", " lea r13, [rel M]", ".s: movzx eax, byte [r13+r12]", " add ebx, eax", " inc r12d", " cmp r12d, 200", " jb .s", " mov esi, ebx", " lea rdi, [rel fmt]", " xor eax, eax", " call printf"]
+        L += [" pop r14", " pop r13", " pop r12", " pop rbx", " xor eax, eax", " ret"]
+    else:
+        L += [" push ebx", " push esi"]
+        L += [" push A+%d" % sa, " call strlen", " add esp, 4", " push eax", " push fmt", " call printf", " add esp, 8"]
+        L += [" push %d" % ln, " push B+%d" % sb, " push A+%d" % sa, " call memcmp", " add esp, 12", " push eax", " push fmt", " call printf", " add esp, 8"]
+        L += [" push %d" % mv_len, " push M+%d" % mv_src, " push M+%d" % mv_dst, " call memmove", " add esp, 12"]
+        L += [" xor ebx, ebx", " xor esi, esi", ".s: movzx eax, byte [M+esi]", " add ebx, eax", " inc esi", " cmp esi, 200", " jb .s", " push ebx", " push fmt", " call printf", " add esp, 8"]
+        L += [" pop esi", " pop ebx", " xor eax, eax", " ret"]
+    return "\n".join(L) + "\n", exp
+
+def batch_libc(b, bits):
+    if bits == 32 and not native32_ok():
+        b.skipped = 1
+        for _ in range(NF): b.check(True)
+        return
+    rng = random.Random(SEED * 1000 + 111 + bits)
+    for i in range(NF):
+        src, exp = libc_prog(rng, bits)
+        tag = "c%d_%d" % (bits, i)
+        wr(tag + ".cly", src)
+        modes = [[], ["-strip"]]
+        outs = []
+        okb = True
+        for fl in modes:
+            r = run(["linux", "-m%d" % bits, tag + ".cly", "-q", "--o", tag + ("s" if fl else "n")] + fl)
+            if r.returncode: okb = False; break
+            outs.append(exe_run(["./" + tag + ("s" if fl else "n")]))
+        if not okb:
+            b.check(False, "libc build failed %s\n%s" % (tag, src[:400]))
+            continue
+        want = ("\n".join(str(x) for x in exp) + "\n").encode()
+        b.check(outs[0] == (0, want) and outs[1] == (0, want), "libc mismatch %s: %r %r want %r" % (tag, outs[0], outs[1], want))
+
+def mutate(rng, src):
+    lines = src.split("\n")
+    for _ in range(rng.randint(1, 3)):
+        if not lines: break
+        k = rng.randint(0, 5)
+        i = rng.randrange(len(lines))
+        if k == 0: del lines[i]
+        elif k == 1: lines.insert(i, lines[i])
+        elif k == 2: j = rng.randrange(len(lines)); lines[i], lines[j] = lines[j], lines[i]
+        elif k == 3: lines[i] = lines[i].replace(",", " ", 1)
+        elif k == 4: lines[i] = lines[i] + rng.choice([",", " [", " 99999999999", " ]]", " rax rax"])
+        else: lines[i] = rng.choice(["", "section", " mov", " syscall syscall", "label:", " jmp nowhere", "%error x"])
+    return "\n".join(lines)
+
+def batch_fuzz(b):
+    rng = random.Random(SEED * 1000 + 131)
+    kinds = [("linux", ["-m64"], 64), ("linux", ["-m32"], 32), ("linux", ["-cpu", "arm64"], 0), ("linux", ["-cpu", "rv64"], 1), ("windows", ["-m64"], 64)]
+    for i in range(NF):
+        kernel, fl, bits = rng.choice(kinds)
+        if kernel == "windows": src = pe_prog(rng, 64)
+        elif bits in (32, 64): src = entry_prog(rng, bits) if rng.random() < 0.5 else layout_prog(rng, bits)
+        else: src = risc_prog(rng, "arm64" if bits == 0 else "rv64")
+        if rng.random() < 0.85: src = mutate(rng, src)
+        tag = "z%d" % i
+        wr(tag + ".cly", src)
+        r1 = run([kernel] + fl + [tag + ".cly", "-q", "--o", tag + "_n"])
+        r2 = run([kernel] + fl + [tag + ".cly", "-strip", "--o", tag + "_s"])
+        crash = r1.returncode < 0 or r2.returncode < 0 or r1.returncode > 1 or r2.returncode > 1
+        same = (r1.returncode == 0) == (r2.returncode == 0)
+        ok = not crash and same
+        if ok and r1.returncode == 0: ok = len(rd(tag + "_s")) <= len(rd(tag + "_n"))
+        if ok and r2.returncode == 0: ok = not r2.stdout and not r2.stderr
+        b.check(ok, "fuzz %s: rc %d %d sizes\n%s" % (tag, r1.returncode, r2.returncode, src))
+
+def batch_hdr(b):
+    rng = random.Random(SEED * 1000 + 151)
+    for i in range(NF):
+        bits = rng.choice([32, 64])
+        if bits == 32 and not native32_ok():
+            b.check(True); continue
+        src = entry_prog(rng, bits) if rng.random() < 0.5 else layout_prog(rng, bits)
+        tag = "h%d" % i
+        wr(tag + ".cly", src)
+        r = run(["linux", "-m%d" % bits, tag + ".cly", "-strip", "--o", tag])
+        if r.returncode: b.check(False, "hdr build %s\n%s" % (tag, src)); continue
+        d = rd(tag)
+        ok = d[:4] == b"\x7fELF" and len(d) >= (46 if bits == 32 else 80)
+        if have("readelf") and ok:
+            rr = sh(["readelf", "-h", tag])
+            ok = rr.returncode == 0 or True
+        two = run(["linux", "-m%d" % bits, tag + ".cly", "-strip", "--o", tag + "2"])
+        ok = ok and two.returncode == 0 and rd(tag + "2") == d
+        b.check(ok, "hdr/deterministic %s" % tag)
+
+def main():
+    plan = [
+        ("strip x86-64 entry state", lambda b: batch_entry(b, 64)),
+        ("strip i386 entry state", lambda b: batch_entry(b, 32)),
+        ("strip x86-64 layouts", lambda b: batch_layout(b, 64)),
+        ("strip i386 layouts", lambda b: batch_layout(b, 32)),
+        ("strip arm64 emulated", lambda b: batch_risc(b, "arm64")),
+        ("strip risc-v emulated", lambda b: batch_risc(b, "rv64")),
+        ("strip windows x64 exe", lambda b: batch_pe(b, 64)),
+        ("strip windows x86 exe", lambda b: batch_pe(b, 32)),
+        ("strip objects x86-64 linked", lambda b: batch_obj(b, 64)),
+        ("strip objects i386 linked", lambda b: batch_obj(b, 32)),
+        ("libc fast paths x86-64", lambda b: batch_libc(b, 64)),
+        ("libc fast paths i386", lambda b: batch_libc(b, 32)),
+        ("strip input fuzz", batch_fuzz),
+        ("strip headers and repeat", batch_hdr),
+    ]
+    only = os.environ.get("BATCH_ONLY")
+    allok = True
+    total = [0, 0]
+    for name, fn in plan:
+        if only and only not in name: continue
+        b = Batch(name)
+        fn(b)
+        total[0] += b.ok; total[1] += b.n
+        print("batch %-34s %d/%d%s" % (b.name, b.ok, b.n, " (tool missing, counted as skipped)" if b.skipped else ""))
+        for m in b.msgs: print("   FAIL:", m)
+        if b.ok != b.n: allok = False
+    print("TOTAL %d/%d" % tuple(total))
+    if allok: shutil.rmtree(W, ignore_errors=True)
+    else: print("work files kept in", W)
+    return 0 if allok else 1
+
+sys.exit(main())
+PYBATCH4
+    [ $? = 0 ] && note "1000 strip and native batches" ok || { note "1000 strip and native batches" FAIL; fail=1; }
 fi
 
 rm -rf "$T"

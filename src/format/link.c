@@ -120,7 +120,7 @@ static void order_secs(Obj *o)
     }
 }
 
-int g_compact;
+int g_compact, g_compact_min;
 int g_ro_prog;
 
 /* Assigns addresses to every section for a given base and page size. Computes where the file image ends. */
@@ -151,6 +151,8 @@ int link_layout(Obj *o, i64 base, i64 pagesz, int mode)
         }
         if (s->has_start) cur = s->start;
         int a = g_compact ? (s->ualign > 0 ? s->ualign : 1) : (s->align > 0 ? s->align : 1);
+        if (o->arch != ARCH_X86 && !s->exec && a < 8 && a >= 1 && s->alloc) a = 8;
+        if (g_compact && a < g_compact_min) a = g_compact_min;
         cur = round_up(cur, a);
         s->base = cur;
         cur += s->size;
@@ -224,6 +226,25 @@ int link_apply(Obj *o)
         put_reloc(o, r, v);
     }
     return bad ? 0 : 1;
+}
+
+/* Tells whether every relocation resolves and fits its field with the current layout, without writing anything. Used to pick a layout that needs a large base address. */
+int link_fits(Obj *o)
+{
+    for (int i = 0; i < o->nrelocs; i++) {
+        Reloc *r = &o->relocs[i];
+        int ok = 1;
+        i64 v = val_addr(o, &r->v, &ok);
+        if (!ok || r->kind >= RK_A64_B26) return 0;
+        if (r->kind == RK_REL) v -= sec_addr(o, r->sec) + r->relbase;
+        if (r->size < 1 || r->size > 8) continue;
+        if (r->size < 8) {
+            i64 lo = -((i64)1 << (r->size * 8 - 1));
+            i64 hi = ((i64)1 << (r->size * 8)) - 1;
+            if (v < lo || v > hi) return 0;
+        }
+    }
+    return 1;
 }
 
 /* Copies the bytes between two addresses into dst, zero filling gaps. */

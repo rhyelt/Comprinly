@@ -252,7 +252,7 @@ static int is_jcc(const char *mn, const char **cc)
 static int flag_effects(const Ln *x, int *rd, int *wr)
 {
     const char *m = x->mn;
-    static const char *const pass[] = { "mov", "lea", "push", "pop", "movzx", "movsx", "movsxd", "xchg", "nop", "cdq", "cqo", "cwd", "cbw", "cwde", "cdqe", "not", "bswap", "leave", "pause", "cld", "std", "syscall", "movd", "movq", "movaps", "movups", "movdqa", "movdqu", "pxor", "xorps", "movss", NULL };
+    static const char *const pass[] = { "mov", "lea", "push", "pop", "movzx", "movsx", "movsxd", "xchg", "nop", "cdq", "cqo", "cwd", "cbw", "cwde", "cdqe", "not", "bswap", "leave", "pause", "cld", "std", "syscall", "int", "movd", "movq", "movaps", "movups", "movdqa", "movdqu", "pxor", "xorps", "movss", NULL };
     static const char *const wall[] = { "add", "sub", "cmp", "test", "and", "or", "xor", "neg", "mul", "imul", "div", "idiv", NULL };
     *rd = 0;
     *wr = 0;
@@ -1110,6 +1110,166 @@ static void ro_analyze(LineVec *lv, int bits)
     g_ro_prog = ok;
 }
 
+
+
+/* Only for -strip, 64-bit. `mov r64, label` needs an absolute address that fits in 32 bits, which rules out the smallest file layout. It becomes a rip-relative `lea`, which has the same effect for a full 64-bit register. */
+static int strip_abs(Ctx *c)
+{
+    Ln *L = c->L;
+    int n = c->n, changed = 0, nl = 0, cap = 0;
+    char **names = NULL;
+    for (int i = 0; i < n; i++) {
+        const char *nm = NULL;
+        char tmp[128];
+        if (L[i].kind == LK_LABEL && L[i].name) nm = L[i].name;
+        else if (L[i].kind == LK_OTHER && L[i].plain) {
+            const char *p = L[i].plain;
+            const char *q = p;
+            while (idc((unsigned char)*q)) q++;
+            size_t len = (size_t)(q - p);
+            if (len && len < sizeof tmp) {
+                const char *r = q;
+                if (*r == ':') {
+                    r++;
+                    while (isspace((unsigned char)*r)) r++;
+                } else if (isspace((unsigned char)*r)) {
+                    while (isspace((unsigned char)*r)) r++;
+                } else continue;
+                char w[24];
+                size_t k = 0;
+                while (idc((unsigned char)r[k]) && k + 1 < sizeof w) { w[k] = (char)tolower((unsigned char)r[k]); k++; }
+                w[k] = 0;
+                if (strcmp(w, "equ") && (in_list(w, datad) || (q[0] == ':' && insn_known(w)))) {
+                    memcpy(tmp, p, len);
+                    tmp[len] = 0;
+                    nm = tmp;
+                }
+            }
+        }
+        if (!nm) continue;
+        if (nl == cap) { cap = cap ? cap * 2 : 16; names = xrealloc(names, sizeof(char *) * (size_t)cap); }
+        names[nl++] = xstrdup(nm);
+    }
+    for (int i = 0; i < n; i++) {
+        Ln *x = &L[i];
+        if (x->kind != LK_INSN || strcmp(x->mn, "mov") || x->nops != 2 || regw(x->ops[0], NULL) != 64) continue;
+        if (!ident_only(x->ops[1]) || regw(x->ops[1], NULL)) continue;
+        int hit = 0;
+        for (int k = 0; k < nl && !hit; k++) if (!strcmp(names[k], x->ops[1])) hit = 1;
+        if (!hit) continue;
+        char buf[160];
+        snprintf(buf, sizeof buf, "    lea %s, [rel %s]", x->ops[0], x->ops[1]);
+        set_line(c, i, buf);
+        changed = 1;
+    }
+    for (int k = 0; k < nl; k++) free(names[k]);
+    free(names);
+    return changed;
+}
+
+/* True if the program never touches the stack: no push, pop, call, ret and no use of the stack or frame register. */
+static int stack_free(Ctx *c)
+{
+    static const char *const sm[] = { "push", "pop", "call", "ret", "retn", "retf", "leave", "enter", "pushf", "popf", "pushfq", "popfq", "pusha", "popa", NULL };
+    static const char *const sr[] = { "rsp", "esp", "sp", "spl", "rbp", "ebp", "bp", "bpl", NULL };
+    for (int i = 0; i < c->n; i++) {
+        Ln *x = &c->L[i];
+        if (x->kind != LK_INSN) continue;
+        if (in_list(x->mn, sm)) return 0;
+        for (int k = 0; k < x->nops && k < 4; k++)
+            for (int r = 0; sr[r]; r++) if (has_word(x->ops[k], sr[r])) return 0;
+    }
+    return 1;
+}
+
+/* Only for -strip. A Linux program starts with every general register at zero (except the stack pointer), so the first straight run of instructions after the entry label is rewritten with that knowledge: a load into a zero register becomes a byte load or an increment, a repeated load disappears, and a small constant after a system call is loaded with push and pop. */
+static int entry_pass(Ctx *c, char **extra)
+{
+    Ln *L = c->L;
+    int n = c->n, e = -1;
+    for (int i = 0; i < n; i++)
+        if (L[i].kind == LK_LABEL && !L[i].local && (!strcasecmp(L[i].name, "start") || !strcasecmp(L[i].name, "_start") || !strcasecmp(L[i].name, "..start"))) { e = i; break; }
+    if (e < 0) return 0;
+    for (int i = 0; i < n; i++) {
+        if (L[i].kind != LK_INSN) continue;
+        for (int k = 0; k < L[i].nops && k < 4; k++) if (has_word(L[i].ops[k], L[e].name)) return 0;
+    }
+    int sf = stack_free(c), changed = 0, nreg = OB == 64 ? 16 : 8;
+    int kn[16];
+    unsigned long long val[16];
+    char buf[96];
+    for (int k = 0; k < 16; k++) { kn[k] = 1; val[k] = 0; }
+    kn[4] = 0;
+    static const char *const b8[16] = { "al", "cl", "dl", "bl", NULL, NULL, "sil", "dil", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b" };
+    for (int i = e + 1; i < n; i++) {
+        Ln *x = &L[i];
+        if (x->kind == LK_BLANK) continue;
+        if (x->kind != LK_INSN) break;
+        if (x->nops == 1 && !strcmp(x->mn, "mov")) {
+            char *sp = strchr(x->ops[0], ' ');
+            if (sp) { *sp++ = 0; while (*sp == ' ') sp++; x->ops[1] = xstrdup(sp); x->nops = 2; }
+        }
+        const char *cc;
+        if (is_jcc(x->mn, &cc) || !strcmp(x->mn, "jmp") || !strcmp(x->mn, "call") || is_term(x)) break;
+        if (OB == 64 && !strcmp(x->mn, "syscall")) { kn[0] = kn[1] = kn[11] = 0; continue; }
+        if (!strcmp(x->mn, "int") && x->nops == 1) { kn[0] = 0; continue; }
+        if (!strcmp(x->mn, "nop") || reads_only(x)) continue;
+        int dw = 0, d = x->nops >= 1 && !strchr(x->ops[0], '[') ? regidx(x->ops[0], &dw) : -1;
+        long v;
+        int src_known = 0;
+        if (!strcmp(x->mn, "mov") && x->nops == 2 && d >= 0 && d < nreg && d != 4 && (dw == 32 || dw == 64)) {
+            int sw, sr = regidx(x->ops[1], &sw);
+            if (sr >= 0 && sr != 4 && sw == dw && kn[sr]) { v = (long)val[sr]; src_known = 1; }
+        }
+        if (!strcmp(x->mn, "mov") && x->nops == 2 && d >= 0 && d < nreg && d != 4 && (dw == 32 || dw == 64) && (src_known || (is_num(x->ops[1], &v) && (dw == 32 || (v >= 0 && v <= 0x7fffffffL)))) && (v >= 0 || dw == 32) && (unsigned long long)v <= 0xffffffffULL) {
+            unsigned long long t = (unsigned long long)(unsigned int)v;
+            char r32n[16];
+            snprintf(r32n, sizeof r32n, "%s", N32[d]);
+            const char *dn32 = r32n;
+            if (kn[d] && val[d] == t) { set_line(c, i, ""); changed = 1; continue; }
+            int done = 0;
+            if (kn[d] && flags_dead(L, n, i, F_ALL)) {
+                if (t == val[d] + 1) { snprintf(buf, sizeof buf, "    inc %s", dn32); done = 1; }
+                else if (t == val[d] - 1) { snprintf(buf, sizeof buf, "    dec %s", dn32); done = 1; }
+            }
+            if (!done && kn[d] && b8[d] && ((t ^ val[d]) >> 8) == 0 && (OB == 64 || d < 4)) {
+                snprintf(buf, sizeof buf, "    mov %s, %llu", b8[d], t & 255);
+                done = 1;
+            }
+            if (!done && !kn[d] && sf && t >= 1 && t <= 127) {
+                char nb[16];
+                snprintf(nb, sizeof nb, "%s", OB == 64 ? N64[d] : N32[d]);
+                snprintf(buf, sizeof buf, "    push %llu", t);
+                set_line(c, i, buf);
+                snprintf(buf, sizeof buf, "    pop %s", nb);
+                extra[i] = xstrdup(buf);
+                changed = 1;
+                kn[d] = 1; val[d] = t;
+                continue;
+            }
+            if (done) { set_line(c, i, buf); changed = 1; }
+            kn[d] = 1; val[d] = t;
+            continue;
+        }
+        if (!strcmp(x->mn, "xor") && x->nops == 2 && !strcasecmp(x->ops[0], x->ops[1]) && d >= 0 && d < nreg && d != 4 && dw == 32) {
+            if (kn[d] && flags_dead(L, n, i, F_ALL)) {
+                if (val[d] == 0) { set_line(c, i, ""); changed = 1; }
+                else if (OB == 32 && val[d] == 1) { snprintf(buf, sizeof buf, "    dec %s", x->ops[0]); set_line(c, i, buf); changed = 1; }
+            }
+            kn[d] = 1; val[d] = 0;
+            continue;
+        }
+        if ((!strcmp(x->mn, "inc") || !strcmp(x->mn, "dec")) && x->nops == 1 && d >= 0 && d < nreg && dw == 32) {
+            if (kn[d]) val[d] = (unsigned long long)(unsigned int)(val[d] + (x->mn[0] == 'i' ? 1 : -1));
+            continue;
+        }
+        if (writes_dest(x) && d >= 0) { kn[d] = 0; continue; }
+        if (writes_dest(x) && x->nops >= 1 && strchr(x->ops[0], '[')) continue;
+        break;
+    }
+    return changed;
+}
+
 /* Speed pass, only with -O3 or -Ofast. On many Intel cpus a 64-bit `div' is several times slower than a 32-bit one, and most divisions are of small numbers. So `xor edx, edx` followed by `div r64` becomes: if neither the dividend (rax) nor the divisor has bits above bit 31, do the 32-bit `div`, otherwise the 64-bit one. Both give the same quotient and remainder. rdx is free to use as scratch because it is zero here and `div' overwrites it. The flags a `div' leaves are undefined, so this is only done when nothing reads them afterwards. Signed `cqo' + `idiv' gets the same treatment for numbers from 0 to 2^31-1. It adds about 20 bytes per division. */
 static int speed_pass(Ctx *c, LineVec *out)
 {
@@ -1179,7 +1339,7 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
     insn_init();
     OB = bits;
     OK_KERNEL = kernel;
-    OK_ABS32 = bits == 64 && kernel == K_LINUX && (type == T_ELF || type == T_BIN);
+    OK_ABS32 = bits == 64 && kernel == K_LINUX && (type == T_ELF || type == T_BIN) && !(g_xstrip && g_xlea);
     int allow_dce = !IS_OBJ(type);
     for (int round = 0; round < 2; round++) {
         Ctx c;
@@ -1243,4 +1403,31 @@ void opt_run(LineVec *lv, int bits, int kernel, int type)
         }
     }
     if (kernel == K_LINUX && (type == T_ELF || type == T_BIN)) ro_analyze(lv, bits);
+    if (g_xstrip && !g_ldo.dynamic && kernel == K_LINUX && (type == T_ELF || type == T_BIN) && (bits == 32 || bits == 64)) {
+        Ctx c;
+        c.lv = lv;
+        c.n = lv->n;
+        c.L = xcalloc((size_t)c.n + 1, sizeof(Ln));
+        c.scope = xcalloc((size_t)c.n + 1, sizeof(char *));
+        reparse(&c);
+        char **extra = xcalloc((size_t)c.n + 1, sizeof(char *));
+        if (bits == 64 && g_xlea) strip_abs(&c);
+        int any = entry_pass(&c, extra);
+        int nn = c.n;
+        for (int i = 0; i < c.n; i++) { free_ln(&c.L[i]); free(c.scope[i]); }
+        if (any) {
+            LineVec nl = {0};
+            for (int i = 0; i < nn; i++) {
+                lv_add(&nl, lv->v[i].text, lv->v[i].file, lv->v[i].line);
+                if (extra[i]) lv_add(&nl, extra[i], lv->v[i].file, lv->v[i].line);
+            }
+            for (int i = 0; i < lv->n; i++) free(lv->v[i].text);
+            free(lv->v);
+            *lv = nl;
+        }
+        for (int i = 0; i < nn; i++) free(extra[i]);
+        free(extra);
+        free(c.L);
+        free(c.scope);
+    }
 }

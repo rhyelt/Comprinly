@@ -14,7 +14,7 @@ Comprinly is no longer an experiment, I am fully working on it and hoping for co
 
 From 1.3.0 on, the project is no longer fully vibe-coded. It is partly vibe-coded and partly written by hand by me and, hopefully, by the people who join. See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to help.
 
-Version 1.3.5 adds shared libraries (`.so`) and Windows DLLs, and it is the first release where Comprinly can link its own programs against libc, against libraries built by gcc, and into libraries that gcc programs load. It was hunted for bugs hard: every release is checked by three sets of batched tests (500, 500 and 1600) that link and run programs on four CPU families, compare thousands of random instructions against NASM, link random C programs and compare the result with GNU ld, and feed broken files to the assembler and the linker. Bugs can still exist, so please keep reporting them.
+Version 1.4.0 adds `-strip`, which writes the smallest file possible (a hello world is 78 to 166 bytes depending on the CPU), and makes the output of every format smaller. It was hunted for bugs hard: every release is checked by four sets of batched tests (500, 500, 1600 and 1400) that link and run programs on four CPU families, compare thousands of random instructions against NASM, link random C programs and compare the result with GNU ld, and feed broken files to the assembler and the linker. Bugs can still exist, so please keep reporting them.
 
 ## Get it
 

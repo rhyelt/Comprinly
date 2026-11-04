@@ -93,13 +93,149 @@ static void pe_relocs(Obj *o, Bytes *reloc)
     }
 }
 
-/* Lays out the image, builds the import table from the imports the code uses (kernel32 and others) and writes the file. */
+
+/* -strip: the whole program, its data and the import tables go into one read, write and execute section, so a small program is a 512 byte header and one 512 byte block. Returns -1 when the program has bss, which needs the usual layout. */
+static int pe_single(Obj *o, Bytes *out)
+{
+    int w = o->is64 ? 8 : 4;
+    pe_base = 0x400000;
+    g_compact = 1;
+    link_layout(o, PE_BASE + PE_SA, 0, 0);
+    g_compact = 0;
+    if (g_lay.end != g_lay.file_end) return -1;
+    if (!link_apply(o)) return 0;
+    if (!o->entry) {
+        fprintf(stderr, "cly: error: `start' is not defined (add a `start:' label as the entry point)\n");
+        return 0;
+    }
+    i64 entry = link_entry(o);
+    Bytes img = {0};
+    i64 filesz = g_lay.file_end - g_lay.base;
+    link_range(o, &img, g_lay.base, g_lay.file_end);
+    int nd;
+    const ImpDll *imps = link_imports(&nd);
+    i64 idata_off = rup(filesz, 8);
+    Bytes idata = {0};
+    i64 iat_rva = 0, iat_size = 0;
+    if (nd > 0) {
+        Sec *iat = NULL;
+        for (int i = 0; i < o->nsecs; i++) if (!strcmp(o->secs[i]->name, ".iat")) iat = o->secs[i];
+        iat_rva = iat->base - PE_BASE;
+        iat_size = iat->size;
+        i64 idata_va = PE_SA + idata_off;
+        size_t dir_sz = (size_t)(nd + 1) * 20;
+        i64 pos = (i64)dir_sz;
+        i64 *ilt = xmalloc(sizeof(i64) * (size_t)nd);
+        for (int d = 0; d < nd; d++) { ilt[d] = pos; pos += (imps[d].n + 1) * w; }
+        i64 *namepos = xmalloc(sizeof(i64) * (size_t)nd);
+        for (int d = 0; d < nd; d++) { namepos[d] = pos; pos += (i64)strlen(imps[d].dll) + 1; if (pos & 1) pos++; }
+        i64 **hn = xmalloc(sizeof(i64 *) * (size_t)nd);
+        for (int d = 0; d < nd; d++) {
+            hn[d] = xmalloc(sizeof(i64) * (size_t)(imps[d].n + 1));
+            for (int k = 0; k < imps[d].n; k++) { hn[d][k] = pos; pos += 2 + (i64)strlen(imps[d].names[k]) + 1; if (pos & 1) pos++; }
+        }
+        bfill(&idata, 0, (size_t)pos);
+        bfill(&img, 0, (size_t)(idata_off - filesz));
+        for (int d = 0; d < nd; d++) {
+            bputle(&idata, (size_t)(d * 20), (u64)(idata_va + ilt[d]), 4);
+            bputle(&idata, (size_t)(d * 20 + 12), (u64)(idata_va + namepos[d]), 4);
+            bputle(&idata, (size_t)(d * 20 + 16), (u64)(iat_rva + imps[d].slot[0]), 4);
+            memcpy(idata.p + namepos[d], imps[d].dll, strlen(imps[d].dll) + 1);
+            for (int k = 0; k < imps[d].n; k++) {
+                bputle(&idata, (size_t)(ilt[d] + k * w), (u64)(idata_va + hn[d][k]), w);
+                memcpy(idata.p + hn[d][k] + 2, imps[d].names[k], strlen(imps[d].names[k]) + 1);
+                i64 at = iat_rva + imps[d].slot[k] - PE_SA;
+                if (at >= 0 && at + w <= (i64)img.n) bputle(&img, (size_t)at, (u64)(idata_va + hn[d][k]), w);
+            }
+        }
+        for (int d = 0; d < nd; d++) free(hn[d]);
+        free(hn);
+        free(ilt);
+        free(namepos);
+        badd(&img, idata.p, idata.n);
+    }
+    i64 vs = (i64)img.n;
+    i64 raw = rup(vs, PE_FA);
+    bfill(&img, 0, (size_t)(raw - vs));
+    i64 hdr_raw = rup(64 + 24 + (o->is64 ? 240 : 224) + 40, PE_FA);
+    i64 image_size = rup(PE_SA + vs, PE_SA);
+    Bytes f = {0};
+    u8 mz[64] = { 'M', 'Z' };
+    mz[0x3C] = 0x40;
+    badd(&f, mz, 64);
+    badd(&f, "PE\0\0", 4);
+    put16(&f, o->is64 ? 0x8664 : 0x14C);
+    put16(&f, 1);
+    put32(&f, 0); put32(&f, 0); put32(&f, 0);
+    put16(&f, o->is64 ? 240 : 224);
+    put16(&f, o->is64 ? 0x0022 : 0x0103);
+    put16(&f, o->is64 ? 0x20B : 0x10B);
+    bad1(&f, 1);
+    bad1(&f, 0);
+    put32(&f, (u32)raw);
+    put32(&f, 0);
+    put32(&f, 0);
+    put32(&f, (u32)(entry - PE_BASE));
+    put32(&f, PE_SA);
+    if (o->is64) put64(&f, PE_BASE);
+    else { put32(&f, PE_SA); put32(&f, PE_BASE); }
+    put32(&f, PE_SA);
+    put32(&f, PE_FA);
+    if (o->is64) { put16(&f, 6); put16(&f, 0); } else { put16(&f, 4); put16(&f, 0); }
+    put16(&f, 0); put16(&f, 0);
+    if (o->is64) { put16(&f, 6); put16(&f, 0); } else { put16(&f, 4); put16(&f, 0); }
+    put32(&f, 0);
+    put32(&f, (u32)image_size);
+    put32(&f, (u32)hdr_raw);
+    put32(&f, 0);
+    put16(&f, 3);
+    put16(&f, 0);
+    if (o->is64) { put64(&f, 0x100000); put64(&f, 0x1000); put64(&f, 0x100000); put64(&f, 0x1000); }
+    else { put32(&f, 0x100000); put32(&f, 0x1000); put32(&f, 0x100000); put32(&f, 0x1000); }
+    put32(&f, 0);
+    put32(&f, 16);
+    for (int i = 0; i < 16; i++) {
+        if (i == 1 && nd > 0) { put32(&f, (u32)(PE_SA + idata_off)); put32(&f, (u32)((nd + 1) * 20)); }
+        else if (i == 12 && nd > 0) { put32(&f, (u32)iat_rva); put32(&f, (u32)iat_size); }
+        else { put32(&f, 0); put32(&f, 0); }
+    }
+    PSec s;
+    memset(&s, 0, sizeof s);
+    memcpy(s.name, ".text", 5);
+    s.vsize = (u32)vs; s.rva = PE_SA; s.rawsize = (u32)raw; s.rawptr = (u32)hdr_raw; s.chars = 0xE0000060;
+    put_sec(&f, &s);
+    while ((i64)f.n < hdr_raw) bad1(&f, 0);
+    badd(&f, img.p, img.n);
+    badd(out, f.p, f.n);
+    return 1;
+}
+
+static int fmt_pe_norm(Obj *o, Bytes *out);
+
 int fmt_pe(Obj *o, Bytes *out)
+{
+    link_prepare_imports(o);
+    if (g_xstrip && !g_pe_dll && o->arch == ARCH_X86) {
+        Bytes tb = {0};
+        int tr = pe_single(o, &tb);
+        if (tr == 0) return 0;
+        if (tr == 1) {
+            Bytes nb = {0};
+            int r = fmt_pe_norm(o, &nb);
+            if (r && nb.n < tb.n) badd(out, nb.p, nb.n);
+            else badd(out, tb.p, tb.n);
+            return 1;
+        }
+    }
+    return fmt_pe_norm(o, out);
+}
+
+/* Lays out the image, builds the import table from the imports the code uses (kernel32 and others) and writes the file. */
+static int fmt_pe_norm(Obj *o, Bytes *out)
 {
     int w = o->is64 ? 8 : 4;
     int dll = g_pe_dll;
     pe_base = dll ? 0x10000000 : 0x400000;
-    link_prepare_imports(o);
     link_layout(o, PE_BASE + PE_SA, PE_SA, 1);
     if (!link_apply(o)) return 0;
     if (!o->entry && !dll) {

@@ -601,6 +601,65 @@ static int pass_cbz(NC *c)
 }
 
 /* Runs the passes until nothing changes. */
+
+/* ARM64: `mov xN, label` loads an address with a movz and a movk (two instructions). `adr xN, label` does it in one, as long as the label is within 1 MB, which holds for any program without large reserved or included blocks. */
+static int pass_adr(NC *c)
+{
+    if (!c->a64) return 0;
+    static const char *const dd[] = { "db", "dw", "dd", "dq", "resb", "resw", "resd", "resq", NULL };
+    char **names = NULL;
+    int nn = 0, cap = 0, changed = 0;
+    for (int i = 0; i < c->n; i++) {
+        const char *t = sk(c->lv->v[i].text);
+        if (!strncasecmp(t, "incbin", 6) || !strncasecmp(t, "times", 5) || !strncasecmp(t, "align", 5)) {
+            if (!strncasecmp(t, "align", 5)) continue;
+            for (int k = 0; k < nn; k++) free(names[k]);
+            free(names);
+            return 0;
+        }
+        const char *p = t;
+        while (idch((unsigned char)*p)) p++;
+        size_t len = (size_t)(p - t);
+        if (!len) continue;
+        const char *r = p;
+        int colon = 0;
+        if (*r == ':') { colon = 1; r++; }
+        while (*r == ' ' || *r == '\t') r++;
+        char w[16];
+        size_t k = 0;
+        while (idch((unsigned char)r[k]) && k + 1 < sizeof w) { w[k] = (char)tolower((unsigned char)r[k]); k++; }
+        w[k] = 0;
+        int isdata = 0;
+        for (int q = 0; dd[q]; q++) if (!strcmp(w, dd[q])) isdata = 1;
+        if (!strcmp(w, "equ")) continue;
+        if (!(isdata || (colon && (!*r || *r == ';' || arch_known(c->arch, w))))) continue;
+        if (!colon && !isdata) continue;
+        if (isdigit((unsigned char)*t)) continue;
+        if (nn == cap) { cap = cap ? cap * 2 : 16; names = xrealloc(names, sizeof(char *) * (size_t)cap); }
+        if (isdigit((unsigned char)*t)) continue;
+        names[nn++] = trimdup(t, len);
+    }
+    for (int i = 0; i < c->n; i++) {
+        NL *x = &c->L[i];
+        if (x->kind != N_INSN || strcmp(x->mn, "mov") || x->nops != 2) continue;
+        const char *d = x->ops[0], *sname = x->ops[1];
+        if ((d[0] != 'x' && d[0] != 'X') || !isdigit((unsigned char)d[1])) continue;
+        int hit = 0;
+        for (int k = 0; k < nn && !hit; k++) if (!strcmp(names[k], sname)) hit = 1;
+        if (!hit) continue;
+        char buf[160];
+        snprintf(buf, sizeof buf, "    adr %s, %s", d, sname);
+        free(c->lv->v[i].text);
+        c->lv->v[i].text = xstrdup(buf);
+        free_nl(x);
+        parse_nl(c, buf, x);
+        changed = 1;
+    }
+    for (int k = 0; k < nn; k++) free(names[k]);
+    free(names);
+    return changed;
+}
+
 void opt_run_nx(LineVec *lv, int arch, int kernel, int type)
 {
     (void)kernel;
@@ -628,6 +687,7 @@ void opt_run_nx(LineVec *lv, int arch, int kernel, int type)
         ch |= pass_fwd(&c);
         ch |= pass_waw(&c);
         ch |= pass_cbz(&c);
+        ch |= pass_adr(&c);
         if (!ch) break;
     }
     for (int i = 0; i < c.n; i++) free_nl(&c.L[i]);

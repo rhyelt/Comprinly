@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.3.5"
+#define CLY_VERSION "1.4.0"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)
@@ -110,7 +110,7 @@ const char *dep_get(int i);
 extern int g_werror;
 void xlog(const char *phase, const char *fmt, ...);
 extern int g_hidewarn;
-extern int g_strip, g_errors, g_warnings, g_nowarn, g_nasm, g_objmode;
+extern int g_xlea, g_xstrip, g_strip, g_errors, g_warnings, g_nowarn, g_nasm, g_objmode;
 void err(const char *fmt, ...);
 void warn(const char *fmt, ...);
 int warn_class_set(const char *spec);
@@ -231,6 +231,7 @@ typedef struct Sec {
     i64 fileoff;
     char *cls;
     int sbits, combine;
+    int conv;
 } Sec;
 
 /* Relocation kinds: plain absolute, PC relative, then the ARM64 and RISC-V instruction field kinds. */
@@ -435,7 +436,8 @@ typedef struct {
     int n;
 } Layout;
 extern Layout g_lay;
-extern int g_compact;
+extern int g_compact, g_compact_min;
+int link_fits(Obj *o);
 extern int g_ro_prog;
 
 /* The functions imported from one DLL, with their slots in the import address table. */

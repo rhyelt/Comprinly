@@ -2,6 +2,42 @@
 
 Results are listed by version, starting at 1.3.2. Each version adds its own section.
 
+## 1.4.0
+
+Same programs and commands as 1.3.5 (hello world, and the prime counter that prints 25997). The timings come from a busier machine than the 1.3.5 ones, so compare rows inside this table, not with older sections. Times are the median of 20 builds and of 200 runs for hello (15 for primes).
+
+### Hello World
+
+| | Compile | Run | Size |
+|---|---|---|---|
+| C (gcc 13.3) | 59.7 ms | 3.9 ms | 15,960 bytes |
+| NASM 2.16 + ld | 12.1 ms | 2.0 ms | 4,696 bytes |
+| Comprinly | **9.1 ms** | 1.9 ms | 164 bytes |
+| Comprinly `-strip` | 10.4 ms | **1.7 ms** | **116 bytes** |
+
+### Count primes below 300,000
+
+| | Compile | Run | Size |
+|---|---|---|---|
+| C (gcc 13.3) | 69.6 ms | 37.0 ms | 15,968 bytes |
+| NASM 2.16 + ld | **9.4 ms** | **36.5 ms** | 4,920 bytes |
+| Comprinly | 10.4 ms | 37.2 ms | 299 bytes |
+| Comprinly `-strip` | 11.6 ms | 39.7 ms | **197 bytes** |
+
+### Hello World size on every target
+
+| Target | Normal | `-strip` |
+|---|---|---|
+| Linux x86-64 | 164 bytes | 116 bytes |
+| Linux i386 | 129 bytes | 78 bytes |
+| Linux ARM64 | 286 bytes | 166 bytes |
+| Linux RISC-V | 286 bytes | 166 bytes |
+| Windows x86-64 | 1,536 bytes | 1,024 bytes |
+
+### What it shows
+
+`-strip` cuts the size by about a third and keeps the same behavior. The prime counter is limited by the `div` instruction, so run time is the same for every row (the `-strip` run is within noise). `-strip` also does a second build to pick the smaller layout, which costs about 1 ms of compile time.
+
 ## 1.3.5
 
 Same commands as 1.3.3. The programs are hand written in assembly for NASM and Comprinly (the same source for both) and plain C for gcc, so the machine code differs from 1.3.3's programs and the sizes are not comparable with that section. Hello World writes the string with a `write` call and exits. The prime counter prints 25997 in all three.

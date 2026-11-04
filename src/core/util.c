@@ -2,7 +2,7 @@
 #include "cly.h"
 
 Pos g_pos;
-int g_hidewarn, g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode, g_debug;
+int g_hidewarn, g_errors, g_warnings, g_nowarn, g_quiet, g_strip, g_nasm, g_objmode, g_debug, g_xstrip, g_xlea;
 const char *g_mappath;
 char *g_gprefix, *g_gpostfix;
 

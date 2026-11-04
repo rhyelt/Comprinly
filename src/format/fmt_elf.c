@@ -39,8 +39,186 @@ static u32 elf_flags(Obj *o)
     return f;
 }
 
+
+/* Smallest x86-64 program file (-strip): the program header sits inside the ELF header from byte 24. The entry address is the header's own p_type and p_flags, so it points at byte 1 of the file, where a jump to the real entry is stored. The file is 80 bytes plus the program. Returns -1 when the program does not fit this layout (it has bss, or an address that needs more than 32 bits). */
+static int tiny64_run(Obj *o, Bytes *out);
+
+static int tiny64(Obj *o, Bytes *out)
+{
+    int r = tiny64_run(o, out);
+    for (int i = 0; i < o->nsecs; i++) {
+        Sec *s = o->secs[i];
+        if (s->conv) { s->conv = 0; s->nobits = 1; s->data.n = 0; }
+    }
+    return r;
+}
+
+static int tiny64_run(Obj *o, Bytes *out)
+{
+    int anyw = 0;
+    i64 bss = 0;
+    for (int i = 0; i < o->nsecs; i++) if (o->secs[i]->alloc && o->secs[i]->nobits) bss += o->secs[i]->size;
+    if (bss > 96) return -1;
+    for (int i = 0; i < o->nsecs; i++) {
+        Sec *s = o->secs[i];
+        if (s->alloc && s->nobits && s->size) { s->nobits = 0; bfill(&s->data, 0, (size_t)s->size - s->data.n); s->conv = 1; }
+    }
+    for (int i = 0; i < o->nsecs; i++) if (!g_ro_prog && o->secs[i]->alloc && o->secs[i]->write && (o->secs[i]->size || o->secs[i]->data.n)) anyw = 1;
+    u32 H = anyw ? 7 : 5;
+    i64 page = (i64)H << 32;
+    g_compact = 1;
+    link_layout(o, page + 80, 0, 0);
+    if (g_lay.has_bss || g_lay.end != g_lay.file_end || !o->entry) return -1;
+    if (!link_fits(o)) return -1;
+    if (!link_apply(o)) return 0;
+    i64 eo = link_entry(o) - page;
+    Bytes img = {0};
+    link_range(o, &img, g_lay.base, g_lay.file_end);
+    size_t total = 80 + img.n;
+    u8 h[80];
+    memset(h, 0, sizeof h);
+    h[0] = 0x7F; h[1] = 'E'; h[2] = 'L'; h[3] = 'F';
+    i64 d8 = eo - 6;
+    if (d8 >= -128 && d8 <= 127) { h[4] = 0xEB; h[5] = (u8)d8; }
+    else { h[4] = 0xE9; u32 d32 = (u32)(eo - 9); memcpy(h + 5, &d32, 4); }
+    h[16] = 2; h[18] = 0x3E;
+    h[24] = 1;
+    memcpy(h + 28, &H, 4);
+    u64 v;
+    v = 24; memcpy(h + 32, &v, 8);
+    v = (u64)(page + 0x18); memcpy(h + 40, &v, 8);
+    h[54] = 56;
+    u64 need = total > 25 ? (u64)total - 24 : 1;
+    u64 fsz = 1;
+    if (need > 1) fsz = 1 + 65536 * ((need - 1 + 65535) / 65536);
+    memcpy(h + 56, &fsz, 8);
+    memcpy(h + 64, &fsz, 8);
+    badd(out, h, 80);
+    badd(out, img.p, img.n);
+    return 1;
+}
+
+/* Smallest i386 program file (-strip): the program header starts at byte 4 and shares its fields with the ELF header (the entry address doubles as the memory size). The file is 46 bytes plus the program, and the page is mapped read and execute by the kernel's rule for programs without a stack header. Returns -1 when the program writes to memory. */
+static int tiny32(Obj *o, Bytes *out)
+{
+    for (int i = 0; i < o->nsecs; i++) if (o->secs[i]->alloc && (o->secs[i]->nobits || (o->secs[i]->write && !g_ro_prog)) && (o->secs[i]->size || o->secs[i]->data.n)) return -1;
+    i64 V = 0x20000;
+    g_compact = 1;
+    for (int tries = 0; tries < 2; tries++) {
+        link_layout(o, V + 46, 0, 0);
+        if (g_lay.has_bss || g_lay.end != g_lay.file_end || !o->entry) return -1;
+        if ((g_lay.file_end - V) > V) { V = (g_lay.file_end - V + 0xFFFF) / 0x10000 * 0x10000; if (V < 0x20000) V = 0x20000; continue; }
+        break;
+    }
+    if (g_lay.file_end - V > V) return -1;
+    if (!link_fits(o)) return -1;
+    if (!link_apply(o)) return 0;
+    i64 ent = link_entry(o);
+    Bytes img = {0};
+    link_range(o, &img, g_lay.base, g_lay.file_end);
+    u8 h[46];
+    memset(h, 0, sizeof h);
+    h[0] = 0x7F; h[1] = 'E'; h[2] = 'L'; h[3] = 'F';
+    h[4] = 1;
+    u32 t;
+    t = (u32)V; memcpy(h + 12, &t, 4);
+    h[16] = 2; h[18] = 3;
+    t = (u32)ent; memcpy(h + 20, &t, 4);
+    memcpy(h + 24, &t, 4);
+    h[28] = 4;
+    h[42] = 32;
+    h[44] = 1;
+    badd(out, h, 46);
+    badd(out, img.p, img.n);
+    return 1;
+}
+
+
+/* -strip for ARM64 and RISC-V: one read, write and execute segment, one program header, no padding between sections. A small bss is written out as zeros; a larger one makes this return -1 and the usual layout is used. */
+static int single_seg(Obj *o, Bytes *out, int is64)
+{
+    i64 bss = 0;
+    for (int i = 0; i < o->nsecs; i++) if (o->secs[i]->alloc && o->secs[i]->nobits) bss += o->secs[i]->size;
+    if (bss > 96) return -1;
+    for (int i = 0; i < o->nsecs; i++) {
+        Sec *s = o->secs[i];
+        if (s->alloc && s->nobits && s->size) { s->nobits = 0; bfill(&s->data, 0, (size_t)s->size - s->data.n); s->conv = 1; }
+    }
+    i64 base = is64 ? ELF64_BASE : ELF_BASE;
+    int hdr = is64 ? 120 : 84;
+    g_compact = 1;
+    g_compact_min = is64 ? 8 : 4;
+    link_layout(o, base + hdr, 0, 0);
+    g_compact_min = 0;
+    int r = -1;
+    if (!g_lay.has_bss && g_lay.end == g_lay.file_end && o->entry) {
+        if (!link_apply(o)) r = 0;
+        else {
+            i64 entry = link_entry(o);
+            Bytes img = {0};
+            link_range(o, &img, g_lay.base, g_lay.file_end);
+            Bytes f = {0};
+            u8 ident[16] = { 0x7F, 'E', 'L', 'F', (u8)(is64 ? 2 : 1), 1, 1, 0 };
+            badd(&f, ident, 16);
+            put16(&f, 2);
+            put16(&f, (u16)elf_machine(o));
+            put32(&f, 1);
+            i64 total = hdr + (i64)img.n;
+            if (is64) {
+                put64(&f, (u64)entry); put64(&f, 64); put64(&f, 0);
+                put32(&f, elf_flags(o)); put16(&f, 64); put16(&f, 56); put16(&f, 1); put16(&f, 64); put16(&f, 0); put16(&f, 0);
+                put32(&f, 1); put32(&f, 7); put64(&f, 0); put64(&f, (u64)base); put64(&f, (u64)base); put64(&f, (u64)total); put64(&f, (u64)total); put64(&f, 0x1000);
+            } else {
+                put32(&f, (u32)entry); put32(&f, 52); put32(&f, 0);
+                put32(&f, elf_flags(o)); put16(&f, 52); put16(&f, 32); put16(&f, 1); put16(&f, 40); put16(&f, 0); put16(&f, 0);
+                put32(&f, 1); put32(&f, 0); put32(&f, (u32)base); put32(&f, (u32)base); put32(&f, (u32)total); put32(&f, (u32)total); put32(&f, 7); put32(&f, 0x1000);
+            }
+            while ((int)f.n < hdr) bad1(&f, 0);
+            badd(&f, img.p, img.n);
+            badd(out, f.p, f.n);
+            r = 1;
+        }
+    }
+    for (int i = 0; i < o->nsecs; i++) {
+        Sec *s = o->secs[i];
+        if (s->conv) { s->conv = 0; s->nobits = 1; s->data.n = 0; }
+    }
+    return r;
+}
+
 /* 64-bit ELF: header, program headers for the code and data segments, section headers and the section name table. */
+static int fmt_elf64_norm(Obj *o, Bytes *out);
+
 static int fmt_elf64(Obj *o, Bytes *out)
+{
+    if (g_xstrip && o->arch != ARCH_X86) {
+        Bytes tb = {0};
+        int tr = single_seg(o, &tb, 1);
+        if (tr == 0) return 0;
+        if (tr == 1) {
+            Bytes nb = {0};
+            int r = fmt_elf64_norm(o, &nb);
+            if (r && nb.n < tb.n) badd(out, nb.p, nb.n);
+            else badd(out, tb.p, tb.n);
+            return 1;
+        }
+    }
+    if (g_xstrip && o->arch == ARCH_X86 && !g_ldo.dynamic) {
+        Bytes tb = {0};
+        int tr = tiny64(o, &tb);
+        if (tr == 0) return 0;
+        if (tr == 1) {
+            Bytes nb = {0};
+            int r = fmt_elf64_norm(o, &nb);
+            if (r && nb.n < tb.n) badd(out, nb.p, nb.n);
+            else badd(out, tb.p, tb.n);
+            return 1;
+        }
+    }
+    return fmt_elf64_norm(o, out);
+}
+
+static int fmt_elf64_norm(Obj *o, Bytes *out)
 {
     int hdr = ELF64_HDR;
     g_compact = g_strip && o->arch == ARCH_X86;
@@ -182,9 +360,40 @@ static int fmt_elf64(Obj *o, Bytes *out)
 }
 
 /* 32-bit ELF, or hands off to fmt_elf64 for 64-bit files. */
+static int fmt_elf32_norm(Obj *o, Bytes *out);
+
 int fmt_elf(Obj *o, Bytes *out)
 {
     if (o->is64) return fmt_elf64(o, out);
+    if (g_xstrip && o->arch != ARCH_X86) {
+        Bytes tb = {0};
+        int tr = single_seg(o, &tb, 0);
+        if (tr == 0) return 0;
+        if (tr == 1) {
+            Bytes nb = {0};
+            int r = fmt_elf32_norm(o, &nb);
+            if (r && nb.n < tb.n) badd(out, nb.p, nb.n);
+            else badd(out, tb.p, tb.n);
+            return 1;
+        }
+    }
+    if (g_xstrip && o->arch == ARCH_X86 && !g_ldo.dynamic) {
+        Bytes tb = {0};
+        int tr = tiny32(o, &tb);
+        if (tr == 0) return 0;
+        if (tr == 1) {
+            Bytes nb = {0};
+            int r = fmt_elf32_norm(o, &nb);
+            if (r && nb.n < tb.n) badd(out, nb.p, nb.n);
+            else badd(out, tb.p, tb.n);
+            return 1;
+        }
+    }
+    return fmt_elf32_norm(o, out);
+}
+
+static int fmt_elf32_norm(Obj *o, Bytes *out)
+{
     int hdr = ELF_HDR;
     g_compact = g_strip && o->arch == ARCH_X86;
     link_layout(o, ELF_BASE + hdr, 0x1000, 3);

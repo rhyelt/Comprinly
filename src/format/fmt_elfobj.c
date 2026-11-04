@@ -155,6 +155,35 @@ static int rv_elf_type(Reloc *r, int *ok)
     return 0;
 }
 
+
+typedef struct { Sym *p; int i; } SymKey;
+
+static int symkey_cmp(const void *a, const void *b)
+{
+    const SymKey *x = a, *y = b;
+    return x->p < y->p ? -1 : x->p > y->p;
+}
+
+static int symkey_find(const SymKey *k, int n, Sym *p)
+{
+    int lo = 0, hi = n - 1;
+    while (lo <= hi) {
+        int m = (lo + hi) / 2;
+        if (k[m].p == p) return k[m].i;
+        if (k[m].p < p) lo = m + 1; else hi = m - 1;
+    }
+    return -1;
+}
+
+/* Builds the symbol lookup table used to find the symbol a relocation names. */
+static SymKey *symkey_build(Obj *o)
+{
+    SymKey *k = xmalloc(sizeof(SymKey) * (size_t)(o->nsyms + 1));
+    for (int i = 0; i < o->nsyms; i++) { k[i].p = o->syms[i]; k[i].i = i; }
+    qsort(k, (size_t)o->nsyms, sizeof(SymKey), symkey_cmp);
+    return k;
+}
+
 void obj_live_secs(Obj *o, int *keep, int *secsym)
 {
     int narch = o->arch != ARCH_X86;
@@ -209,6 +238,12 @@ int fmt_elfobj(Obj *o, Bytes *out)
     }
     int nlocal = nsym;
     int *symidx = xcalloc((size_t)o->nsyms + 1, sizeof(int));
+    SymKey *skeys = symkey_build(o);
+    char *refd = xcalloc((size_t)o->nsyms + 1, 1);
+    for (int i = 0; i < o->nrelocs; i++) {
+        Sym *e = o->relocs[i].v.ext;
+        if (e) { int k = symkey_find(skeys, o->nsyms, e); if (k >= 0) refd[k] = 1; }
+    }
     int nsyn = 0;
     int *syn_sec = NULL;
     i64 *syn_off = NULL;
@@ -245,6 +280,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
             if (s->isequ && !s->isabs && !glob) continue;
             if (!s->defined && !s->ext && !s->common && !s->referenced) continue;
             if (g_nasm && s->ext && !s->defined && !s->common && !s->referenced) continue;
+            if (g_xstrip && !glob && !refd[i]) continue;
             g_other = s->svis;
             int ty = s->stype;
             if (s->defined && !s->common && !s->ext) {
@@ -290,8 +326,7 @@ int fmt_elfobj(Obj *o, Bytes *out)
             continue;
         }
         if (v->ext) {
-            int k = -1;
-            for (int j = 0; j < o->nsyms; j++) if (o->syms[j] == v->ext) k = j;
+            int k = symkey_find(skeys, o->nsyms, v->ext);
             if (k < 0 || !symidx[k]) { err("symbol `%s' has no ELF symbol", v->ext->name); continue; }
             symi = symidx[k];
         } else if (v->pos >= 0) symi = secsym[v->pos];
