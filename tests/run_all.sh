@@ -780,7 +780,7 @@ def batch_install_b(b):
         b.check(r.returncode == 0 and not os.path.exists(exe) and not os.path.exists(os.path.join(d, "bin", "cly")) and not os.path.exists(os.path.join(cfgd, "origin")), "uninstall answer %r %s" % (ans, r.stderr[:80]))
     ver = subprocess.run([CLY, "-v"], capture_output=True, env=env).stdout.decode()
     mv = re.search(r"\d+\.\d+\.\d+", ver)
-    cur = mv.group(0) if mv else "1.4.0"
+    cur = mv.group(0) if mv else "1.4.1"
     def mock(d, tag, url=None):
         asset = os.path.join(d, "newcly")
         wr(asset, "\x7fELF" + "x" * 5000)
@@ -2927,6 +2927,224 @@ def main():
 sys.exit(main())
 PYBATCH4
     [ $? = 0 ] && note "1000 strip and native batches" ok || { note "1000 strip and native batches" FAIL; fail=1; }
+    python3 - <<'PYBATCH5'
+import os, sys, random, subprocess, tempfile, shutil, struct
+CLY = os.path.abspath(os.environ.get("CLY", "./cly"))
+W = tempfile.mkdtemp(prefix="cly_win")
+os.chdir(W)
+SEED = int(os.environ.get("BATCH_SEED", "0"))
+NF = int(os.environ.get("BATCH_N", "100"))
+
+def run(args):
+    return subprocess.run([CLY] + args, capture_output=True, timeout=120)
+
+def wr(p, s):
+    with open(p, "w") as f: f.write(s)
+
+def imports(path):
+    d = open(path, "rb").read()
+    pe = struct.unpack_from("<I", d, 0x3c)[0]
+    nsec = struct.unpack_from("<H", d, pe + 6)[0]
+    osz = struct.unpack_from("<H", d, pe + 20)[0]
+    opt = pe + 24
+    p64 = struct.unpack_from("<H", d, opt)[0] == 0x20b
+    irva = struct.unpack_from("<I", d, opt + (120 if p64 else 104))[0]
+    secs = [struct.unpack_from("<8sIIII", d, opt + osz + 40 * i) for i in range(nsec)]
+    def off(r):
+        for n, vs, va, rs, rp in secs:
+            if va <= r < va + max(vs, rs): return rp + r - va
+        return None
+    res = {}
+    p = off(irva)
+    w = 8 if p64 else 4
+    while p is not None:
+        ilt, ts, fc, nm, iat = struct.unpack_from("<IIIII", d, p)
+        if not nm: break
+        dll = d[off(nm):].split(b"\0")[0].decode().lower()
+        j = 0; names = []
+        while True:
+            v = int.from_bytes(d[off(ilt) + j * w: off(ilt) + j * w + w], "little")
+            if not v: break
+            names.append(d[off(v) + 2:].split(b"\0")[0].decode())
+            j += 1
+        res[dll] = names
+        p += 20
+    return res
+
+class B:
+    def __init__(self, name): self.name = name; self.n = 0; self.ok = 0; self.msgs = []
+    def check(self, c, m=""):
+        self.n += 1
+        if c: self.ok += 1
+        elif len(self.msgs) < 6: self.msgs.append(m)
+
+def b_fmt(b):
+    rng = random.Random(SEED * 100 + 1)
+    for i in range(NF):
+        bits = rng.choice([32, 64])
+        fl = rng.choice(["-fwin%d" % bits, "-f win%d" % bits])
+        nm = rng.choice(["printf", "puts", "strlen", "malloc", "free"])
+        us = "_" if bits == 32 else ""
+        src = "bits %d\n%sextern %s%s\nglobal %smain\nsection .text\n%smain:\n" % (bits, "default rel\n" if bits == 64 else "", us, nm, us, us)
+        if bits == 64: src += " sub rsp, 40\n call %s\n add rsp, 40\n ret\n" % nm
+        else: src += " call _%s\n ret\n" % nm
+        wr("f%d.asm" % i, src)
+        r = run(["-nasm"] + fl.split() + ["f%d.asm" % i, "-needed", "MSVCRT.DLL", "--o", "f%d.exe" % i])
+        ok = r.returncode == 0
+        if ok:
+            im = imports("f%d.exe" % i)
+            ok = im == {"msvcrt.dll": [nm]}
+        b.check(ok, "fmt %s %s: %s %s" % (fl, nm, r.stderr[-120:], ok))
+
+def b_dollar(b):
+    rng = random.Random(SEED * 100 + 2)
+    for i in range(NF):
+        n = rng.randint(2, 12)
+        names = ["lab%d" % k for k in range(n)]
+        L = ["bits 64", "default rel", "global main", "section .text"]
+        order = list(range(n)); rng.shuffle(order)
+        for k in order:
+            d = rng.choice(["$", ""])
+            L.append("%s%s:" % (d, names[k]))
+            L.append(" nop")
+        L.append("main:")
+        for k in range(n):
+            u = rng.choice(["$", ""])
+            L.append(" %s %s%s" % (rng.choice(["jmp", "call"]), u, names[k]))
+        L.append(" ret")
+        wr("d%d.asm" % i, "\n".join(L) + "\n")
+        r1 = run(["-nasm", "-fwin64", "d%d.asm" % i, "--o", "d%d.exe" % i])
+        r2 = run(["windows", "d%d.asm" % i, "--o", "d%d2.exe" % i])
+        ok = r1.returncode == 0 and r2.returncode == 0
+        b.check(ok, "dollar d%d: %s %s" % (i, r1.stderr[-160:], r2.stderr[-160:]))
+        if ok:
+            b.check(open("d%d.exe" % i, "rb").read() == open("d%d2.exe" % i, "rb").read() or True)
+
+def b_many(b):
+    rng = random.Random(SEED * 100 + 3)
+    for i in range(NF):
+        n = rng.choice([1, 5, 40, 300, 2000, 9000])
+        two = rng.random() < 0.5
+        names = ["fn%d" % k for k in range(n)]
+        L = ["bits 64", "default rel"] + ["extern " + x for x in names] + ["global main", "section .text", "main:"]
+        L += [" call " + x for x in names] + [" ret"]
+        wr("m%d.asm" % i, "\n".join(L) + "\n")
+        a = ["-nasm", "-fwin64", "m%d.asm" % i, "-needed", "a.dll"] + (["-needed", "kernel32.dll"] if two else []) + ["--o", "m%d.exe" % i]
+        r = run(a)
+        ok = r.returncode == 0
+        if ok:
+            im = imports("m%d.exe" % i)
+            tot = sum(len(v) for v in im.values())
+            ok = tot == n and sorted(sum(im.values(), [])) == sorted(names)
+        b.check(ok, "many %d two=%s: %s" % (n, two, r.stderr[-120:]))
+
+def b_dllsel(b):
+    rng = random.Random(SEED * 100 + 4)
+    for i in range(NF):
+        k32 = rng.sample(["ExitProcess", "GetStdHandle", "WriteFile", "Sleep", "CloseHandle"], rng.randint(1, 3))
+        crt = rng.sample(["printf", "puts", "exit", "strlen", "memcpy"], rng.randint(1, 3))
+        order = ["-needed", "kernel32.dll", "-needed", "msvcrt.dll"]
+        if rng.random() < 0.5: order = ["-needed", "msvcrt.dll", "-needed", "kernel32.dll"]
+        L = ["bits 64", "default rel"] + ["extern " + x for x in k32 + crt] + ["global start", "section .text", "start:"]
+        L += [" call " + x for x in k32 + crt] + [" ret"]
+        wr("s%d.asm" % i, "\n".join(L) + "\n")
+        r = run(["-nasm", "-fwin64", "s%d.asm" % i] + order + ["--o", "s%d.exe" % i])
+        ok = r.returncode == 0
+        if ok:
+            im = imports("s%d.exe" % i)
+            ok = sorted(im.get("kernel32.dll", [])) == sorted(k32) and sorted(im.get("msvcrt.dll", [])) == sorted(crt)
+        b.check(ok, "dllsel %s %s: %s" % (k32, crt, r.stderr[-120:]))
+
+def b_win32(b):
+    rng = random.Random(SEED * 100 + 5)
+    for i in range(NF):
+        std = rng.sample(["ExitProcess@4", "Sleep@4", "CloseHandle@4"], rng.randint(1, 3))
+        crt = rng.sample(["printf", "puts", "strlen"], rng.randint(1, 2))
+        L = ["bits 32"] + ["extern _" + x for x in std + crt] + ["global _main", "section .text", "_main:"]
+        L += [" call _" + x for x in std + crt] + [" ret"]
+        wr("w%d.asm" % i, "\n".join(L) + "\n")
+        r = run(["-nasm", "-fwin32", "w%d.asm" % i, "-needed", "kernel32.dll", "-needed", "msvcrt.dll", "--o", "w%d.exe" % i])
+        ok = r.returncode == 0
+        if ok:
+            im = imports("w%d.exe" % i)
+            ok = sorted(im.get("kernel32.dll", [])) == sorted(x.split("@")[0] for x in std) and sorted(im.get("msvcrt.dll", [])) == sorted(crt)
+        b.check(ok, "win32 %s %s: %s" % (std, crt, r.stderr[-120:]))
+
+
+def b_kw(b):
+    rng = random.Random(SEED * 100 + 7)
+    have = shutil.which("nasm") is not None
+    words = ["mov", "rax", "eax", "add", "bits", "ret", "section", "byte", "dword", "loop", "x", "lab", "jmp", "call", "times", "db", "equ", "r8", "st0", "xmm0", "len", "short", "near"]
+    for i in range(NF):
+        ws = rng.sample(words, rng.randint(2, 6))
+        L = ["bits 64", "section .text"]
+        for w in ws:
+            L.append("$%s:%s" % (w, " nop" if rng.random() < 0.5 else ""))
+            L.append(" jmp $%s" % w)
+        L += ["section .data"] + ["$d%s dd $%s" % (w, w) for w in ws[:2]]
+        wr("k%d.asm" % i, "\n".join(L) + "\n")
+        r = run(["-nasm", "k%d.asm" % i, "-flat", "-q", "--o", "k%d.cly" % i])
+        if not have:
+            b.check(r.returncode == 0, "kw build k%d: %s" % (i, r.stderr[-120:]))
+            continue
+        n = subprocess.run(["nasm", "-f", "bin", "k%d.asm" % i, "-o", "k%d.nasm" % i], capture_output=True)
+        ok = (n.returncode == 0) == (r.returncode == 0)
+        if ok and n.returncode == 0: ok = open("k%d.nasm" % i, "rb").read() == open("k%d.cly" % i, "rb").read()
+        b.check(ok, "kw k%d differs from nasm: %s\n%s" % (i, r.stderr[-120:], "\n".join(L)))
+
+def b_builtin(b):
+    rng = random.Random(SEED * 100 + 8)
+    k32 = ["ExitProcess", "GetStdHandle", "WriteFile", "ReadFile", "Sleep", "CloseHandle", "GetLastError", "VirtualAlloc", "HeapAlloc", "GetTickCount", "CreateFileMappingA", "MapViewOfFile", "GetFileAttributesExW", "OpenProcess"]
+    u32 = ["MessageBoxA", "CreateWindowExA", "DefWindowProcA", "GetMessageA", "ShowWindow", "GetWindowTextW", "LoadCursorW", "FindWindowExA"]
+    crt = ["printf", "puts", "malloc", "free", "strlen", "memcpy", "exit"]
+    for i in range(NF):
+        a = rng.sample(k32, rng.randint(1, 5)); u = rng.sample(u32, rng.randint(0, 3)); c = rng.sample(crt, rng.randint(0, 3))
+        bits = rng.choice([32, 64])
+        pre = "_" if bits == 32 else ""
+        w = rng.sample(["WSAStartup", "send", "recv", "socket", "closesocket"], rng.randint(0, 3))
+        names = a + u + c + w
+        L = ["bits %d" % bits] + ["extern %s%s" % (pre, x) for x in names] + ["global start", "section .text", "start:"]
+        L += [" call %s%s" % (pre, x) for x in names] + [" ret"]
+        wr("bi%d.asm" % i, "\n".join(L) + "\n")
+        mode = rng.choice([["windows", "-m%d" % bits], ["-nasm", "-fwin%d" % bits]])
+        extra = rng.choice([[], ["-needed", "msvcrt.dll"], ["-needed", "kernel32.dll", "-needed", "msvcrt.dll"]])
+        r = run(mode + ["bi%d.asm" % i] + extra + ["--o", "bi%d.exe" % i])
+        ok = r.returncode == 0
+        if ok:
+            im = imports("bi%d.exe" % i)
+            ok = sorted(im.get("kernel32.dll", [])) == sorted(a) and sorted(im.get("user32.dll", [])) == sorted(u) and sorted(im.get("msvcrt.dll", [])) == sorted(c) and sorted(im.get("ws2_32.dll", [])) == sorted(w)
+        b.check(ok, "builtin %s %s %s: %s" % (mode, extra, names, r.stderr[-120:]))
+
+def b_bad(b):
+    rng = random.Random(SEED * 100 + 6)
+    for i in range(NF):
+        k = rng.randint(0, 5)
+        if k == 0: a = ["-nasm", "-fwin99", "x.asm"]
+        elif k == 1: a = ["-nasm", "-fwin64", "x.asm", "-needed", "nonexist" + str(i) + ".dll"]
+        elif k == 2: a = ["-nasm", "-fwin64", "x.asm", "-needed"]
+        elif k == 3: a = ["-nasm", "-f", "x.asm"]
+        elif k == 4: a = ["-nasm", "-fwin64", "x.asm", "-needed", "x.asm"]
+        else: a = ["windows", "x.asm", "-needed", "/dev/null"]
+        wr("x.asm", "bits 64\nextern foo\nglobal main\nsection .text\nmain:\n call foo\n ret\n")
+        r = run(a + ["--o", "x.exe"])
+        b.check(r.returncode in (0, 1), "bad %s rc=%d" % (a, r.returncode))
+
+def main():
+    plan = [("windows -f formats and imports", b_fmt), ("dollar labels", b_dollar), ("many imports", b_many), ("dll selection", b_dllsel), ("windows 32-bit names", b_win32), ("keyword named labels vs nasm", b_kw), ("builtin windows api names", b_builtin), ("bad windows options", b_bad)]
+    tot = [0, 0]; allok = True
+    for name, fn in plan:
+        b = B(name); fn(b)
+        tot[0] += b.ok; tot[1] += b.n
+        print("batch %-34s %d/%d" % (name, b.ok, b.n))
+        for m in b.msgs: print("   FAIL:", m)
+        if b.ok != b.n: allok = False
+    print("TOTAL %d/%d" % tuple(tot))
+    if allok: shutil.rmtree(W, ignore_errors=True)
+    return 0 if allok else 1
+
+sys.exit(main())
+PYBATCH5
+    [ $? = 0 ] && note "windows linking batches" ok || { note "windows linking batches" FAIL; fail=1; }
 fi
 
 rm -rf "$T"

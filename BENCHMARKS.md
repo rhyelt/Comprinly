@@ -2,6 +2,17 @@
 
 Results are listed by version, starting at 1.3.2. Each version adds its own section.
 
+## 1.4.1
+
+Large inputs for the Windows target, built with `cly -nasm -fwin64 FILE -needed msvcrt.dll`.
+
+| Input | Time | Result |
+|---|---|---|
+| 332,010 lines, 6,000 functions, 8,000 data labels, all names start with `$` | 2.4 s | 1,270,784 byte exe |
+| 60,006 lines, 30,000 different imported functions | 0.4 s | 1,108,992 byte exe |
+
+Assembly is about 13 percent faster than 1.4.0 on this input (it took 2.7 s before the speedups). The import linking changed more: 30,000 imports used to compare every name with every other name, and a program with that many relocations could crash.
+
 ## 1.4.0
 
 Same programs and commands as 1.3.5 (hello world, and the prime counter that prints 25997). The timings come from a busier machine than the 1.3.5 ones, so compare rows inside this table, not with older sections. Times are the median of 20 builds and of 200 runs for hello (15 for primes).

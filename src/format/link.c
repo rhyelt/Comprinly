@@ -304,6 +304,39 @@ static void add_reloc(Obj *o, Reloc *r)
     o->relocs[o->nrelocs++] = *r;
 }
 
+static int *imp_ht;
+static int imp_hn;
+static int *imp_hv;
+static unsigned imp_hash(int d, const char *nm)
+{
+    unsigned h = 2166136261u ^ (unsigned)d;
+    for (; *nm; nm++) h = (h ^ (unsigned char)*nm) * 16777619u;
+    return h;
+}
+
+static int imp_find(int d, const char *nm)
+{
+    if (!imp_ht) return -1;
+    unsigned m = (unsigned)imp_hn - 1, h = imp_hash(d, nm) & m;
+    while (imp_ht[h] >= 0) {
+        int e = imp_ht[h];
+        if ((e >> 20) == d && !strcmp(imps[d].names[imp_hv[e & 0xFFFFF]], nm)) return imp_hv[e & 0xFFFFF];
+        h = (h + 1) & m;
+    }
+    return -1;
+}
+
+static int imp_ne;
+
+static void imp_add(int d, int k, const char *nm)
+{
+    unsigned m = (unsigned)imp_hn - 1, h = imp_hash(d, nm) & m;
+    while (imp_ht[h] >= 0) h = (h + 1) & m;
+    imp_hv[imp_ne] = k;
+    imp_ht[h] = (d << 20) | imp_ne;
+    imp_ne++;
+}
+
 /* Collects the imported functions the code refers to, groups them by DLL and creates the import address table and call thunks. */
 void link_prepare_imports(Obj *o)
 {
@@ -312,6 +345,12 @@ void link_prepare_imports(Obj *o)
     int any = 0;
     for (int i = 0; i < o->nsyms; i++) if (o->syms[i]->import && o->syms[i]->referenced) any = 1;
     if (!any) return;
+    imp_hn = 64;
+    while (imp_hn < o->nsyms * 2 + 16) imp_hn <<= 1;
+    imp_ht = xmalloc(sizeof(int) * (size_t)imp_hn);
+    memset(imp_ht, 0xFF, sizeof(int) * (size_t)imp_hn);
+    imp_hv = xmalloc(sizeof(int) * (size_t)(o->nsyms + 1));
+    imp_ne = 0;
     int slots = 0;
     for (int i = 0; i < o->nsyms; i++) {
         Sym *s = o->syms[i];
@@ -326,8 +365,7 @@ void link_prepare_imports(Obj *o)
             d = nimps++;
         }
         const char *nm = s->impname ? s->impname : s->name;
-        int found = 0;
-        for (int k = 0; k < imps[d].n; k++) if (!strcmp(imps[d].names[k], nm)) found = 1;
+        int found = imp_find(d, nm) >= 0;
         if (!found) {
             ImpDll *D = &imps[d];
             if (D->n == D->cap) {
@@ -337,6 +375,7 @@ void link_prepare_imports(Obj *o)
             }
             D->names[D->n] = xstrdup(nm);
             D->slot[D->n] = 0;
+            imp_add(d, D->n, nm);
             D->n++;
             slots++;
         }
@@ -361,7 +400,8 @@ void link_prepare_imports(Obj *o)
         i64 so = 0;
         for (int d = 0; d < nimps; d++) {
             if (strcasecmp(imps[d].dll, dll)) continue;
-            for (int k = 0; k < imps[d].n; k++) if (!strcmp(imps[d].names[k], nm)) so = imps[d].slot[k];
+            int k = imp_find(d, nm);
+            if (k >= 0) so = imps[d].slot[k];
         }
         s->ext = 0;
         s->defined = 1;

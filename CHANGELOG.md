@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.1
+
+- New: `-needed DLL` works for Windows programs. Names the program leaves undefined (`extern printf`) are imported from the DLLs you list. If the DLL file exists, its export table decides which DLL gets which name. If it does not (a system DLL like `msvcrt.dll` on a Linux machine), C style names go to a C runtime DLL and Windows API names (`ExitProcess`) go to the other ones. In 32-bit code the leading `_` and the `@N` suffix are dropped (`_ExitProcess@4` imports `ExitProcess`).
+- New: common Windows API names need no `-needed`. `ExitProcess`, `GetStdHandle`, `WriteFile` and about 150 other kernel32 names, plus common user32, gdi32, shell32, advapi32 and C runtime (msvcrt) names, are imported from the right DLL when the code declares them with `extern`. Names that are not in the list are matched by rules (for example `Reg*` goes to advapi32, `gl*` to opengl32, `WSA*` and socket calls to ws2_32, `Nt*` to ntdll, names with `Window` or `Message` to user32, and the usual kernel32 verbs like `Get`, `Create` and `Map`). The `A`, `W` and `Ex` forms follow their base name. A plain hello world with `extern ExitProcess` now links with just `cly windows hello.asm`. This was the "cannot be resolved for this output type" error.
+- New: `-f FORMAT` and `-fFORMAT` like NASM (`-fwin64`, `-f win32`, `-felf64`, `-felf32`, `-fmacho64`). It picks the kernel and the code size, so `cly -nasm -fwin64 a.asm -needed msvcrt.dll` makes a Windows program.
+- New: a Windows program without a `start` label starts at `main`, `_main` or `WinMain`, so the usual `global main` NASM examples link as they are.
+- Fix: names that begin with `$` (`$next:`, `jmp $next`) are the same name as `next`, like NASM. A label defined as `$name:` was stored with the `$` and every use of `$name` was reported as undefined.
+- Fix: a program with thousands of imports crashed or took seconds. The linker's list of relocations was one slot too small after the assembler filled it, and import names were compared one by one. 30,000 imports now link in 0.4 s.
+- Faster: the assembler no longer copies each instruction's encoding string, and skips macro lookups when no macro is defined.
+- Fix: `$` in front of a name works for every name, including names that are also keywords or registers (`$eax:`, `jmp $dword`, `$byte`). Output matches NASM on these.
+- Faster: about 13 percent faster on large inputs. Character class checks use a table, instructions skip name tests that cannot match, macro lookups are skipped when no macro exists, and `-nasm` no longer scans lines for registers of other CPUs.
+- New: a fifth set of tests at the end of `tests/run_all.sh`: 8 batches of 100 for the `-f` formats, `$` labels, many imports, choosing the DLL, built-in API names, 32-bit names, keyword named labels against NASM and bad options.
+- Docs: the README lists the contributor who tested the Windows build.
+
 ## 1.4.0
 
 - New: `-strip`. Writes the smallest file it can and prints nothing. No warnings, no log, no hints, no symbol tables, and the optimizer is allowed to use what Linux guarantees at startup (all registers are zero except the stack pointer), so `mov eax, 0`, `mov eax, 1` and similar setup code shrinks. The program does the same thing as the normal build. A hello world is 116 bytes for x86-64 (164 normally), 78 for i386 (129 normally), 166 for ARM64 and RISC-V (286 normally), and a Windows hello is 1024 bytes (1536 normally).

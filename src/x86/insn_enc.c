@@ -544,7 +544,8 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
         if (ops[i].rc) rc = ops[i].rc;
         if (ops[i].bcst) bc = 1;
     }
-    char *enc = xstrdup(e->enc);
+    char encbuf[96];
+    char *enc = strlen(e->enc) < sizeof encbuf ? strcpy(encbuf, e->enc) : xstrdup(e->enc);
     char *sv = enc;
     int regf = 0, haveR = 0, opc[4], nopc = 0, hasib = 0, post[4], npost = 0, is4 = 0, sibf = 0, regonly = 0;
     for (char *t = nexttok(&sv); t; t = nexttok(&sv)) {
@@ -561,10 +562,10 @@ static int vec_body(const Ent *e, Op *ops, int nops, IC *ic, Buf *bf, Bytes *pre
         if (t[0] == 'p' && isxdigit((unsigned char)t[1]) && npost < 4) { post[npost++] = (int)strtol(t + 1, NULL, 16); continue; }
         if (isxdigit((unsigned char)t[0]) && isxdigit((unsigned char)t[1]) && !t[2] && nopc < 4) { opc[nopc++] = (int)strtol(t, NULL, 16); continue; }
         err("internal: bad vector encoding token `%s'", t);
-        free(enc);
+        if (enc != encbuf) free(enc);
         return 0;
     }
-    free(enc);
+    if (enc != encbuf) free(enc);
     int regn = 0, rmn = 0, mx = 0;
     int vvn = 0;
     if (haveR == 1) {
@@ -680,12 +681,13 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
     }
     int relfield = -1, relsize = 0;
     int osz16 = 0, fwait = 0, tokn = 0;
-    char *enc = xstrdup(e->enc);
+    char encbuf[96];
+    char *enc = strlen(e->enc) < sizeof encbuf ? strcpy(encbuf, e->enc) : xstrdup(e->enc);
     char *save = enc;
     Bytes vpre;
     memset(&vpre, 0, sizeof vpre);
     if (e->vkind) {
-        if (!vec_body(e, ops, nops, ic, &bf, &vpre, &need67, &memseg)) { free(enc); return 0; }
+        if (!vec_body(e, ops, nops, ic, &bf, &vpre, &need67, &memseg)) { if (enc != encbuf) free(enc); return 0; }
         bf.rw = bf.rr = bf.rx = bf.rb = bf.needrex = 0;
         save = enc + strlen(enc);
     }
@@ -704,26 +706,26 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
             int regf;
             int rm = rmop;
             if (t[1] == 'r') {
-                if (regop < 0) { err("internal: no reg operand for %s", e->mn); free(enc); return 0; }
+                if (regop < 0) { err("internal: no reg operand for %s", e->mn); if (enc != encbuf) free(enc); return 0; }
                 const Op *ro = &ops[regop];
                 regf = rfield(&bf, ro->reg, &bf.rr);
                 if (rm < 0) rm = regop;
             } else regf = t[1] - '0';
-            if (rm < 0) { err("internal: no rm operand for %s", e->mn); free(enc); return 0; }
+            if (rm < 0) { err("internal: no rm operand for %s", e->mn); if (enc != encbuf) free(enc); return 0; }
             const Op *mo = &ops[rm];
             if (mo->kind == OK_REG) {
                 int rmn = rfield(&bf, mo->reg, &bf.rb);
                 bad1(&bf.b, (u8)(0xC0 | (regf << 3) | rmn));
             } else {
                 int asz;
-                if (!emit_ea(mo, regf, ic, &bf, &asz, 0)) { free(enc); return 0; }
+                if (!emit_ea(mo, regf, ic, &bf, &asz, 0)) { if (enc != encbuf) free(enc); return 0; }
                 if (asz != bits) need67 = 1;
                 if (mo->mseg) memseg = mo->mseg;
             }
             continue;
         }
         if (!strcmp(t, "ib") || !strcmp(t, "iw") || !strcmp(t, "id") || !strcmp(t, "iq")) {
-            if (imi >= nimm) { err("internal: missing imm operand for %s", e->mn); free(enc); return 0; }
+            if (imi >= nimm) { err("internal: missing imm operand for %s", e->mn); if (enc != encbuf) free(enc); return 0; }
             Op *io = &ops[immidx[imi++]];
             int sz = t[1] == 'b' ? 1 : (t[1] == 'w' ? 2 : (t[1] == 'q' ? 8 : 4));
             if (val_isconst(&io->val) && io->val.n >= -128 && io->val.n <= 255 && sz == 1) {}
@@ -763,20 +765,20 @@ static int emit_entry(const Ent *e, Op *ops, int nops, IC *ic, InsnOut *out)
         if (isxdigit((unsigned char)t[0]) && isxdigit((unsigned char)t[1])) {
             u8 v = (u8)strtol(hx, NULL, 16);
             if (plus && plus[1] == 'r') {
-                if (plusr < 0) { err("internal: no +r operand for %s", e->mn); free(enc); return 0; }
+                if (plusr < 0) { err("internal: no +r operand for %s", e->mn); if (enc != encbuf) free(enc); return 0; }
                 v = (u8)(v | rfield(&bf, ops[plusr].reg, &bf.rb));
             } else if (plus && plus[1] == 'i') {
-                if (plusi < 0) { err("internal: no +i operand for %s", e->mn); free(enc); return 0; }
+                if (plusi < 0) { err("internal: no +i operand for %s", e->mn); if (enc != encbuf) free(enc); return 0; }
                 v = (u8)(v | REGNUM(ops[plusi].reg));
             }
             bad1(&bf.b, v);
             continue;
         }
         err("internal: bad encoding token `%s'", t);
-        free(enc);
+        if (enc != encbuf) free(enc);
         return 0;
     }
-    free(enc);
+    if (enc != encbuf) free(enc);
     if (ic->o16 && obits == 32) need66 = 1;
     if (ic->o32 && obits == 16) need66 = 1;
     if (ic->o16 && obits == 16 && osz16 == 32) need66 = 0;
@@ -902,7 +904,7 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     {
         /* Mask instructions come in b, w, d and q sizes. kmov with a general register takes its size from the register; the rest need the letter. */
         static const char *const kgen[] = { "kmov", "kand", "kandn", "kor", "kxor", "kxnor", "knot", "kortest", "ktest", "kadd", "kunpck", "kshiftl", "kshiftr", NULL };
-        for (int i = 0; kgen[i]; i++) {
+        for (int i = 0; key[0] == 'k' && kgen[i]; i++) {
             if (strcmp(key, kgen[i])) continue;
             const char *sfx = NULL;
             if (!strcmp(key, "kmov") && nops == 2) {
@@ -924,7 +926,7 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     const Ent *head = tab_lookup(key);
     if (!head) { err("unknown instruction `%s'", mn); ic->nomatch = 2; return 0; }
     Op mib[2];
-    if (nops == 3 && (!strcmp(key, "bndldx") || !strcmp(key, "bndstx"))) {
+    if (nops == 3 && key[0] == 'b' && (!strcmp(key, "bndldx") || !strcmp(key, "bndstx"))) {
         int ri = -1, mi = -1, bi = -1;
         for (int i = 0; i < 3; i++) {
             if (ops[i].kind == OK_MEM) mi = i;
@@ -988,13 +990,18 @@ int insn_encode(const char *mn, Op *ops, int nops, IC *ic, InsnOut *out)
     /* NASM does not guess the size of a lone memory operand ("mov [x], 5"), so strict mode asks for it with a hint. */
     if (g_nasm && !ic->quiet) {
         static const char *const sized[] = { "mov", "add", "sub", "and", "or", "xor", "cmp", "adc", "sbb", "test", "inc", "dec", "neg", "not", "mul", "div", "imul", "idiv", "shl", "shr", "sar", "sal", "rol", "ror", NULL };
-        int is_sized = 0, is_shift = !strcasecmp(mn, "shl") || !strcasecmp(mn, "shr") || !strcasecmp(mn, "sar") || !strcasecmp(mn, "sal") || !strcasecmp(mn, "rol") || !strcasecmp(mn, "ror");
-        for (int k = 0; sized[k]; k++) if (!strcasecmp(mn, sized[k])) is_sized = 1;
         int unsized_mem = 0, sizing_reg = 0;
         for (int k = 0; k < nops; k++) {
             if (ops[k].kind == OK_MEM && ops[k].size == 0 && !ops[k].bcst) unsized_mem = 1;
-            if (ops[k].kind == OK_REG && !(is_shift && k > 0)) sizing_reg = 1;
-            if (ops[k].kind == OK_IMM && ops[k].size) sizing_reg = 1;
+        }
+        int is_sized = 0, is_shift = 0;
+        if (unsized_mem) {
+            is_shift = !strcasecmp(mn, "shl") || !strcasecmp(mn, "shr") || !strcasecmp(mn, "sar") || !strcasecmp(mn, "sal") || !strcasecmp(mn, "rol") || !strcasecmp(mn, "ror");
+            for (int k = 0; sized[k]; k++) if (!strcasecmp(mn, sized[k])) is_sized = 1;
+            for (int k = 0; k < nops; k++) {
+                if (ops[k].kind == OK_REG && !(is_shift && k > 0)) sizing_reg = 1;
+                if (ops[k].kind == OK_IMM && ops[k].size) sizing_reg = 1;
+            }
         }
         if (is_sized && unsized_mem && !sizing_reg) {
             err("operation size not specified: put byte, word, dword or qword before the memory operand");

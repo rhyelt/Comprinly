@@ -43,7 +43,7 @@ static const char *usage_text =
     "options:\n"
     "  --o FILE, -out FILE   output file name\n"
     "  --ld FILE     link object files into a program: cly a.o b.o --ld program\n"
-    "  -needed LIB   link against a shared library (a path to a .so, or a name such as libc.so.6); repeat for more\n"
+    "  -needed LIB   link against a shared library (a path to a .so, or a name such as libc.so.6); for Windows, a DLL that undefined names are imported from (msvcrt.dll); repeat for more\n"    "  -f FORMAT     NASM style format: win64, win32, elf64, elf32 or macho64 (also -fwin64)\n"
     "  -rdynamic, -rpath DIR, -soname NAME, -interp PATH   dynamic program and shared library settings\n"
     "  -global, -unglobal, -uninstall   install Comprinly as a command, move it back, or remove it\n"
     "  -update       check GitHub for a newer release and update\n"
@@ -329,6 +329,20 @@ int main(int argc, char **argv)
             if (cli_arch == ARCH_X86 && ia32_cpu(nm, &g_cpu_lvl)) { g_ia32 = 1; ia32_name = nm; }
             continue;
         }
+        if (a[0] == '-' && a[1] == 'f') {
+            const char *fm = a[2] ? a + 2 : (i + 1 < argc ? argv[i + 1] : "");
+            int fk = -1, fb = 0;
+            if (!strcasecmp(fm, "win64")) { fk = K_WINDOWS; fb = 64; }
+            else if (!strcasecmp(fm, "win32")) { fk = K_WINDOWS; fb = 32; }
+            else if (!strcasecmp(fm, "elf64")) { fk = K_LINUX; fb = 64; }
+            else if (!strcasecmp(fm, "elf32") || !strcasecmp(fm, "elf")) { fk = K_LINUX; fb = 32; }
+            else if (!strcasecmp(fm, "macho64")) { fk = K_MAC; fb = 64; }
+            if (fk >= 0) {
+                if (!a[2]) i++;
+                kernel = fk; mbits = fb;
+                continue;
+            }
+        }
         if (!strcmp(a, "-m32")) { mbits = 32; continue; }
         if (!strcmp(a, "-m64")) { mbits = 64; continue; }
         if (!strcmp(a, "-m16")) { mbits = 16; continue; }
@@ -381,7 +395,7 @@ int main(int argc, char **argv)
         if (!strcmp(a, "-needed") || !strcmp(a, "-rpath") || !strcmp(a, "-soname") || !strcmp(a, "-interp")) {
             if (i + 1 >= argc) { fprintf(stderr, "cly: option `%s' needs an argument\n", a); return 1; }
             const char *v = argv[++i];
-            if (!strcmp(a, "-needed")) { g_ldo.needed = xrealloc(g_ldo.needed, sizeof(char *) * (size_t)(g_ldo.nneeded + 1)); g_ldo.needed[g_ldo.nneeded++] = (char *)v; g_ldo.dynamic = 1; }
+            if (!strcmp(a, "-needed")) { g_ldo.needed = xrealloc(g_ldo.needed, sizeof(char *) * (size_t)(g_ldo.nneeded + 1)); g_ldo.needed[g_ldo.nneeded++] = (char *)v; }
             else if (!strcmp(a, "-rpath")) g_ldo.rpath = v;
             else if (!strcmp(a, "-soname")) g_ldo.soname = v;
             else g_ldo.interp = v;
@@ -489,7 +503,7 @@ int main(int argc, char **argv)
     }
     for (int i = 0; i < npos; i++) {
         int k = parse_kernel(pos[i]);
-        if (k >= 0 && kernel < 0 && !file_exists(pos[i])) {
+        if (k >= 0 && (kernel < 0 || kernel == k) && !file_exists(pos[i])) {
             kernel = k;
             /* linux32 and linux64 are Linux with the code size already chosen, the same as -m32 and -m64. */
             int want = !strcasecmp(pos[i], "linux32") ? 32 : !strcasecmp(pos[i], "linux64") ? 64 : 0;
@@ -522,6 +536,7 @@ int main(int argc, char **argv)
     }
     if (type == T_SO && kernel != K_LINUX) { fprintf(stderr, "cly: -shared writes an ELF shared library; use the linux kernel (for a Windows DLL use -dll)\n"); return 1; }
     if (type == T_DLL && kernel != K_WINDOWS) { fprintf(stderr, "cly: -dll writes a Windows DLL; use the windows kernel (for a Linux shared library use -shared)\n"); return 1; }
+    if (g_ldo.nneeded && kernel != K_WINDOWS) g_ldo.dynamic = 1;
     if (g_ldo.dynamic && type == T_BIN && kernel == K_LINUX) type = T_ELF;
     if (g_ldo.dynamic && type != T_ELF && type != T_SO && type != T_BIN) { fprintf(stderr, "cly: -dynamic, -needed and -rpath only apply to Linux programs (-elf) and shared libraries (-shared)\n"); return 1; }
     g_ldo.shared = type == T_SO;
@@ -649,7 +664,7 @@ int main(int argc, char **argv)
         }
         break;
     }
-    if (!pponly && arch_check_foreign(&lines, arch)) { fprintf(stderr, "cly: %d error%s\n", g_errors, g_errors == 1 ? "" : "s"); return 1; }
+    if (!pponly && !g_nasm && arch_check_foreign(&lines, arch)) { fprintf(stderr, "cly: %d error%s\n", g_errors, g_errors == 1 ? "" : "s"); return 1; }
     if (arch != ARCH_X86) {
         if (type == T_COM) { fprintf(stderr, "cly: -com is a 16-bit x86 format and does not apply to %s\n", arch_name(arch)); return 1; }
         if (arch != ARCH_A64 && (kernel == K_WINDOWS || kernel == K_MAC)) {

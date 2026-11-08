@@ -16,7 +16,7 @@
 #include <strings.h>
 #endif
 
-#define CLY_VERSION "1.4.0"
+#define CLY_VERSION "1.4.1"
 
 /* Case-insensitive string compare that bails out on the first differing character, which is faster than strcasecmp on typical symbol names. */
 static inline int cly_ieq(const char *a, const char *b)
@@ -176,8 +176,9 @@ extern ExprHooks g_hooks;
 
 int expr_parse(const char **pp, Val *out, int flags);
 int expr_eval_str(const char *s, Val *out, int flags);
-int ident_start(int c);
-int ident_char(int c);
+extern const unsigned char g_idstart_t[256], g_idchar_t[256];
+#define ident_start(c) ((int)g_idstart_t[(unsigned char)(c)])
+#define ident_char(c) ((int)g_idchar_t[(unsigned char)(c)])
 extern int num_overflow;
 int parse_number_tok(const char *s, const char **end, i64 *out, int *isfloat);
 int parse_charconst(const char **pp, Str *out);

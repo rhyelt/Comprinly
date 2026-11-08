@@ -210,10 +210,200 @@ static int pe_single(Obj *o, Bytes *out)
     return 1;
 }
 
+
+static u32 rd32le(const u8 *p) { return (u32)p[0] | (u32)p[1] << 8 | (u32)p[2] << 16 | (u32)p[3] << 24; }
+
+static int pe_read_exports(const char *path, char ***names, int *n)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (len < 0x100 || len > (64L << 20)) { fclose(f); return 0; }
+    u8 *d = xmalloc((size_t)len);
+    size_t got = fread(d, 1, (size_t)len, f);
+    fclose(f);
+    int ok = 0;
+    if ((long)got == len && d[0] == 'M' && d[1] == 'Z') {
+        u32 pe = rd32le(d + 0x3c);
+        if (pe + 0x108 < (u32)len && !memcmp(d + pe, "PE\0\0", 4)) {
+            u16 ns = (u16)(d[pe + 6] | d[pe + 7] << 8), osz = (u16)(d[pe + 20] | d[pe + 21] << 8);
+            u32 opt = pe + 24;
+            int p64 = (d[opt] | d[opt + 1] << 8) == 0x20b;
+            u32 erva = rd32le(d + opt + (p64 ? 112 : 96));
+            u32 sec = opt + osz;
+            #define RVA2OFF(r, out) do { out = 0; for (int q = 0; q < ns; q++) { u32 b = sec + 40u * (u32)q; if (b + 40 > (u32)len) break; u32 va = rd32le(d + b + 12), vs = rd32le(d + b + 8), rs = rd32le(d + b + 16), rp = rd32le(d + b + 20); if ((r) >= va && (r) < va + (vs > rs ? vs : rs)) { out = rp + ((r) - va); break; } } } while (0)
+            u32 eo = 0;
+            if (erva) RVA2OFF(erva, eo);
+            if (eo && eo + 40 <= (u32)len) {
+                u32 nn = rd32le(d + eo + 24), np = rd32le(d + eo + 32), npo = 0;
+                RVA2OFF(np, npo);
+                if (npo && nn < 100000 && npo + 4ull * nn <= (u64)len) {
+                    char **v = xmalloc(sizeof(char *) * (nn + 1));
+                    int c = 0;
+                    for (u32 i = 0; i < nn; i++) {
+                        u32 sr = rd32le(d + npo + 4 * i), so = 0;
+                        RVA2OFF(sr, so);
+                        if (so && so < (u32)len) { size_t m = strnlen((char *)d + so, (size_t)len - so); v[c++] = xstrndup((char *)d + so, m); }
+                    }
+                    *names = v; *n = c; ok = 1;
+                }
+            }
+        }
+    }
+    free(d);
+    return ok;
+}
+
+typedef struct { const char *path, *base; char **names; int n, loaded; } NeedDll;
+
+static const char *path_base(const char *p)
+{
+    const char *b = p;
+    for (; *p; p++) if (*p == '/' || *p == '\\') b = p + 1;
+    return b;
+}
+
+static int is_crt_dll(const char *b)
+{
+    return !strncasecmp(b, "msvcr", 5) || !strncasecmp(b, "ucrt", 4) || !strncasecmp(b, "api-ms-win-crt", 14) || !strncasecmp(b, "vcruntime", 9) || !strncasecmp(b, "crtdll", 6);
+}
+
+static const char *const tk32[] = {"AllocConsole", "CloseHandle", "CopyFileA", "CreateDirectoryA", "CreateEventA", "CreateFileA", "CreateFileW", "CreateMutexA", "CreateProcessA", "CreateProcessW", "CreateThread", "DeleteCriticalSection", "DeleteFileA", "DeleteFileW", "EnterCriticalSection", "ExitProcess", "ExitThread", "FileTimeToSystemTime", "FindClose", "FindFirstFileA", "FindNextFileA", "FlushFileBuffers", "FormatMessageA", "FreeConsole", "FreeEnvironmentStringsW", "FreeLibrary", "GetACP", "GetCPInfo", "GetCommandLineA", "GetCommandLineW", "GetComputerNameA", "GetConsoleCP", "GetConsoleMode", "GetConsoleOutputCP", "GetConsoleScreenBufferInfo", "GetCurrentDirectoryA", "GetCurrentProcess", "GetCurrentProcessId", "GetCurrentThread", "GetCurrentThreadId", "GetEnvironmentStringsW", "GetEnvironmentVariableA", "GetFileAttributesA", "GetFileSize", "GetFileSizeEx", "GetLastError", "GetLocalTime", "GetModuleFileNameA", "GetModuleFileNameW", "GetModuleHandleA", "GetModuleHandleW", "GetProcAddress", "GetProcessHeap", "GetStartupInfoA", "GetStartupInfoW", "GetStdHandle", "GetSystemInfo", "GetSystemTime", "GetSystemTimeAsFileTime", "GetTickCount", "GetTickCount64", "GetUserDefaultLCID", "GetVersion", "GetVersionExA", "GlobalAlloc", "GlobalFree", "GlobalLock", "GlobalUnlock", "HeapAlloc", "HeapCreate", "HeapDestroy", "HeapFree", "HeapReAlloc", "InitializeCriticalSection", "InterlockedDecrement", "InterlockedExchange", "InterlockedIncrement", "IsDebuggerPresent", "LeaveCriticalSection", "LoadLibraryA", "LoadLibraryW", "LocalAlloc", "LocalFree", "MoveFileA", "MultiByteToWideChar", "OutputDebugStringA", "QueryPerformanceCounter", "QueryPerformanceFrequency", "RaiseException", "ReadConsoleA", "ReadConsoleW", "ReadFile", "ReleaseMutex", "RemoveDirectoryA", "ResetEvent", "SetConsoleCP", "SetConsoleCtrlHandler", "SetConsoleMode", "SetConsoleOutputCP", "SetConsoleTextAttribute", "SetConsoleTitleA", "SetConsoleTitleW", "SetCurrentDirectoryA", "SetEnvironmentVariableA", "SetEvent", "SetFilePointer", "SetFilePointerEx", "SetLastError", "SetStdHandle", "SetUnhandledExceptionFilter", "Sleep", "SleepEx", "TerminateProcess", "TlsAlloc", "TlsFree", "TlsGetValue", "TlsSetValue", "VirtualAlloc", "VirtualFree", "VirtualProtect", "WaitForMultipleObjects", "WaitForSingleObject", "WideCharToMultiByte", "WriteConsoleA", "WriteConsoleW", "WriteFile", "lstrcatA", "lstrcmpA", "lstrcpyA", "lstrlenA", "lstrlenW", 0};
+static const char *const tu32[] = {"AdjustWindowRect", "BeginPaint", "ClientToScreen", "CreateWindowExA", "CreateWindowExW", "DefWindowProcA", "DefWindowProcW", "DestroyWindow", "DialogBoxParamA", "DispatchMessageA", "DispatchMessageW", "DrawTextA", "EndDialog", "EndPaint", "FillRect", "FindWindowA", "GetAsyncKeyState", "GetClientRect", "GetCursorPos", "GetDC", "GetDlgItem", "GetFocus", "GetKeyState", "GetMessageA", "GetMessageW", "GetSystemMetrics", "GetWindowRect", "GetWindowTextA", "InvalidateRect", "KillTimer", "LoadCursorA", "LoadCursorW", "LoadIconA", "LoadImageA", "MapVirtualKeyA", "MessageBoxA", "MessageBoxExA", "MessageBoxW", "MoveWindow", "PeekMessageA", "PeekMessageW", "PostMessageA", "PostQuitMessage", "RegisterClassA", "RegisterClassExA", "RegisterClassExW", "RegisterClassW", "ReleaseCapture", "ReleaseDC", "ScreenToClient", "SendMessageA", "SendMessageW", "SetCapture", "SetCursorPos", "SetDlgItemTextA", "SetFocus", "SetForegroundWindow", "SetTimer", "SetWindowPos", "SetWindowTextA", "ShowCursor", "ShowWindow", "TranslateMessage", "UpdateWindow", "keybd_event", "mouse_event", "wsprintfA", "wsprintfW", 0};
+static const char *const tgdi[] = {"BitBlt", "ChoosePixelFormat", "CreateCompatibleBitmap", "CreateCompatibleDC", "CreateFontA", "CreatePen", "CreateSolidBrush", "DeleteDC", "DeleteObject", "Ellipse", "GetPixel", "GetStockObject", "LineTo", "MoveToEx", "Rectangle", "SelectObject", "SetBkColor", "SetBkMode", "SetPixel", "SetPixelFormat", "SetTextColor", "StretchBlt", "SwapBuffers", "TextOutA", 0};
+static const char *const tcrt[] = {"_XcptFilter", "__getmainargs", "__p__commode", "__p__environ", "__p__fmode", "__set_app_type", "_access", "_amsg_exit", "_atoi64", "_beginthreadex", "_cexit", "_chdir", "_close", "_controlfp", "_endthreadex", "_exit", "_fileno", "_fstat", "_getch", "_getcwd", "_initterm", "_isatty", "_itoa", "_kbhit", "_ltoa", "_mkdir", "_onexit", "_open", "_read", "_rmdir", "_setmode", "_sleep", "_snprintf", "_stat", "_strdup", "_stricmp", "_strlwr", "_strnicmp", "_strupr", "_ultoa", "_unlink", "_vsnprintf", "_wcsicmp", "_wfopen", "_write", "abort", "abs", "atan", "atan2", "atexit", "atof", "atoi", "atol", "bsearch", "calloc", "ceil", "clock", "cos", "exit", "exp", "fabs", "fclose", "feof", "ferror", "fflush", "fgetc", "fgets", "floor", "fmod", "fopen", "fprintf", "fputc", "fputs", "fread", "free", "fscanf", "fseek", "ftell", "fwrite", "getc", "getchar", "getenv", "gets", "isalnum", "isalpha", "isdigit", "islower", "isspace", "isupper", "labs", "log", "log10", "longjmp", "malloc", "memchr", "memcmp", "memcpy", "memmove", "memset", "perror", "pow", "printf", "putc", "putchar", "puts", "qsort", "raise", "rand", "realloc", "remove", "rename", "rewind", "scanf", "setjmp", "signal", "sin", "snprintf", "sprintf", "sqrt", "srand", "sscanf", "strcat", "strchr", "strcmp", "strcpy", "strdup", "strlen", "strncat", "strncmp", "strncpy", "strrchr", "strstr", "strtod", "strtok", "strtol", "strtoul", "swprintf", "system", "tan", "time", "tolower", "toupper", "vprintf", "vsprintf", "wcscmp", "wcscpy", "wcslen", "wprintf", 0};
+static const char *const tsh[] = {"CommandLineToArgvW", "SHGetFolderPathA", "ShellExecuteA", "ShellExecuteW", 0};
+static const char *const tadv[] = {"AdjustTokenPrivileges", "CryptAcquireContextA", "CryptGenRandom", "CryptReleaseContext", "GetUserNameA", "LookupPrivilegeValueA", "OpenProcessToken", "RegCloseKey", "RegCreateKeyExA", "RegDeleteKeyA", "RegOpenKeyExA", "RegQueryValueExA", "RegSetValueExA", 0};
+
+typedef struct { const char *dll; const char *const *names; } WinTab;
+
+static const WinTab k_wintabs[] = {
+    {"kernel32.dll", tk32}, {"user32.dll", tu32}, {"gdi32.dll", tgdi}, {"msvcrt.dll", tcrt}, {"shell32.dll", tsh}, {"advapi32.dll", tadv}, {0, 0}
+};
+
+static const char *const tws[] = {"WSACleanup", "WSAGetLastError", "WSASocketA", "WSAStartup", "accept", "bind", "closesocket", "connect", "freeaddrinfo", "getaddrinfo", "gethostbyname", "getpeername", "getsockname", "getsockopt", "htonl", "htons", "inet_addr", "inet_ntoa", "ioctlsocket", "listen", "ntohl", "ntohs", "recv", "recvfrom", "select", "send", "sendto", "setsockopt", "shutdown", "socket", 0};
+static const char *const tole[] = {"CoCreateInstance", "CoInitialize", "CoInitializeEx", "CoTaskMemAlloc", "CoTaskMemFree", "CoUninitialize", "CLSIDFromString", "StringFromGUID2", 0};
+static const char *const tmm[] = {"PlaySoundA", "PlaySoundW", "timeBeginPeriod", "timeEndPeriod", "timeGetTime", "waveOutClose", "waveOutOpen", "waveOutPrepareHeader", "waveOutUnprepareHeader", "waveOutWrite", 0};
+
+static const WinTab k_wintabs2[] = {{"ws2_32.dll", tws}, {"ole32.dll", tole}, {"winmm.dll", tmm}, {0, 0}};
+
+static int has_pfx(const char *s, const char *p) { return !strncmp(s, p, strlen(p)); }
+
+static int has_any(const char *s, const char *const *w)
+{
+    for (; *w; w++) if (strstr(s, *w)) return 1;
+    return 0;
+}
+
+static const char *win_exact(const char *nm)
+{
+    for (int t = 0; k_wintabs[t].dll; t++)
+        for (int i = 0; k_wintabs[t].names[i]; i++)
+            if (!strcmp(k_wintabs[t].names[i], nm)) return k_wintabs[t].dll;
+    for (int t = 0; k_wintabs2[t].dll; t++)
+        for (int i = 0; k_wintabs2[t].names[i]; i++)
+            if (!strcmp(k_wintabs2[t].names[i], nm)) return k_wintabs2[t].dll;
+    return NULL;
+}
+
+static const char *win_known(const char *nm)
+{
+    const char *d = win_exact(nm);
+    if (d) return d;
+    size_t n = strlen(nm);
+    if (n > 3 && n < 120) {
+        char base[128];
+        memcpy(base, nm, n + 1);
+        if (base[n - 1] == 'A' || base[n - 1] == 'W') {
+            base[n - 1] = 0;
+            d = win_exact(base);
+            if (d) return d;
+            size_t m = n - 1;
+            if (m > 2 && base[m - 2] == 'E' && base[m - 1] == 'x') { base[m - 2] = 0; d = win_exact(base); if (d) return d; }
+            memcpy(base, nm, n + 1);
+        }
+        if (n > 2 && !strcmp(nm + n - 2, "Ex")) { base[n - 2] = 0; d = win_exact(base); if (d) return d; }
+    }
+    static const char *const kpfx[] = {"Nt", "Rtl", "Zw", 0};
+    if (has_pfx(nm, "Reg") && isupper((unsigned char)nm[3])) return "advapi32.dll";
+    if (has_pfx(nm, "Crypt") || (has_pfx(nm, "Open") && strstr(nm, "Token")) || strstr(nm, "Service")) return "advapi32.dll";
+    if (has_pfx(nm, "WSA")) return "ws2_32.dll";
+    if (has_pfx(nm, "wgl") || (has_pfx(nm, "gl") && isupper((unsigned char)nm[2]))) return "opengl32.dll";
+    if (has_pfx(nm, "glu") && isupper((unsigned char)nm[3])) return "glu32.dll";
+    if (has_pfx(nm, "Dwm")) return "dwmapi.dll";
+    if (has_pfx(nm, "Co") && isupper((unsigned char)nm[2]) && strstr(nm, "Initialize")) return "ole32.dll";
+    if ((has_pfx(nm, "SH") && isupper((unsigned char)nm[2])) || has_pfx(nm, "Shell")) return "shell32.dll";
+    if (has_pfx(nm, "Path") && isupper((unsigned char)nm[4])) return "shlwapi.dll";
+    if (has_pfx(nm, "Str") && isupper((unsigned char)nm[3]) && strlen(nm) > 5) return "shlwapi.dll";
+    for (int i = 0; kpfx[i]; i++) if (has_pfx(nm, kpfx[i]) && isupper((unsigned char)nm[strlen(kpfx[i])])) return "ntdll.dll";
+    if (isupper((unsigned char)nm[0]) && has_any(nm, (const char *const[]){"Window", "Message", "Dialog", "Menu", "Cursor", "Icon", "Clipboard", "Caption", "Keyboard", "MapVirtualKey", "Mouse", "Monitor", "Desktop", "Hook", "Accel", "ScrollBar", "Rect", "DC", 0}) && !has_pfx(nm, "Create") && !strstr(nm, "Console") && !strstr(nm, "Process") && !strstr(nm, "Thread")) return "user32.dll";
+    if (has_pfx(nm, "Create") && has_any(nm, (const char *const[]){"Window", "Dialog", "Menu", "Cursor", "Icon", "Accelerator", 0})) return "user32.dll";
+    if (isupper((unsigned char)nm[0]) && has_any(nm, (const char *const[]){"Brush", "Pen", "Bitmap", "Font", "Palette", "Region", "Blt", "TextOut", "Pixel", "StockObject", 0})) return "gdi32.dll";
+    static const char *const kverb[] = {"Get", "Set", "Create", "Open", "Close", "Read", "Write", "Map", "Unmap", "Virtual", "Heap", "Local", "Global", "Find", "Wait", "Release", "Reset", "Resume", "Suspend", "Terminate", "Load", "Free", "Lock", "Unlock", "Duplicate", "Flush", "Query", "Is", "Enter", "Leave", "Initialize", "Delete", "Copy", "Move", "Peek", "Signal", "Interlocked", "Tls", "Fls", "Sleep", "Exit", "Allocate", "Console", "Debug", "Output", "Format", "Lstr", "Mul", "Add", "Remove", "Attach", "Cancel", "Connect", "Disconnect", "Transact", "Device", "Process", "Thread", "File", "Last", "Start", "Stop", "Switch", "Try", "Convert", "Compare", "Check", "Expand", "Fill", "Zero", "Rtl", 0};
+    if (isupper((unsigned char)nm[0]) && strlen(nm) > 4) {
+        for (int i = 0; kverb[i]; i++) if (has_pfx(nm, kverb[i]) && (isupper((unsigned char)nm[strlen(kverb[i])]) || !nm[strlen(kverb[i])])) return "kernel32.dll";
+    }
+    return NULL;
+}
+
+void pe_auto_imports(Obj *o)
+{
+    int nd = g_ldo.nneeded;
+    NeedDll *D = xmalloc(sizeof(NeedDll) * (size_t)(nd + 1));
+    for (int i = 0; i < nd; i++) {
+        D[i].path = g_ldo.needed[i];
+        D[i].base = path_base(g_ldo.needed[i]);
+        D[i].names = NULL; D[i].n = 0;
+        D[i].loaded = pe_read_exports(g_ldo.needed[i], &D[i].names, &D[i].n);
+    }
+    for (int i = 0; i < o->nsyms; i++) {
+        Sym *s = o->syms[i];
+        if (s->defined || s->import || !s->referenced || !s->ext) continue;
+        const char *nm = s->name;
+        int imp = !strncmp(nm, "__imp_", 6);
+        if (imp) nm += 6;
+        char buf[256];
+        snprintf(buf, sizeof buf, "%s", nm);
+        if (!o->is64 && buf[0] == '_') memmove(buf, buf + 1, strlen(buf));
+        char *at = strrchr(buf, '@');
+        if (at && at[1] && strspn(at + 1, "0123456789") == strlen(at + 1)) *at = 0;
+        int pick = -1;
+        for (int k = 0; k < nd && pick < 0; k++) {
+            if (!D[k].loaded) continue;
+            for (int j = 0; j < D[k].n; j++) if (!strcmp(D[k].names[j], buf)) { pick = k; break; }
+        }
+        if (pick < 0) {
+            const char *kd = win_known(buf);
+            if (kd) {
+                for (int k = 0; k < nd && pick < 0; k++) if (!strcasecmp(D[k].base, kd)) pick = k;
+                if (pick < 0) {
+                    s->import = 1;
+                    s->impdll = xstrdup(kd);
+                    s->impname = xstrdup(buf);
+                    continue;
+                }
+            }
+        }
+        if (pick < 0) {
+            int cname = islower((unsigned char)buf[0]) || buf[0] == '_';
+            for (int k = 0; k < nd && pick < 0; k++) if (!D[k].loaded && (is_crt_dll(D[k].base) == cname)) pick = k;
+            for (int k = 0; k < nd && pick < 0; k++) if (!D[k].loaded) pick = k;
+        }
+        if (pick < 0) continue;
+        s->import = 1;
+        s->impdll = xstrdup(D[pick].base);
+        s->impname = xstrdup(buf);
+    }
+}
+
 static int fmt_pe_norm(Obj *o, Bytes *out);
 
 int fmt_pe(Obj *o, Bytes *out)
 {
+    pe_auto_imports(o);
+    if (!o->entry && !g_pe_dll) for (int i = 0; i < o->nsyms; i++) if (o->syms[i]->defined && (!strcmp(o->syms[i]->name, "main") || !strcmp(o->syms[i]->name, "_main") || !strcmp(o->syms[i]->name, "WinMain") || !strcmp(o->syms[i]->name, "start") || !strcmp(o->syms[i]->name, "_start"))) { o->entry = o->syms[i]; break; }
     link_prepare_imports(o);
     if (g_xstrip && !g_pe_dll && o->arch == ARCH_X86) {
         Bytes tb = {0};

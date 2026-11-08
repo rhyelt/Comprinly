@@ -171,6 +171,7 @@ static char *ctx_key(const char *name)
 /* Finds a single-line macro, checking the case-sensitive table and then the case-insensitive one. */
 static SMac *smac_lookup(const char *name, int nargs, int isfunc_call)
 {
+    if (!P.smacs.cnt && !P.smacs_ci.cnt) return NULL;
     char *key = ctx_key(name);
     if (!key) return NULL;
     SMac *m = smac_find_in(&P.smacs, key, nargs, isfunc_call);
@@ -828,6 +829,7 @@ static MMac *mmac_find(const char *name, int nargs)
 /* True if any multi line macro has this name. */
 static int mmac_exists_name(const char *name)
 {
+    if (!P.mmacs.cnt && !P.mmacs_ci.cnt) return 0;
     for (int ci = 0; ci < 2; ci++) {
         HT *h = ci ? &P.mmacs_ci : &P.mmacs;
         char *k = ci ? lower(name) : xstrdup(name);

@@ -132,8 +132,14 @@ static void chunk_free(Chunk *c)
 }
 
 /* Finds a symbol by name or creates it. */
+static const char *unesc(const char *n)
+{
+    return n[0] == '$' && ident_start((unsigned char)n[1]) ? n + 1 : n;
+}
+
 static Sym *get_sym(const char *name)
 {
+    name = unesc(name);
     Sym *s = ht_get(&A.symtab, name);
     if (s) return s;
     s = xcalloc(1, sizeof *s);
@@ -157,7 +163,7 @@ static Sym *get_sym(const char *name)
     return s;
 }
 
-Sym *sym_find(const char *name) { return ht_get(&A.symtab, name); }
+Sym *sym_find(const char *name) { return ht_get(&A.symtab, unesc(name)); }
 
 /* Expands a .local label to its full name (lastlabel.local). */
 static char *full_name(const char *name)
@@ -2733,6 +2739,7 @@ int assemble(AsmOpts *o, Obj *out)
     out->nsecs = A.nsecs;
     out->relocs = A.relocs;
     out->nrelocs = A.nrelocs;
+    out->caprelocs = A.caprelocs;
     out->syms = A.syms;
     out->nsyms = A.nsyms;
     out->bits = A.bits;

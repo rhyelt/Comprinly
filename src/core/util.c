@@ -301,7 +301,7 @@ void ht_put(HT *h, const char *k, void *v)
     e->next = h->b[i];
     h->b[i] = e;
     h->cnt++;
-    if (h->cnt > h->nb * 2) {
+    if (h->cnt > h->nb) {
         size_t nn = h->nb * 4;
         HEnt **nb = xcalloc(nn, sizeof(HEnt *));
         for (size_t j = 0; j < h->nb; j++) {
